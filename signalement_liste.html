@@ -39,9 +39,15 @@
   .count-tag{font-size:12px; color:var(--ink-soft); margin-left:auto; font-family:'IBM Plex Mono',monospace;}
 
   .list{display:flex; flex-direction:column; gap:8px;}
+  .row-wrap{position:relative; border-radius:var(--radius); overflow:hidden;}
+  .row-delete-bg{
+    position:absolute; inset:0; background:var(--danger); color:#fff;
+    display:flex; align-items:center; justify-content:flex-end; padding-right:26px;
+    font-weight:600; font-size:13px; border-radius:var(--radius);
+  }
   .row{
     display:grid; grid-template-columns: 54px 1fr 140px 120px 110px;
-    align-items:center; gap:14px;
+    align-items:center; gap:14px; position:relative; touch-action:pan-y;
     background:#fff; border:1px solid var(--line); border-left:4px solid var(--nature-color, var(--teal));
     border-radius:var(--radius); padding:13px 16px; cursor:pointer; transition:box-shadow .15s, transform .1s;
   }
@@ -400,6 +406,10 @@ function render(){
   document.getElementById('countTag').textContent = filtered.length + ' dossier' + (filtered.length>1?'s':'');
 
   filtered.forEach(function(d){
+    const wrap = document.createElement('div');
+    wrap.className = 'row-wrap';
+    wrap.innerHTML = '<div class="row-delete-bg">🗑️ Supprimer</div>';
+
     const row = document.createElement('div');
     row.className='row';
     row.style.setProperty('--nature-color', NATURE_COLORS[d.natureIncident] || '#019682');
@@ -409,8 +419,42 @@ function render(){
       '<div class="col-nature" style="color:' + (NATURE_COLORS[d.natureIncident]||'#019682') + '">' + d.natureIncident + '</div>' +
       '<div class="col-site">' + d.site + (d.lieu ? ' - '+d.lieu : '') + '<br><span style="font-size:11px;">' + d.date + '</span></div>' +
       '<div><span class="status-chip ' + statusClass(d.statut) + '">' + d.statut + '</span></div>';
-    row.addEventListener('click', function(){ openDrawer(d.id); });
-    list.appendChild(row);
+    row.addEventListener('click', function(){
+      if(row.dataset.swiping === 'true') return;
+      openDrawer(d.id);
+    });
+    wrap.appendChild(row);
+    list.appendChild(wrap);
+    bindSwipeToDelete(row, d.id);
+  });
+}
+
+function bindSwipeToDelete(row, id){
+  let startX = 0, currentX = 0, dragging = false, width = 0;
+  row.addEventListener('touchstart', function(e){
+    startX = e.touches[0].clientX;
+    width = row.offsetWidth;
+    dragging = true;
+    row.style.transition = 'none';
+  }, {passive:true});
+  row.addEventListener('touchmove', function(e){
+    if(!dragging) return;
+    let dx = e.touches[0].clientX - startX;
+    if(dx > 0) dx = 0;
+    currentX = dx;
+    row.style.transform = 'translateX(' + dx + 'px)';
+    row.dataset.swiping = Math.abs(dx) > 10 ? 'true' : 'false';
+  }, {passive:true});
+  row.addEventListener('touchend', function(){
+    dragging = false;
+    row.style.transition = 'transform .2s ease';
+    const swipedFar = Math.abs(currentX) > width * 0.75;
+    row.style.transform = 'translateX(0)';
+    if(swipedFar){
+      deleteDossier(id);
+    }
+    setTimeout(function(){ row.dataset.swiping = 'false'; }, 80);
+    currentX = 0;
   });
 }
 ['searchInput','filterStatut','filterNature','filterSite'].forEach(function(id){
@@ -550,7 +594,6 @@ function openDrawer(numero){
       '<button onclick="addSuivi(\'' + d.id + '\')">Ajouter au suivi</button></div></div>' +
       '<div class="dsection danger-zone"><h3>Actions sur le dossier</h3><div class="action-row">' +
       '<button class="btn btn-export" onclick="previewReport(\'' + d.id + '\')">🔍 Prévisualiser le rapport</button>' +
-      '<button class="btn btn-export" onclick="exportWord(\'' + d.id + '\')">Exporter en Word</button>' +
       '<button class="btn btn-close-dossier" onclick="closeDossier(\'' + d.id + '\')" ' + (d.statut==='3-Clos'?'disabled':'') + '>Cloturer le dossier</button>' +
       '<button class="btn btn-danger" onclick="deleteDossier(\'' + d.id + '\')">Supprimer le dossier</button>' +
       '</div></div>' +
@@ -945,4 +988,3 @@ function showToast(msg){
 </script>
 </body>
 </html>
-
