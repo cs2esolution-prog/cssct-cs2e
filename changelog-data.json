@@ -1,5 +1,17 @@
 [
   {
+    "hash": "618c4f4",
+    "date": "28/07/2026",
+    "title": "Prise en charge des anciens numéros de dossier (PA23, PA24...) et suppression de l'alerte de débogage",
+    "description": "Les dossiers importés avec un ancien identifiant texte (PA23, PA24) ne provoquent plus d'erreur. Les nouveaux dossiers continuent d'être numérotés à la suite du plus grand numéro trouvé. L'alerte technique qui s'affichait au lancement depuis l'écran d'accueil a été retirée."
+  },
+  {
+    "hash": "ccb6fd1",
+    "date": "28/07/2026",
+    "title": "chore: mise a jour automatique du changelog [skip ci]",
+    "description": ""
+  },
+  {
     "hash": "1259964",
     "date": "28/07/2026",
     "title": "Add files via upload",
