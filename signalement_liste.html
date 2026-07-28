@@ -173,12 +173,6 @@
 </head>
 <body>
 <script>
-window.onerror = function(msg, src, line, col, err){
-  alert('Erreur JS détectée :\n' + msg + '\n(ligne ' + line + ')');
-  return false;
-};
-</script>
-<script>
 fetch('./changelog-data.json?t=' + Date.now())
   .then(function(r){ return r.ok ? r.json() : null; })
   .then(function(entries){
@@ -394,7 +388,11 @@ function render(){
       if(hay.indexOf(q) === -1) return false;
     }
     return true;
-  }).sort(function(a,b){ return b.numero-a.numero; });
+  }).sort(function(a,b){
+    const na = parseInt(String(a.numero),10), nb = parseInt(String(b.numero),10);
+    if(!isNaN(na) && !isNaN(nb)) return nb - na;
+    return (b.date||'').localeCompare(a.date||'');
+  });
 
   const list = document.getElementById('list');
   list.innerHTML='';

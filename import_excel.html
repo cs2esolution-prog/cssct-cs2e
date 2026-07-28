@@ -60,9 +60,6 @@
 </style>
 </head>
 <body>
-<script>
-window.onerror = function(msg, src, line){ alert('Erreur JS : ' + msg + ' (ligne ' + line + ')'); return false; };
-</script>
 
 <div id="authGate">
   <div id="authChecking" style="color:#ffffffaa;font-size:13.5px;">Vérification de la connexion…</div>
@@ -159,7 +156,7 @@ window.onerror = function(msg, src, line){ alert('Erreur JS : ' + msg + ' (ligne
   window.CSSCT_FIREBASE = {
     async getExistingNumeros(){
       const snap = await getDocs(col);
-      return new Set(snap.docs.map(d => Number(d.data().numero)));
+      return new Set(snap.docs.map(d => String(d.data().numero)));
     },
     async batchImport(rows, onProgress){
       const CHUNK = 400;
@@ -221,7 +218,7 @@ document.getElementById('fileInput').addEventListener('change', async function(e
   existingNumeros = await window.CSSCT_FIREBASE.getExistingNumeros();
 
   parsedRows = dataRows.map(function(row){
-    const numero = Number(cell(row,1));
+    const numero = cell(row,1);
     const suiviText = cell(row,26);
     return {
       numero: numero,
@@ -252,7 +249,7 @@ document.getElementById('fileInput').addEventListener('change', async function(e
       actionEnvisagee: cell(row,25),
       suivi: suiviText ? [{date: '', text: suiviText}] : [],
       incidentOrigineLie: cell(row,27),
-      _isDuplicate: existingNumeros.has(numero)
+      _isDuplicate: existingNumeros.has(String(numero))
     };
   });
 
