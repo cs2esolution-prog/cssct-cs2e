@@ -1,5 +1,17 @@
 [
   {
+    "hash": "6c7a731",
+    "date": "28/07/2026",
+    "title": "Ajout du tableau de bord d'indicateurs CSSCT",
+    "description": "Nouvelle page qui calcule automatiquement des indicateurs utiles au suivi : totaux et taux de clôture, répartition par nature et par site, délai moyen de traitement, dossiers ouverts depuis longtemps, et tendance mensuelle des signalements."
+  },
+  {
+    "hash": "4108966",
+    "date": "28/07/2026",
+    "title": "chore: mise a jour automatique du changelog [skip ci]",
+    "description": ""
+  },
+  {
     "hash": "d57bfe7",
     "date": "28/07/2026",
     "title": "Balayer pour supprimer, et nettoyage des actions",
