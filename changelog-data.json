@@ -1,5 +1,17 @@
 [
   {
+    "hash": "8a1e03a",
+    "date": "28/07/2026",
+    "title": "Add files via upload",
+    "description": "Ajout d'une vraie page d'accueil\r\n\r\nNouvelle page d'accueil mobile avec les indicateurs clés (dossiers en cours, en souffrance, trousses à traiter) et des raccourcis vers chaque partie de l'application."
+  },
+  {
+    "hash": "5569165",
+    "date": "28/07/2026",
+    "title": "chore: mise a jour automatique du changelog [skip ci]",
+    "description": ""
+  },
+  {
     "hash": "87ae3e0",
     "date": "28/07/2026",
     "title": "Rename index.html to nouveau_signalement.html",
