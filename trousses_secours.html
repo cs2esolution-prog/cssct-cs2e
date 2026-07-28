@@ -66,6 +66,15 @@
   .modal-body{padding:20px 24px;}
   .field{display:flex; flex-direction:column; gap:5px; margin-bottom:12px;}
   .field label{font-size:12px; font-weight:600;}
+  .ac-wrap{position:relative;}
+  .ac-suggestions{
+    position:absolute; top:100%; left:0; right:0; background:#fff; border:1px solid var(--line);
+    border-radius:8px; box-shadow:0 8px 20px rgba(0,0,0,.1); max-height:170px; overflow-y:auto;
+    z-index:20; display:none; margin-top:4px;
+  }
+  .ac-suggestions.show{display:block;}
+  .ac-item{padding:8px 12px; font-size:13px; cursor:pointer;}
+  .ac-item:hover{background:#FBFAF7;}
   .grid2{display:grid; grid-template-columns:1fr 1fr; gap:12px;}
   input, select{width:100%; padding:9px 11px; border:1px solid var(--line); border-radius:7px; font-size:13.5px; font-family:'Inter',sans-serif;}
   .modal-actions{display:flex; justify-content:space-between; padding:14px 24px; border-top:1px solid var(--line);}
@@ -119,10 +128,25 @@
     </div>
     <div class="modal-body">
       <input type="hidden" id="itemId">
-      <div class="field"><label>Site</label><input type="text" id="itemSite" placeholder="Ex : Montpellier"></div>
-      <div class="field"><label>Entité</label><input type="text" id="itemEntite" placeholder="Ex : SMAG / AS"></div>
-      <div class="field"><label>Emplacement de la trousse</label><input type="text" id="itemEmplacement" placeholder="Ex : Meuble bas, derrière l'accueil"></div>
-      <div class="field"><label>Contenu (article)</label><input type="text" id="itemContenu" placeholder="Ex : Compresses stériles"></div>
+      <div class="field">
+        <label>Site</label>
+        <select id="itemSite"></select>
+      </div>
+      <div class="field ac-wrap">
+        <label>Entité</label>
+        <input type="text" id="itemEntite" placeholder="Ex : SMAG / AS" autocomplete="off">
+        <div class="ac-suggestions" id="acEntite"></div>
+      </div>
+      <div class="field ac-wrap">
+        <label>Emplacement de la trousse <span style="font-weight:400;color:var(--ink-soft);">(propositions liées au site choisi)</span></label>
+        <input type="text" id="itemEmplacement" placeholder="Ex : Meuble bas, derrière l'accueil" autocomplete="off">
+        <div class="ac-suggestions" id="acEmplacement"></div>
+      </div>
+      <div class="field ac-wrap">
+        <label>Contenu (article)</label>
+        <input type="text" id="itemContenu" placeholder="Ex : Compresses stériles" autocomplete="off">
+        <div class="ac-suggestions" id="acContenu"></div>
+      </div>
       <div class="grid2">
         <div class="field"><label>Quantité théorique</label><input type="number" id="itemQteTheo" min="0"></div>
         <div class="field"><label>Quantité réelle</label><input type="number" id="itemQteReelle" min="0"></div>
@@ -205,6 +229,60 @@
 
 <script>
 function esc(s){ return (s==null?'':String(s)).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+
+const SITES = ["Bezannes","Chalons-en-Champagne","Evreux","Milly-la-Forêt","Montpellier","Nancy","Paris","Poitiers","Reims","Télétravail","Wavre"].sort((a,b)=>a.localeCompare(b,'fr'));
+(function populateSiteSelect(){
+  const sel = document.getElementById('itemSite');
+  sel.innerHTML = '<option value="">Choisir…</option>' + SITES.map(function(s){ return '<option>' + s + '</option>'; }).join('');
+})();
+
+function getEntiteSuggestions(){
+  const set = new Set();
+  (window._items||[]).forEach(function(it){ if(it.entite) set.add(it.entite); });
+  return Array.from(set).sort(function(a,b){ return a.localeCompare(b,'fr'); });
+}
+function getContenuSuggestions(){
+  const set = new Set();
+  (window._items||[]).forEach(function(it){ if(it.contenu) set.add(it.contenu); });
+  return Array.from(set).sort(function(a,b){ return a.localeCompare(b,'fr'); });
+}
+function getEmplacementSuggestions(){
+  const site = document.getElementById('itemSite').value;
+  const set = new Set();
+  (window._items||[]).forEach(function(it){ if(it.emplacement && it.site === site) set.add(it.emplacement); });
+  return Array.from(set).sort(function(a,b){ return a.localeCompare(b,'fr'); });
+}
+
+function bindAutocomplete(inputId, suggestionsBoxId, getSuggestionsFn){
+  const input = document.getElementById(inputId);
+  const box = document.getElementById(suggestionsBoxId);
+
+  function renderList(){
+    const q = input.value.toLowerCase().trim();
+    const all = getSuggestionsFn();
+    const matches = q ? all.filter(function(v){ return v.toLowerCase().includes(q); }) : all;
+    if(!matches.length){ box.classList.remove('show'); box.innerHTML=''; return; }
+    box.innerHTML = matches.slice(0,8).map(function(v){ return '<div class="ac-item">' + esc(v) + '</div>'; }).join('');
+    box.classList.add('show');
+    box.querySelectorAll('.ac-item').forEach(function(el, i){
+      el.addEventListener('mousedown', function(e){
+        e.preventDefault();
+        input.value = matches[i];
+        box.classList.remove('show');
+      });
+    });
+  }
+  input.addEventListener('input', renderList);
+  input.addEventListener('focus', renderList);
+  input.addEventListener('blur', function(){ setTimeout(function(){ box.classList.remove('show'); }, 120); });
+}
+
+bindAutocomplete('itemEntite', 'acEntite', getEntiteSuggestions);
+bindAutocomplete('itemContenu', 'acContenu', getContenuSuggestions);
+bindAutocomplete('itemEmplacement', 'acEmplacement', getEmplacementSuggestions);
+document.getElementById('itemSite').addEventListener('change', function(){
+  document.getElementById('itemEmplacement').value = '';
+});
 function daysUntil(iso){
   if(!iso) return null;
   const d = new Date(iso + 'T00:00:00');
