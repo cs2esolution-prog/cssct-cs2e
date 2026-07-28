@@ -178,16 +178,6 @@
 </style>
 </head>
 <body>
-<script>
-fetch('./changelog-data.json?t=' + Date.now())
-  .then(function(r){ return r.ok ? r.json() : null; })
-  .then(function(entries){
-    if(entries && entries.length && entries[0].title){
-      document.getElementById('changelogLink').textContent = entries[0].title;
-    }
-  })
-  .catch(function(){});
-</script>
 
 <div id="authGate" style="position:fixed;inset:0;background:#2B2A2E;display:flex;align-items:center;justify-content:center;z-index:200;padding:20px;">
   <div id="authChecking" style="color:#ffffffaa;font-family:'Inter',sans-serif;font-size:13.5px;">Vérification de la connexion…</div>
@@ -205,15 +195,16 @@ fetch('./changelog-data.json?t=' + Date.now())
 
 <div class="wrap">
   <header class="top">
-    <div class="brand">
+    <div class="brand" style="cursor:pointer;" onclick="window.location.href='index.html'">
       <div class="brand-mark"></div>
       <div class="brand-text">CS<span>2E</span> · CSSCT</div>
-      <a href="changelog.html" id="changelogLink" style="margin-left:16px;font-size:11px;color:#6B6873;text-decoration:none;border:1px solid #E4E0D8;padding:5px 12px;border-radius:16px;">Notes de mise à jour</a>
     </div>
-    <div style="display:flex; gap:10px;">
+    <a href="changelog.html" id="changelogLink" title="Notes de mise à jour" style="font-size:16px;text-decoration:none;margin-left:6px;">🆕</a>
+    <div style="display:flex; gap:10px; align-items:center; margin-left:auto;">
       <a href="trousses_secours.html" style="text-decoration:none;display:inline-flex;align-items:center;font-size:12.5px;font-weight:600;color:#6B6873;border:1px solid #E4E0D8;padding:9px 16px;border-radius:20px;">🩹 Trousses de secours</a>
       <a href="dashboard.html" style="text-decoration:none;display:inline-flex;align-items:center;font-size:12.5px;font-weight:600;color:#6B6873;border:1px solid #E4E0D8;padding:9px 16px;border-radius:20px;">📊 Tableau de bord</a>
-      <a class="new-btn" href="index.html" style="text-decoration:none;display:inline-block;">+ Nouveau signalement</a>
+      <a class="new-btn" href="nouveau_signalement.html" style="text-decoration:none;display:inline-block;">+ Nouveau signalement</a>
+      <button id="logoutBtn" title="Se déconnecter" style="background:#fff;border:1px solid #E4E0D8;color:#A85D45;width:34px;height:34px;border-radius:50%;font-weight:700;cursor:pointer;font-size:14px;">✕</button>
     </div>
   </header>
 
@@ -268,7 +259,7 @@ fetch('./changelog-data.json?t=' + Date.now())
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js";
   import {
-    getAuth, sendSignInLinkToEmail, isSignInWithEmailLink, signInWithEmailLink, onAuthStateChanged
+    getAuth, sendSignInLinkToEmail, isSignInWithEmailLink, signInWithEmailLink, onAuthStateChanged, signOut
   } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js";
   import {
     getFirestore, collection, doc, onSnapshot, updateDoc, deleteDoc, arrayUnion
@@ -334,6 +325,12 @@ fetch('./changelog-data.json?t=' + Date.now())
     async addSuiviEntry(docId, entry){ await updateDoc(doc(db,'signalements', docId), { suivi: arrayUnion(entry) }); },
     async remove(docId){ await deleteDoc(doc(db,'signalements', docId)); }
   };
+
+  document.getElementById('logoutBtn').addEventListener('click', () => {
+    if(confirm('Se déconnecter ?')){
+      signOut(auth).then(() => { window.location.href = 'index.html'; });
+    }
+  });
 </script>
 <script>
 const NATURE_COLORS = {

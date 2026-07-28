@@ -104,11 +104,14 @@
 
 <div class="wrap">
   <header class="top">
-    <div class="brand">
+    <div class="brand" style="cursor:pointer;" onclick="window.location.href='index.html'">
       <div class="brand-mark"></div>
       <div class="brand-text">CS<span>2E</span> · CSSCT</div>
     </div>
-    <a class="back-link" href="signalement_liste.html">Retour aux dossiers</a>
+    <div style="display:flex; align-items:center; gap:10px; margin-left:auto;">
+      <a class="back-link" href="signalement_liste.html">Retour aux dossiers</a>
+      <button id="logoutBtn" title="Se déconnecter" style="background:#fff;border:1px solid #E4E0D8;color:#A85D45;width:34px;height:34px;border-radius:50%;font-weight:700;cursor:pointer;font-size:14px;">✕</button>
+    </div>
   </header>
 
   <h1>Trousses de secours</h1>
@@ -169,7 +172,7 @@
 
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js";
-  import { getAuth, sendSignInLinkToEmail, isSignInWithEmailLink, signInWithEmailLink, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js";
+  import { getAuth, sendSignInLinkToEmail, isSignInWithEmailLink, signInWithEmailLink, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js";
   import { getFirestore, collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
 
   const firebaseConfig = {
@@ -225,6 +228,12 @@
     async update(id, fields){ await updateDoc(doc(db,'trousses_secours', id), fields); },
     async remove(id){ await deleteDoc(doc(db,'trousses_secours', id)); }
   };
+
+  document.getElementById('logoutBtn').addEventListener('click', () => {
+    if(confirm('Se déconnecter ?')){
+      signOut(auth).then(() => { window.location.href = 'index.html'; });
+    }
+  });
 </script>
 
 <script>
