@@ -6,6 +6,7 @@
 <title>Nouveau signalement · CSSCT</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,500;8..60,600;8..60,700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/docx"></script>
 <style>
   :root{
     --teal:#019682;
@@ -393,7 +394,7 @@ window.onerror = function(msg, src, line, col, err){
       <div class="top-right">
         <div class="eyebrow">Nouveau dossier</div>
         <div class="dossier-no" id="dossierNo">N° À ATTRIBUER</div>
-        <a href="changelog.html" style="display:block;margin-top:4px;font-size:10.5px;color:#6B6873;text-decoration:none;">v0.10 · Notes de mise à jour</a>
+        <a href="changelog.html" style="display:block;margin-top:4px;font-size:10.5px;color:#6B6873;text-decoration:none;">v0.11 · Notes de mise à jour</a>
       </div>
     </div>
   </header>
@@ -616,7 +617,7 @@ window.onerror = function(msg, src, line, col, err){
     </div>
     <div class="modal-actions">
       <button id="btnPrintReport">🖨️ Imprimer</button>
-      <button id="btnDownloadPdf">⬇️ Enregistrer en PDF</button>
+      <button id="btnDownloadPdf">⬇️ Télécharger en Word (.docx)</button>
       <button class="maction-primary" id="btnMailReport">✉️ Envoyer par mail</button>
     </div>
   </div>
@@ -1096,24 +1097,134 @@ function reportFileName(){
   return `Signalement_${num}`;
 }
 
+const PRINT_WINDOW_CSS = `
+  body{font-family:Arial,Helvetica,sans-serif; color:#1a1a1a; padding:28px; max-width:760px; margin:0 auto;}
+  .rp-header{display:flex; align-items:center; justify-content:space-between; margin-bottom:20px;}
+  .rp-brand{display:flex; align-items:center; gap:10px;}
+  .rp-mark{width:34px; height:34px; border-radius:50%; background:conic-gradient(#019682 0deg 120deg,#C6AB76 120deg 240deg,#5A4570 240deg 360deg);}
+  .rp-name{font-weight:700; font-size:16px;}
+  .rp-badge{width:56px; height:56px; border-radius:10px; background:#A85D45; color:#fff; display:flex; flex-direction:column; align-items:center; justify-content:center; font-size:9px; font-weight:700; text-align:center; line-height:1.15;}
+  .rp-bold{font-weight:700; font-size:13px; margin:2px 0;}
+  .rp-plain{font-size:12.5px; margin:2px 0;}
+  .rp-blank{height:12px;}
+  .rp-h{color:#019682; font-weight:700; font-size:12.5px; margin:10px 0 3px;}
+  .rp-v{margin:0 0 8px; white-space:pre-wrap; font-size:12.5px;}
+  .rp-suivi{margin-bottom:6px; font-size:12.5px;}
+  .rp-footer{margin:16px 0; font-size:11px; color:#333; font-style:italic;}
+`;
+
+function openPrintWindow(innerHtml){
+  const w = window.open('', '_blank');
+  if(!w){ showToast("Le navigateur a bloqué l'ouverture de la fenêtre d'impression."); return; }
+  w.document.open();
+  w.document.write('<!DOCTYPE html><html><head><meta charset="utf-8"><title>Rapport</title><style>' + PRINT_WINDOW_CSS + '</style></head><body>' + innerHtml + '</body></html>');
+  w.document.close();
+  w.focus();
+  w.print();
+}
+
 document.getElementById('btnPrintReport').addEventListener('click', ()=>{
-  window.print();
+  openPrintWindow(document.getElementById('reportPrintArea').innerHTML);
 });
 
 document.getElementById('btnDownloadPdf').addEventListener('click', ()=>{
-  window.print();
-  showToast("Dans la fenêtre d'impression, choisis « Enregistrer au format PDF » comme destination.");
+  const p = gatherPayload();
+  generateDocxFile(p);
 });
 
 document.getElementById('btnMailReport').addEventListener('click', ()=>{
   const p = gatherPayload();
+  generateDocxFile(p);
   const subject = encodeURIComponent('Signalement CSSCT — ' + (p.objet || document.getElementById('dossierNo').textContent));
   const body = encodeURIComponent(
     "Bonjour,\n\nVeuillez trouver ci-joint le signalement CSSCT concernant : " + (p.objet||'') +
-    ".\n\n(Pense à joindre le PDF à ce mail : utilise d'abord le bouton « Enregistrer en PDF » pour le générer, si ce n'est pas déjà fait.)\n\nCordialement,"
+    ".\n\n(Le fichier Word vient d'être téléchargé — pense à le joindre manuellement à ce mail.)\n\nCordialement,"
   );
-  window.location.href = `mailto:?subject=${subject}&body=${body}`;
+  setTimeout(()=>{ window.location.href = `mailto:?subject=${subject}&body=${body}`; }, 300);
 });
+
+function generateDocxFile(p){
+  const { Document, Packer, Paragraph, TextRun } = docx;
+  const nature = p.natureIncident === "Signalement autre" && p.natureAutrePrecision
+    ? `${p.natureIncident} — ${p.natureAutrePrecision}` : (p.natureIncident || '—');
+  const heureFin = p.heureFin ? (p.heureFin + (p.heureFinLendemain ? ' (J+1)' : '')) : '';
+  const numeroLabel = document.getElementById('dossierNo').textContent;
+  const salarie = [p.prenom, p.nom].filter(Boolean).join(' ');
+  const GREEN = "019682";
+
+  const P = (text) => new Paragraph({ children: [ new TextRun(text || '') ] });
+  const PB = (text) => new Paragraph({ children: [ new TextRun({ text: text || '', bold: true }) ] });
+  const PH = (label, value) => new Paragraph({ children: [
+    new TextRun({ text: label + ' : ', bold: true, color: GREEN }),
+    new TextRun({ text: value || '' })
+  ]});
+  const blank = () => new Paragraph({ text: '' });
+
+  const children = [
+    PB(numeroLabel),
+    PB('Etat : ' + (p.statut || '')),
+    P(nature),
+    blank(),
+    P('Salarié : ' + salarie + ' ( – ) Matricule : ' + (p.matricule || '')),
+    P('Le : ' + (p.date || '') + (p.heureDebut ? ' — ' + p.heureDebut + (heureFin ? ' à ' + heureFin : '') : '')),
+    P('Localisation : ' + (p.site || '') + (p.lieu ? ' — ' + p.lieu : '')),
+    P('Rapporteur : ' + (p.rapporteur || '')),
+    P('Témoins : ' + (p.temoins || '')),
+    blank(),
+    PH('Objet', p.objet),
+    PH('Incident de référence (si suivi)', p.incidentOrigineLie),
+    PH('Clos-le', p.dateCloture),
+    PH('Info si clôture', p.infoCloture),
+    blank(),
+    new Paragraph({ children: [ new TextRun({ text: 'Description ou recueil des propos :', bold: true, color: GREEN }) ] }),
+    P(p.description)
+  ];
+
+  if(p.impactCorporel){
+    children.push(new Paragraph({ children:[ new TextRun({text:'Impact corporel remonté par le collaborateur :', bold:true, color:GREEN}) ]}));
+    children.push(P(p.impactCorporel));
+  }
+  if(p.impactPsychologique){
+    children.push(new Paragraph({ children:[ new TextRun({text:'Impact psychologique remonté par le collaborateur :', bold:true, color:GREEN}) ]}));
+    children.push(P(p.impactPsychologique));
+  }
+
+  children.push(new Paragraph({ children:[ new TextRun({text:'Risque :', bold:true, color:GREEN}) ]}));
+  children.push(P(p.risque));
+  children.push(new Paragraph({ children:[ new TextRun({text:'Actions réalisées :', bold:true, color:GREEN}) ]}));
+  children.push(P(p.actionRealisee));
+  children.push(new Paragraph({ children:[ new TextRun({text:'Actions préconisées par le CSSCT :', bold:true, color:GREEN}) ]}));
+  children.push(P(p.actionEnvisagee));
+
+  children.push(new Paragraph({ children:[ new TextRun({text:'Suivi :', bold:true, color:GREEN}) ]}));
+  children.push(P("(pas encore d'entrée de suivi)"));
+
+  children.push(blank());
+  children.push(new Paragraph({ children:[ new TextRun({
+    text: "Le CSSCT vous informe que ce document sera transmis aux membres du CS2E ainsi qu'au président du CSSCT",
+    italics: true
+  }) ]}));
+
+  children.push(new Paragraph({ children:[ new TextRun({text:'Document joint :', bold:true, color:GREEN}) ]}));
+  children.push(P((p._hasPhotoIncident ? "Photo de l'incident jointe. " : '') + (p._hasPhotoLocalisation ? 'Photo de localisation jointe.' : (p._hasPhotoIncident ? '' : 'Aucune pièce jointe.'))));
+  children.push(new Paragraph({ children:[ new TextRun({text:'Localisation :', bold:true, color:GREEN}) ]}));
+  children.push(P((p.site || '') + (p.lieu ? ' — ' + p.lieu : '')));
+
+  const doc = new Document({ sections: [{ properties: {}, children }] });
+  Packer.toBlob(doc).then((blob)=>{
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = reportFileName() + '.docx';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(()=>URL.revokeObjectURL(url), 2000);
+    showToast('Fichier Word téléchargé ✓');
+  }).catch((err)=>{
+    showToast('Erreur de génération du Word : ' + err.message);
+  });
+}
 
 // ---- Mobile field-to-field navigation bar ----
 const fieldNav = document.getElementById('fieldNav');
