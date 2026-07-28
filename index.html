@@ -363,12 +363,6 @@
 </head>
 <body>
 <script>
-window.onerror = function(msg, src, line, col, err){
-  alert('Erreur JS détectée :\n' + msg + '\n(ligne ' + line + ')');
-  return false;
-};
-</script>
-<script>
 fetch('./changelog-data.json?t=' + Date.now())
   .then(function(r){ return r.ok ? r.json() : null; })
   .then(function(entries){
@@ -708,10 +702,19 @@ fetch('./changelog-data.json?t=' + Date.now())
 
   // --- Firestore helpers exposed to the main script below ---
   async function getNextNumero(){
-    const q = query(signalementsCol, orderBy('numero','desc'), limit(1));
-    const snap = await getDocs(q);
-    if (snap.empty) return 1;
-    return (snap.docs[0].data().numero || 0) + 1;
+    // On lit tous les dossiers pour trouver le plus grand numéro numérique
+    // (certains anciens dossiers importés ont des identifiants texte type "PA23", on les ignore ici)
+    const snap = await getDocs(signalementsCol);
+    let max = 0;
+    snap.forEach(d => {
+      const n = d.data().numero;
+      const str = String(n);
+      if(/^\d+$/.test(str)){
+        const val = parseInt(str, 10);
+        if(val > max) max = val;
+      }
+    });
+    return max + 1;
   }
 
   window.CSSCT_FIREBASE = {
