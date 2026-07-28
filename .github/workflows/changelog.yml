@@ -1,0 +1,51 @@
+name: Generate changelog
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  build-changelog:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Generate changelog-data.json
+        run: |
+          node <<'EOF'
+          const { execSync } = require('child_process');
+          const fs = require('fs');
+
+          const raw = execSync(
+            `git log --no-merges --pretty=format:%H%x1f%ad%x1f%s%x1f%b%x1e --date=format:%d/%m/%Y`
+          ).toString();
+
+          const entries = raw
+            .split('\x1e')
+            .map(r => r.trim())
+            .filter(Boolean)
+            .map(record => {
+              const [hash, date, title, body] = record.split('\x1f');
+              return {
+                hash: (hash || '').slice(0, 7),
+                date: date || '',
+                title: (title || '').trim(),
+                description: (body || '').trim()
+              };
+            });
+
+          fs.writeFileSync('changelog-data.json', JSON.stringify(entries, null, 2));
+          EOF
+
+      - name: Commit changelog-data.json
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add changelog-data.json
+          git diff --staged --quiet || git commit -m "chore: mise a jour automatique du changelog [skip ci]"
+          git push
