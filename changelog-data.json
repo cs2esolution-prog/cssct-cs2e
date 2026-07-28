@@ -1,5 +1,17 @@
 [
   {
+    "hash": "87ae3e0",
+    "date": "28/07/2026",
+    "title": "Rename index.html to nouveau_signalement.html",
+    "description": ""
+  },
+  {
+    "hash": "7e1c15a",
+    "date": "28/07/2026",
+    "title": "chore: mise a jour automatique du changelog [skip ci]",
+    "description": ""
+  },
+  {
     "hash": "e5a4a17",
     "date": "28/07/2026",
     "title": "Suggestions automatiques dans le formulaire trousses de secours",
