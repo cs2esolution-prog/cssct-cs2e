@@ -258,7 +258,7 @@
     position:fixed; left:50%; bottom:80px; transform:translate(-50%,120%);
     background:var(--ink); color:#fff; padding:14px 20px; border-radius:12px;
     font-size:13.5px; box-shadow:0 8px 24px rgba(0,0,0,.25);
-    transition:transform .3s ease; z-index:60; max-width:90vw;
+    transition:transform .3s ease; z-index:250; max-width:90vw;
   }
   #toast.show{transform:translate(-50%,0);}
   #toast pre{margin:8px 0 0; font-size:11px; white-space:pre-wrap; color:#ffffffcc; max-height:160px; overflow:auto;}
@@ -328,11 +328,11 @@
   .search-result .sr-meta{font-size:11.5px; color:var(--ink-soft); margin-top:2px;}
   .search-empty{font-size:13px; color:var(--ink-soft); text-align:center; padding:24px 0;}
 
-  /* ---- Rapport formaté (aperçu / impression / PDF) ---- */
+  /* ---- Rapport formaté (aperçu / impression / PDF) — fidèle au modèle Word ---- */
   #reportPrintArea{
     background:#fff; padding:8px 4px; font-family:'Inter',sans-serif; color:#1a1a1a;
   }
-  .rp-header{display:flex; align-items:center; justify-content:space-between; margin-bottom:18px;}
+  .rp-header{display:flex; align-items:center; justify-content:space-between; margin-bottom:20px;}
   .rp-brand{display:flex; align-items:center; gap:10px;}
   .rp-brand .rp-mark{width:34px; height:34px; border-radius:50%;
     background:conic-gradient(#019682 0deg 120deg, #C6AB76 120deg 240deg, #5A4570 240deg 360deg); flex:none;}
@@ -342,13 +342,13 @@
     display:flex; flex-direction:column; align-items:center; justify-content:center;
     font-size:9px; font-weight:700; text-align:center; line-height:1.15; letter-spacing:.02em;
   }
-  .rp-title{font-family:'Source Serif 4',serif; font-size:15px; font-weight:700; text-align:center; margin:6px 0 2px;}
-  .rp-status{text-align:center; font-size:11.5px; color:#6B6873; margin-bottom:16px;}
-  .rp-meta{font-size:12px; color:#4a4a4a; border-top:1px solid #E4E0D8; border-bottom:1px solid #E4E0D8; padding:10px 0; margin-bottom:14px; display:grid; grid-template-columns:1fr 1fr; gap:4px 18px;}
-  .rp-h{color:#017162; font-weight:700; font-size:12px; text-transform:uppercase; letter-spacing:.05em; margin:14px 0 3px;}
-  .rp-h:first-of-type{margin-top:0;}
-  .rp-v{margin:0 0 4px; white-space:pre-wrap; font-size:13px;}
-  .rp-footer{margin-top:22px; padding-top:12px; border-top:1px solid #E4E0D8; font-size:10.5px; color:#8a8a8a; font-style:italic;}
+  .rp-bold{font-weight:700; font-size:13px; margin:1px 0; color:#1a1a1a;}
+  .rp-plain{font-size:12.5px; margin:1px 0; color:#1a1a1a;}
+  .rp-blank{height:12px;}
+  .rp-h{color:#019682; font-weight:700; font-size:12.5px; margin:3px 0;}
+  .rp-v{margin:0 0 10px; white-space:pre-wrap; font-size:12.5px; color:#1a1a1a;}
+  .rp-suivi{margin-bottom:6px; font-size:12.5px;}
+  .rp-footer{margin:16px 0; font-size:11px; color:#333; font-style:italic;}
   .modal-actions{display:flex; gap:8px; padding:14px 24px; border-top:1px solid var(--line); justify-content:flex-end; flex-wrap:wrap;}
   .modal-actions button{padding:9px 16px; border-radius:20px; font-size:12.5px; font-weight:600; cursor:pointer; border:1px solid var(--line); background:#fff;}
   .modal-actions .maction-primary{background:var(--ink); color:#fff; border-color:var(--ink);}
@@ -836,7 +836,9 @@ function gatherPayload(){
     actionEnvisagee: document.getElementById('actionEnvisagee').value,
     infoCloture: "",
     dateCloture: "",
-    suivi: []
+    suivi: [],
+    _hasPhotoIncident: document.getElementById('photoIncident').files.length > 0,
+    _hasPhotoLocalisation: document.getElementById('photoLocalisation').files.length > 0
   };
 }
 
@@ -1035,39 +1037,47 @@ function buildReportHtml(p){
     ? `${p.natureIncident} — ${p.natureAutrePrecision}` : (p.natureIncident || '—');
   const heureFin = p.heureFin ? (p.heureFin + (p.heureFinLendemain ? ' (J+1)' : '')) : '';
   const numeroLabel = document.getElementById('dossierNo').textContent;
-
-  const metaRows = [
-    ['Statut', p.statut], ['Nature', nature], ['Site', p.site], ['Localisation', p.lieu],
-    ['Date', p.date], ['Heure', [p.heureDebut, heureFin].filter(Boolean).join(' → ')],
-    ['Rapporteur', p.rapporteur], ['Témoins', p.temoins],
-    ['Salarié', [p.prenom, p.nom].filter(Boolean).join(' ')], ['Matricule', p.matricule],
-    ['Service / BU', [p.service, p.bu].filter(Boolean).join(' · ')]
-  ].filter(r=>r[1]);
+  const salarie = [p.prenom, p.nom].filter(Boolean).join(' ');
 
   let html = `
     <div class="rp-header">
       <div class="rp-brand"><div class="rp-mark"></div><div class="rp-name">CS2E Solutions</div></div>
-      <div class="rp-badge">CSSCT<br>COMMISSION<br>SANTÉ SÉCURITÉ</div>
+      <div class="rp-badge">CSSCT<br>COMMISSION<br>SANTÉ SÉCURITÉ<br>CONDITIONS<br>DE TRAVAIL</div>
     </div>
-    <div class="rp-title">${esc(numeroLabel)}</div>
-    <div class="rp-status">${esc(p.statut)} — ${esc(nature)}</div>
-    <div class="rp-meta">${metaRows.map(r=>`<div><strong>${esc(r[0])} :</strong> ${esc(r[1])}</div>`).join('')}</div>
+    <div class="rp-bold">${esc(numeroLabel)}</div>
+    <div class="rp-bold">Etat : ${esc(p.statut)}</div>
+    <div class="rp-plain">${esc(nature)}</div>
+    <div class="rp-blank"></div>
+    <div class="rp-plain">Salarié : ${esc(salarie)} ( – ) Matricule : ${esc(p.matricule)}</div>
+    <div class="rp-plain">Le : ${esc(p.date)}${p.heureDebut ? ' — ' + esc(p.heureDebut) + (heureFin ? ' à ' + esc(heureFin) : '') : ''}</div>
+    <div class="rp-plain">Localisation : ${esc(p.site)}${p.lieu ? ' — ' + esc(p.lieu) : ''}</div>
+    <div class="rp-plain">Rapporteur : ${esc(p.rapporteur)}</div>
+    <div class="rp-plain">Témoins : ${esc(p.temoins)}</div>
+    <div class="rp-blank"></div>
+    <div class="rp-h">Objet : <span style="color:#1a1a1a;font-weight:400;">${esc(p.objet)}</span></div>
+    <div class="rp-h">Incident de référence (si suivi) : <span style="color:#1a1a1a;font-weight:400;">${esc(p.incidentOrigineLie)}</span></div>
+    <div class="rp-h">Clos-le : <span style="color:#1a1a1a;font-weight:400;">${esc(p.dateCloture)}</span></div>
+    <div class="rp-h">Info si clôture : <span style="color:#1a1a1a;font-weight:400;">${esc(p.infoCloture)}</span></div>
+    <div class="rp-blank"></div>
   `;
 
-  const blocks = [
-    ['Objet', p.objet],
-    ['Description / recueil des propos', p.description],
-    ['Impact corporel', p.impactCorporel],
-    ['Impact psychologique', p.impactPsychologique],
-    ['Risque identifié', p.risque],
-    ["Action réalisée sur l'instant", p.actionRealisee],
-    ['Actions préconisées par le CSSCT', p.actionEnvisagee],
-  ];
-  blocks.forEach(([title, val])=>{
-    if(val){ html += `<div class="rp-h">${esc(title)}</div><p class="rp-v">${esc(val)}</p>`; }
-  });
+  html += `<div class="rp-h">Description ou recueil des propos :</div><div class="rp-v">${esc(p.description)}</div>`;
+  if(p.impactCorporel){
+    html += `<div class="rp-h">Impact corporel remonté par le collaborateur :</div><div class="rp-v">${esc(p.impactCorporel)}</div>`;
+  }
+  if(p.impactPsychologique){
+    html += `<div class="rp-h">Impact psychologique remonté par le collaborateur :</div><div class="rp-v">${esc(p.impactPsychologique)}</div>`;
+  }
+  html += `<div class="rp-h">Risque :</div><div class="rp-v">${esc(p.risque)}</div>`;
+  html += `<div class="rp-h">Actions réalisées :</div><div class="rp-v">${esc(p.actionRealisee)}</div>`;
+  html += `<div class="rp-h">Actions préconisées par le CSSCT :</div><div class="rp-v">${esc(p.actionEnvisagee)}</div>`;
+  html += `<div class="rp-h">Suivi :</div>`;
+  html += `<div class="rp-v">${p.suivi ? '' : "(pas encore d'entrée de suivi)"}</div>`;
 
-  html += `<div class="rp-footer">Le CSSCT vous informe que ce document sera transmis aux membres du CS2E ainsi qu'au président du CSSCT.</div>`;
+  html += `<div class="rp-footer">Le CSSCT vous informe que ce document sera transmis aux membres du CS2E ainsi qu'au président du CSSCT</div>`;
+  html += `<div class="rp-h">Document joint :</div><div class="rp-v">${(p._hasPhotoIncident ? "Photo de l'incident jointe. " : '')}${(p._hasPhotoLocalisation ? 'Photo de localisation jointe.' : (p._hasPhotoIncident ? '' : 'Aucune pièce jointe.'))}</div>`;
+  html += `<div class="rp-h">Localisation :</div><div class="rp-v">${esc(p.site)}${p.lieu ? ' — ' + esc(p.lieu) : ''}</div>`;
+
   return html;
 }
 
@@ -1091,8 +1101,8 @@ document.getElementById('btnPrintReport').addEventListener('click', ()=>{
 });
 
 document.getElementById('btnDownloadPdf').addEventListener('click', ()=>{
-  showToast("Dans la fenêtre qui s'ouvre, choisis « Enregistrer au format PDF » comme destination, puis Enregistrer.");
-  setTimeout(()=>window.print(), 400);
+  window.print();
+  showToast("Dans la fenêtre d'impression, choisis « Enregistrer au format PDF » comme destination.");
 });
 
 document.getElementById('btnMailReport').addEventListener('click', ()=>{
