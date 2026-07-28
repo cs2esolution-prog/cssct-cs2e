@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Accueil . CSSCT</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,500;8..60,600;8..60,700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --teal:#019682; --teal-dark:#017162; --purple:#5A4570; --gold:#C6AB76;
+    --paper:#F7F5F1; --paper-raised:#fff; --ink:#2B2A2E; --ink-soft:#6B6873; --line:#E4E0D8; --danger:#A85D45; --radius:14px;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0; background:var(--paper); color:var(--ink); font-family:'Inter',system-ui,sans-serif; line-height:1.5;}
+  .wrap{max-width:520px; margin:0 auto; padding:28px 20px 60px;}
+
+  .hero{text-align:center; margin-bottom:26px;}
+  .brand-mark{width:56px; height:56px; border-radius:50%; margin:0 auto 12px;
+    background:conic-gradient(var(--teal) 0deg 120deg, var(--gold) 120deg 240deg, var(--purple) 240deg 360deg);}
+  .hero h1{font-family:'Source Serif 4',serif; font-size:21px; margin:0 0 4px;}
+  .hero h1 span{color:var(--teal);}
+  .hero p{font-size:12.5px; color:var(--ink-soft); margin:0;}
+
+  .alert-stack{display:flex; flex-direction:column; gap:10px; margin-bottom:22px;}
+  .alert-card{
+    display:flex; align-items:center; gap:12px; background:#fff; border:1px solid var(--line);
+    border-left:4px solid var(--danger); border-radius:12px; padding:13px 16px; text-decoration:none; color:var(--ink);
+  }
+  .alert-card.ok{border-left-color:var(--teal);}
+  .alert-card .a-num{font-family:'IBM Plex Mono',monospace; font-size:20px; font-weight:700; color:var(--danger); flex:none;}
+  .alert-card.ok .a-num{color:var(--teal-dark);}
+  .alert-card .a-text{font-size:12.5px; color:var(--ink-soft);}
+  .alert-card .a-title{font-size:13.5px; font-weight:600;}
+
+  .section-lbl{font-size:11px; text-transform:uppercase; letter-spacing:.06em; color:var(--ink-soft); margin:22px 0 10px;}
+
+  .nav-grid{display:grid; grid-template-columns:1fr 1fr; gap:12px;}
+  .nav-tile{
+    background:#fff; border:1px solid var(--line); border-radius:var(--radius); padding:20px 14px;
+    text-decoration:none; color:var(--ink); text-align:center; display:flex; flex-direction:column; align-items:center; gap:8px;
+    transition:box-shadow .15s, transform .1s;
+  }
+  .nav-tile:active{transform:scale(.97);}
+  .nav-tile .icon{font-size:26px;}
+  .nav-tile .lbl{font-size:12.5px; font-weight:600; line-height:1.3;}
+  .nav-tile.primary{background:var(--ink); color:#fff; border-color:var(--ink);}
+
+  .update-link{
+    display:block; text-align:center; margin-top:24px; font-size:11.5px; color:var(--ink-soft); text-decoration:none;
+    border:1px solid var(--line); padding:10px; border-radius:20px;
+  }
+
+  #authGate{position:fixed;inset:0;background:#2B2A2E;display:flex;align-items:center;justify-content:center;z-index:200;padding:20px;}
+  #authForm{display:none;background:#fff;border-radius:14px;padding:32px;max-width:360px;width:100%;text-align:center;}
+</style>
+</head>
+<body>
+
+<div id="authGate">
+  <div id="authChecking" style="color:#ffffffaa;font-size:13.5px;">Vérification de la connexion…</div>
+  <div id="authForm">
+    <div style="font-family:'Source Serif 4',serif;font-weight:700;font-size:18px;margin-bottom:6px;">CS<span style="color:#019682;">2E</span> · CSSCT</div>
+    <p style="font-size:13px;color:#6B6873;margin:0 0 18px;">Connecte-toi avec ton email professionnel.</p>
+    <input type="email" id="authEmail" placeholder="prenom.nom@entreprise.com" style="width:100%;padding:10px 12px;border:1px solid #E4E0D8;border-radius:8px;font-size:13.5px;margin-bottom:10px;">
+    <button id="authSendLink" style="width:100%;background:#2B2A2E;color:#fff;border:none;padding:11px;border-radius:20px;font-weight:600;cursor:pointer;">Recevoir un lien de connexion</button>
+    <div id="authMsg" style="font-size:12px;color:#A85D45;margin-top:10px;min-height:14px;"></div>
+  </div>
+</div>
+
+<div class="wrap">
+  <div class="hero">
+    <div class="brand-mark"></div>
+    <h1>CS<span>2E</span> · CSSCT</h1>
+    <p>Tableau de bord de mandat</p>
+  </div>
+
+  <div class="alert-stack" id="alertStack">
+    <div style="text-align:center;font-size:12.5px;color:var(--ink-soft);">Chargement des indicateurs…</div>
+  </div>
+
+  <div class="section-lbl">Accéder à</div>
+  <div class="nav-grid">
+    <a class="nav-tile primary" href="nouveau_signalement.html"><span class="icon">📝</span><span class="lbl">Nouveau<br>signalement</span></a>
+    <a class="nav-tile" href="signalement_liste.html"><span class="icon">📁</span><span class="lbl">Dossiers</span></a>
+    <a class="nav-tile" href="dashboard.html"><span class="icon">📊</span><span class="lbl">Tableau de bord</span></a>
+    <a class="nav-tile" href="trousses_secours.html"><span class="icon">🩹</span><span class="lbl">Trousses de secours</span></a>
+  </div>
+
+  <a class="update-link" id="changelogLink" href="changelog.html">Notes de mise à jour</a>
+</div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js";
+  import { getAuth, sendSignInLinkToEmail, isSignInWithEmailLink, signInWithEmailLink, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js";
+  import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyB6c5xe4bg5JVUCJXsHcJBj3mFniALh39E",
+    authDomain: "cssct-cs2e.firebaseapp.com",
+    projectId: "cssct-cs2e",
+    storageBucket: "cssct-cs2e.firebasestorage.app",
+    messagingSenderId: "921964040050",
+    appId: "1:921964040050:web:578fcc81ca212b741697eb"
+  };
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+
+  const actionCodeSettings = { url: window.location.origin + window.location.pathname, handleCodeInApp: true };
+
+  if (isSignInWithEmailLink(auth, window.location.href)) {
+    let email = window.prompt("Confirme ton adresse email pour terminer la connexion :");
+    signInWithEmailLink(auth, email, window.location.href)
+      .then(() => window.history.replaceState({}, document.title, window.location.pathname))
+      .catch(err => alert("Connexion impossible : " + err.message));
+  }
+
+  onAuthStateChanged(auth, (user) => {
+    document.getElementById('authChecking').style.display = 'none';
+    if (user) {
+      document.getElementById('authGate').style.display = 'none';
+      loadHighlights();
+    } else {
+      document.getElementById('authGate').style.display = 'flex';
+      document.getElementById('authForm').style.display = 'block';
+    }
+  });
+
+  document.getElementById('authSendLink').addEventListener('click', () => {
+    const email = document.getElementById('authEmail').value.trim();
+    const msg = document.getElementById('authMsg');
+    if (!email) { msg.textContent = "Merci de saisir ton email."; return; }
+    sendSignInLinkToEmail(auth, email, actionCodeSettings)
+      .then(() => { msg.style.color = '#019682'; msg.textContent = "Lien envoyé, vérifie ta boîte mail."; })
+      .catch(err => { msg.textContent = "Erreur : " + err.message; });
+  });
+
+  function parseISO(s){ if(!s) return null; const m = String(s).match(/^(\d{4})-(\d{2})-(\d{2})/); if(!m) return null; return new Date(+m[1], +m[2]-1, +m[3]); }
+  function daysUntil(iso){ if(!iso) return null; const d = new Date(iso+'T00:00:00'); if(isNaN(d.getTime())) return null; return Math.round((d-new Date())/(1000*60*60*24)); }
+  function nextControl(item){
+    if(item.dateProchainControle) return item.dateProchainControle;
+    if(item.dateDernierControle && item.periodiciteControleMois){
+      const d = new Date(item.dateDernierControle+'T00:00:00');
+      d.setMonth(d.getMonth()+Number(item.periodiciteControleMois));
+      return d.toISOString().slice(0,10);
+    }
+    return null;
+  }
+
+  async function loadHighlights(){
+    const stack = document.getElementById('alertStack');
+    try{
+      const [sigSnap, trousseSnap] = await Promise.all([
+        getDocs(collection(db,'signalements')),
+        getDocs(collection(db,'trousses_secours'))
+      ]);
+      const dossiers = sigSnap.docs.map(d => d.data());
+      const items = trousseSnap.docs.map(d => d.data());
+
+      const enCours = dossiers.filter(d => (d.statut||'').startsWith('1')).length;
+      const today = new Date();
+      const enSouffrance = dossiers.filter(function(d){
+        if((d.statut||'').startsWith('3')) return false;
+        const a = parseISO(d.date);
+        return a && Math.round((today-a)/(1000*60*60*24)) > 30;
+      }).length;
+
+      let trousseAlerte = 0;
+      items.forEach(function(it){
+        const perDays = daysUntil(it.datePeremption);
+        const ctrlDays = daysUntil(nextControl(it));
+        const reappro = (it.quantiteReelle !== undefined && it.quantiteTheorique !== undefined) && Number(it.quantiteReelle) < Number(it.quantiteTheorique);
+        if((perDays !== null && perDays < 0) || (ctrlDays !== null && ctrlDays < 0) || reappro) trousseAlerte++;
+      });
+
+      let html = '';
+      html += '<a class="alert-card' + (enCours ? '' : ' ok') + '" href="signalement_liste.html">' +
+        '<div class="a-num">' + enCours + '</div><div><div class="a-title">Dossiers en cours</div><div class="a-text">Signalements actifs à traiter</div></div></a>';
+      html += '<a class="alert-card' + (enSouffrance ? '' : ' ok') + '" href="signalement_liste.html">' +
+        '<div class="a-num">' + enSouffrance + '</div><div><div class="a-title">Dossiers en souffrance</div><div class="a-text">Ouverts depuis plus de 30 jours</div></div></a>';
+      html += '<a class="alert-card' + (trousseAlerte ? '' : ' ok') + '" href="trousses_secours.html">' +
+        '<div class="a-num">' + trousseAlerte + '</div><div><div class="a-title">Trousses à traiter</div><div class="a-text">Péremption, contrôle ou réappro</div></div></a>';
+
+      stack.innerHTML = html;
+    }catch(err){
+      stack.innerHTML = '<div style="text-align:center;font-size:12px;color:var(--danger);">Impossible de charger les indicateurs.</div>';
+    }
+  }
+
+  fetch('./changelog-data.json?t=' + Date.now())
+    .then(r => r.ok ? r.json() : null)
+    .then(entries => {
+      if(entries && entries.length && entries[0].title){
+        document.getElementById('changelogLink').textContent = 'Dernière mise à jour : ' + entries[0].title;
+      }
+    }).catch(()=>{});
+</script>
+</body>
+</html>
