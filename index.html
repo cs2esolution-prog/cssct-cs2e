@@ -361,6 +361,12 @@
 </style>
 </head>
 <body>
+<script>
+window.onerror = function(msg, src, line, col, err){
+  alert('Erreur JS détectée :\n' + msg + '\n(ligne ' + line + ')');
+  return false;
+};
+</script>
 
 <div id="authGate" style="position:fixed;inset:0;background:#2B2A2E;display:flex;align-items:center;justify-content:center;z-index:200;padding:20px;">
   <div id="authChecking" style="color:#ffffffaa;font-family:'Inter',sans-serif;font-size:13.5px;">Vérification de la connexion…</div>
@@ -387,7 +393,7 @@
       <div class="top-right">
         <div class="eyebrow">Nouveau dossier</div>
         <div class="dossier-no" id="dossierNo">N° À ATTRIBUER</div>
-        <a href="changelog.html" style="display:block;margin-top:4px;font-size:10.5px;color:#6B6873;text-decoration:none;">v0.9 · Notes de mise à jour</a>
+        <a href="changelog.html" style="display:block;margin-top:4px;font-size:10.5px;color:#6B6873;text-decoration:none;">v0.10 · Notes de mise à jour</a>
       </div>
     </div>
   </header>
