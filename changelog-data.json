@@ -1,5 +1,17 @@
 [
   {
+    "hash": "79aa370",
+    "date": "28/07/2026",
+    "title": "Add files via upload",
+    "description": ""
+  },
+  {
+    "hash": "94401c3",
+    "date": "28/07/2026",
+    "title": "chore: mise a jour automatique du changelog [skip ci]",
+    "description": ""
+  },
+  {
     "hash": "618c4f4",
     "date": "28/07/2026",
     "title": "Prise en charge des anciens numéros de dossier (PA23, PA24...) et suppression de l'alerte de débogage",
