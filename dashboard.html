@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tableau de bord . CSSCT</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,500;8..60,600;8..60,700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --teal:#019682; --teal-dark:#017162; --purple:#5A4570; --gold:#C6AB76;
+    --paper:#F7F5F1; --paper-raised:#fff; --ink:#2B2A2E; --ink-soft:#6B6873; --line:#E4E0D8; --danger:#A85D45; --radius:10px;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0; background:var(--paper); color:var(--ink); font-family:'Inter',system-ui,sans-serif; line-height:1.5;}
+  .wrap{max-width:1080px; margin:0 auto; padding:32px 24px 90px;}
+  header.top{display:flex; align-items:center; justify-content:space-between; padding-bottom:20px; border-bottom:2px solid var(--ink); margin-bottom:24px; flex-wrap:wrap; gap:10px;}
+  .brand{display:flex; align-items:center; gap:12px;}
+  .brand-mark{width:38px; height:38px; border-radius:50%;
+    background:conic-gradient(var(--teal) 0deg 120deg, var(--gold) 120deg 240deg, var(--purple) 240deg 360deg); flex:none;}
+  .brand-text{font-family:'Source Serif 4', serif; font-weight:700; font-size:19px;}
+  .brand-text span{color:var(--teal);}
+  .back-link{font-size:12.5px; font-weight:600; color:var(--ink-soft); text-decoration:none; border:1px solid var(--line); padding:6px 14px; border-radius:20px;}
+
+  h1{font-family:'Source Serif 4',serif; font-size:20px; margin:0 0 4px;}
+  .subtitle{font-size:12.5px; color:var(--ink-soft); margin:0 0 24px;}
+
+  .grid2{display:grid; grid-template-columns:1fr 1fr; gap:18px;}
+  @media (max-width:760px){ .grid2{grid-template-columns:1fr;} }
+
+  .card{background:var(--paper-raised); border:1px solid var(--line); border-radius:var(--radius); padding:22px 24px; margin-bottom:18px;}
+  .card h2{font-family:'Source Serif 4',serif; font-size:15.5px; margin:0 0 4px;}
+  .card .card-sub{font-size:11.5px; color:var(--ink-soft); margin:0 0 18px;}
+
+  .stat-row{display:grid; grid-template-columns:repeat(4,1fr); gap:14px;}
+  @media (max-width:700px){ .stat-row{grid-template-columns:repeat(2,1fr);} }
+  .stat{background:#FBFAF7; border:1px solid var(--line); border-radius:8px; padding:14px; text-align:center;}
+  .stat .num{font-family:'IBM Plex Mono',monospace; font-size:24px; font-weight:700;}
+  .stat .lbl{font-size:10.5px; color:var(--ink-soft); text-transform:uppercase; letter-spacing:.05em; margin-top:2px;}
+
+  .donut-wrap{display:flex; align-items:center; gap:20px; margin-top:16px; flex-wrap:wrap;}
+  .legend{display:flex; flex-direction:column; gap:6px; font-size:12.5px;}
+  .legend .dot{display:inline-block; width:9px; height:9px; border-radius:50%; margin-right:6px;}
+
+  .bar-item{margin-bottom:10px;}
+  .bar-item .bi-top{display:flex; justify-content:space-between; font-size:12.5px; margin-bottom:3px;}
+  .bar-item .bi-track{height:9px; background:#EFEBE3; border-radius:6px; overflow:hidden;}
+  .bar-item .bi-fill{height:100%; border-radius:6px;}
+
+  .big-num{font-family:'IBM Plex Mono',monospace; font-size:32px; font-weight:700; color:var(--teal-dark);}
+  .big-lbl{font-size:12px; color:var(--ink-soft);}
+
+  table{width:100%; border-collapse:collapse; font-size:12.5px; margin-top:10px;}
+  th, td{text-align:left; padding:7px 8px; border-bottom:1px solid var(--line);}
+  th{color:var(--ink-soft); font-weight:600; font-size:10.5px; text-transform:uppercase; letter-spacing:.04em;}
+  .age-chip{display:inline-block; font-size:10.5px; font-weight:600; padding:2px 8px; border-radius:12px;}
+  .age-30{background:#F5EDE0; color:#8A6A2E;}
+  .age-60{background:#F0DCCB; color:#8A4A1E;}
+  .age-90{background:#F3DCD6; color:var(--danger);}
+
+  .month-chart{display:flex; align-items:flex-end; gap:6px; height:140px; margin-top:16px;}
+  .month-col{flex:1; display:flex; flex-direction:column; align-items:center; justify-content:flex-end; height:100%;}
+  .month-bar{width:100%; background:var(--teal); border-radius:4px 4px 0 0; min-height:2px;}
+  .month-lbl{font-size:9.5px; color:var(--ink-soft); margin-top:4px; writing-mode: horizontal-tb;}
+  .month-val{font-size:10px; color:var(--ink); margin-bottom:2px; font-family:'IBM Plex Mono',monospace;}
+
+  .empty-note{font-size:12.5px; color:var(--ink-soft); text-align:center; padding:20px;}
+
+  #authGate{position:fixed;inset:0;background:#2B2A2E;display:flex;align-items:center;justify-content:center;z-index:200;padding:20px;}
+  #authForm{display:none;background:#fff;border-radius:14px;padding:32px;max-width:360px;width:100%;text-align:center;}
+</style>
+</head>
+<body>
+
+<div id="authGate">
+  <div id="authChecking" style="color:#ffffffaa;font-size:13.5px;">Vérification de la connexion…</div>
+  <div id="authForm">
+    <div style="font-family:'Source Serif 4',serif;font-weight:700;font-size:18px;margin-bottom:6px;">CS<span style="color:#019682;">2E</span> · CSSCT</div>
+    <p style="font-size:13px;color:#6B6873;margin:0 0 18px;">Connecte-toi avec ton email professionnel.</p>
+    <input type="email" id="authEmail" placeholder="prenom.nom@entreprise.com" style="width:100%;padding:10px 12px;border:1px solid #E4E0D8;border-radius:8px;font-size:13.5px;margin-bottom:10px;">
+    <button id="authSendLink" style="width:100%;background:#2B2A2E;color:#fff;border:none;padding:11px;border-radius:20px;font-weight:600;cursor:pointer;">Recevoir un lien de connexion</button>
+    <div id="authMsg" style="font-size:12px;color:#A85D45;margin-top:10px;min-height:14px;"></div>
+  </div>
+</div>
+
+<div class="wrap">
+  <header class="top">
+    <div class="brand">
+      <div class="brand-mark"></div>
+      <div class="brand-text">CS<span>2E</span> · CSSCT</div>
+    </div>
+    <a class="back-link" href="signalement_liste.html">Retour aux dossiers</a>
+  </header>
+
+  <h1>Tableau de bord</h1>
+  <p class="subtitle">Indicateurs calculés sur l'ensemble des dossiers de signalement.</p>
+
+  <div id="dashboardContent">
+    <div class="empty-note">Chargement des dossiers…</div>
+  </div>
+</div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js";
+  import { getAuth, sendSignInLinkToEmail, isSignInWithEmailLink, signInWithEmailLink, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js";
+  import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyB6c5xe4bg5JVUCJXsHcJBj3mFniALh39E",
+    authDomain: "cssct-cs2e.firebaseapp.com",
+    projectId: "cssct-cs2e",
+    storageBucket: "cssct-cs2e.firebasestorage.app",
+    messagingSenderId: "921964040050",
+    appId: "1:921964040050:web:578fcc81ca212b741697eb"
+  };
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+  const col = collection(db, "signalements");
+
+  const actionCodeSettings = { url: window.location.origin + window.location.pathname, handleCodeInApp: true };
+
+  if (isSignInWithEmailLink(auth, window.location.href)) {
+    let email = window.prompt("Confirme ton adresse email pour terminer la connexion :");
+    signInWithEmailLink(auth, email, window.location.href)
+      .then(() => window.history.replaceState({}, document.title, window.location.pathname))
+      .catch(err => alert("Connexion impossible : " + err.message));
+  }
+
+  onAuthStateChanged(auth, (user) => {
+    document.getElementById('authChecking').style.display = 'none';
+    if (user) {
+      document.getElementById('authGate').style.display = 'none';
+      loadDossiersAndRender();
+    } else {
+      document.getElementById('authGate').style.display = 'flex';
+      document.getElementById('authForm').style.display = 'block';
+    }
+  });
+
+  document.getElementById('authSendLink').addEventListener('click', () => {
+    const email = document.getElementById('authEmail').value.trim();
+    const msg = document.getElementById('authMsg');
+    if (!email) { msg.textContent = "Merci de saisir ton email."; return; }
+    sendSignInLinkToEmail(auth, email, actionCodeSettings)
+      .then(() => { msg.style.color = '#019682'; msg.textContent = "Lien envoyé, vérifie ta boîte mail."; })
+      .catch(err => { msg.textContent = "Erreur : " + err.message; });
+  });
+
+  async function loadDossiersAndRender(){
+    const snap = await getDocs(col);
+    const dossiers = snap.docs.map(d => d.data());
+    window.renderDashboard(dossiers);
+  }
+</script>
+
+<script>
+const NATURE_COLORS = {
+  "Situation dangereuse": "#A85D45",
+  "Risque Psycho sociaux": "#5A4570",
+  "Accident de travail": "#A85D45",
+  "Accident de trajet": "#A85D45",
+  "Prevention": "#C6AB76",
+  "Prévention": "#C6AB76",
+  "Trouble musculo squelettique": "#5A4570",
+  "Intervention du CSSCT": "#019682",
+  "Signalement autre": "#6B6873",
+};
+const PALETTE = ["#019682","#5A4570","#C6AB76","#A85D45","#3E7CB1","#6B6873","#8A6A2E","#B08968"];
+
+function esc(s){ return (s==null?'':String(s)).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+function parseISO(s){ if(!s) return null; const m = String(s).match(/^(\d{4})-(\d{2})-(\d{2})/); if(!m) return null; return new Date(Number(m[1]), Number(m[2])-1, Number(m[3])); }
+function daysBetween(a,b){ return Math.round((b-a)/(1000*60*60*24)); }
+
+window.renderDashboard = function(dossiers){
+  const container = document.getElementById('dashboardContent');
+  if(!dossiers.length){
+    container.innerHTML = '<div class="empty-note">Aucun dossier enregistré pour le moment.</div>';
+    return;
+  }
+
+  // ---- Bloc 1 : vue d'ensemble ----
+  const total = dossiers.length;
+  const enCours = dossiers.filter(d => (d.statut||'').startsWith('1')).length;
+  const aSuivre = dossiers.filter(d => (d.statut||'').startsWith('2')).length;
+  const clos = dossiers.filter(d => (d.statut||'').startsWith('3')).length;
+  const tauxCloture = total ? Math.round(clos/total*100) : 0;
+
+  let html = '<div class="card"><h2>Vue d\u2019ensemble</h2><p class="card-sub">Sur l\u2019ensemble des dossiers enregistrés</p>' +
+    '<div class="stat-row">' +
+      '<div class="stat"><div class="num">' + total + '</div><div class="lbl">Total</div></div>' +
+      '<div class="stat"><div class="num" style="color:#3E7CB1;">' + enCours + '</div><div class="lbl">En cours</div></div>' +
+      '<div class="stat"><div class="num" style="color:#8A6A2E;">' + aSuivre + '</div><div class="lbl">A suivre</div></div>' +
+      '<div class="stat"><div class="num" style="color:#8C8A86;">' + clos + '</div><div class="lbl">Clos</div></div>' +
+    '</div>' +
+    '<div style="margin-top:16px;"><div class="big-num">' + tauxCloture + '%</div><div class="big-lbl">Taux de clôture (dossiers clos / total)</div></div>' +
+  '</div>';
+
+  // ---- Bloc 2 : analyse des risques ----
+  function countBy(arr, key){
+    const m = {};
+    arr.forEach(d => { const v = d[key] || 'Non renseigné'; m[v] = (m[v]||0)+1; });
+    return Object.entries(m).sort((a,b)=>b[1]-a[1]);
+  }
+  const byNature = countBy(dossiers, 'natureIncident');
+  const bySite = countBy(dossiers, 'site');
+  const maxNature = byNature.length ? byNature[0][1] : 1;
+  const maxSite = bySite.length ? bySite[0][1] : 1;
+
+  html += '<div class="grid2">';
+  html += '<div class="card"><h2>Répartition par nature</h2><p class="card-sub">Quels types de signalements dominent</p>';
+  byNature.forEach(function(entry, i){
+    const color = NATURE_COLORS[entry[0]] || PALETTE[i % PALETTE.length];
+    html += '<div class="bar-item"><div class="bi-top"><span>' + esc(entry[0]) + '</span><strong>' + entry[1] + '</strong></div>' +
+      '<div class="bi-track"><div class="bi-fill" style="width:' + Math.round(entry[1]/maxNature*100) + '%;background:' + color + ';"></div></div></div>';
+  });
+  html += '</div>';
+
+  html += '<div class="card"><h2>Répartition par site</h2><p class="card-sub">Où se concentrent les signalements</p>';
+  bySite.forEach(function(entry, i){
+    html += '<div class="bar-item"><div class="bi-top"><span>' + esc(entry[0]) + '</span><strong>' + entry[1] + '</strong></div>' +
+      '<div class="bi-track"><div class="bi-fill" style="width:' + Math.round(entry[1]/maxSite*100) + '%;background:' + PALETTE[i % PALETTE.length] + ';"></div></div></div>';
+  });
+  html += '</div></div>';
+
+  // ---- Bloc 3 : délai de traitement + dossiers en souffrance ----
+  const closedWithDates = dossiers.filter(d => d.date && d.dateCloture && (d.statut||'').startsWith('3'));
+  let avgDelay = null;
+  if(closedWithDates.length){
+    const total_days = closedWithDates.reduce(function(sum, d){
+      const a = parseISO(d.date), b = parseISO(d.dateCloture);
+      if(!a || !b) return sum;
+      return sum + Math.max(0, daysBetween(a,b));
+    }, 0);
+    avgDelay = Math.round(total_days / closedWithDates.length);
+  }
+
+  const today = new Date();
+  const openDossiers = dossiers.filter(d => !(d.statut||'').startsWith('3') && d.date);
+  const aged = openDossiers.map(function(d){
+    const a = parseISO(d.date);
+    const age = a ? daysBetween(a, today) : null;
+    return Object.assign({}, d, { _age: age });
+  }).filter(function(d){ return d._age !== null && d._age >= 30; }).sort(function(a,b){ return b._age - a._age; });
+
+  html += '<div class="card"><h2>Réactivité</h2><p class="card-sub">Délai de traitement et dossiers en attente</p>';
+  html += '<div class="stat-row" style="grid-template-columns:1fr;max-width:260px;">' +
+    '<div class="stat"><div class="num" style="color:var(--teal-dark);">' + (avgDelay !== null ? avgDelay + ' j' : '—') + '</div><div class="lbl">Délai moyen de clôture</div></div>' +
+  '</div>';
+
+  if(aged.length){
+    html += '<table><thead><tr><th>N°</th><th>Objet</th><th>Site</th><th>Ouvert depuis</th></tr></thead><tbody>';
+    aged.slice(0,15).forEach(function(d){
+      const cls = d._age >= 90 ? 'age-90' : (d._age >= 60 ? 'age-60' : 'age-30');
+      html += '<tr><td>' + esc(d.numero) + '</td><td>' + esc(d.objet) + '</td><td>' + esc(d.site) + '</td>' +
+        '<td><span class="age-chip ' + cls + '">' + d._age + ' jours</span></td></tr>';
+    });
+    html += '</tbody></table>';
+    if(aged.length > 15) html += '<p style="font-size:11.5px;color:var(--ink-soft);margin-top:8px;">+ ' + (aged.length-15) + ' autre(s) dossier(s) de plus de 30 jours.</p>';
+  } else {
+    html += '<p style="font-size:12.5px;color:var(--ink-soft);margin-top:10px;">Aucun dossier ouvert depuis plus de 30 jours. 👍</p>';
+  }
+  html += '</div>';
+
+  // ---- Bloc 4 : tendance mensuelle ----
+  const months = [];
+  const now = new Date();
+  for(let i=11; i>=0; i--){
+    const d = new Date(now.getFullYear(), now.getMonth()-i, 1);
+    months.push({ key: d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0'), label: d.toLocaleDateString('fr-FR', { month:'short', year:'2-digit' }) });
+  }
+  const countsByMonth = {};
+  months.forEach(function(m){ countsByMonth[m.key] = 0; });
+  dossiers.forEach(function(d){
+    const a = parseISO(d.date);
+    if(!a) return;
+    const key = a.getFullYear() + '-' + String(a.getMonth()+1).padStart(2,'0');
+    if(key in countsByMonth) countsByMonth[key]++;
+  });
+  const maxMonth = Math.max(1, Math.max.apply(null, months.map(function(m){ return countsByMonth[m.key]; })));
+
+  html += '<div class="card"><h2>Tendance mensuelle</h2><p class="card-sub">Nouveaux signalements sur les 12 derniers mois</p>';
+  html += '<div class="month-chart">';
+  months.forEach(function(m){
+    const val = countsByMonth[m.key];
+    const h = Math.max(2, Math.round(val/maxMonth*100));
+    html += '<div class="month-col"><div class="month-val">' + (val||'') + '</div><div class="month-bar" style="height:' + h + '%;"></div><div class="month-lbl">' + esc(m.label) + '</div></div>';
+  });
+  html += '</div></div>';
+
+  container.innerHTML = html;
+};
+</script>
+</body>
+</html>
