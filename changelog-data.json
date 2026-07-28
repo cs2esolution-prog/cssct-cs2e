@@ -1,5 +1,17 @@
 [
   {
+    "hash": "d6f62af",
+    "date": "28/07/2026",
+    "title": "Add files via upload",
+    "description": ""
+  },
+  {
+    "hash": "083d20d",
+    "date": "28/07/2026",
+    "title": "chore: mise a jour automatique du changelog [skip ci]",
+    "description": ""
+  },
+  {
     "hash": "b47a713",
     "date": "28/07/2026",
     "title": "Affichage de la dernière mise à jour dans l'appli",
