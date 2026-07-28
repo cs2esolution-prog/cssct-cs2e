@@ -1,5 +1,17 @@
 [
   {
+    "hash": "14ab8a3",
+    "date": "28/07/2026",
+    "title": "Update signalement_liste.html",
+    "description": ""
+  },
+  {
+    "hash": "1b53f93",
+    "date": "28/07/2026",
+    "title": "chore: mise a jour automatique du changelog [skip ci]",
+    "description": ""
+  },
+  {
     "hash": "8937ade",
     "date": "28/07/2026",
     "title": "Update signalement_liste.html",
