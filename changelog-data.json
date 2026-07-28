@@ -1,5 +1,17 @@
 [
   {
+    "hash": "e5a4a17",
+    "date": "28/07/2026",
+    "title": "Suggestions automatiques dans le formulaire trousses de secours",
+    "description": "Le site est maintenant une liste fixe alignée sur les signalements. L'entité, l'emplacement et le contenu proposent des suggestions basées sur les saisies précédentes (l'emplacement est filtré par site), tout en permettant d'ajouter une nouvelle valeur à tout moment."
+  },
+  {
+    "hash": "70f540e",
+    "date": "28/07/2026",
+    "title": "chore: mise a jour automatique du changelog [skip ci]",
+    "description": ""
+  },
+  {
     "hash": "7c0fa82",
     "date": "28/07/2026",
     "title": "Add files via upload",
