@@ -1,5 +1,23 @@
 [
   {
+    "hash": "a5ef0e9",
+    "date": "28/07/2026",
+    "title": "Update nouveau_signalement.html",
+    "description": ""
+  },
+  {
+    "hash": "7e2fcd1",
+    "date": "28/07/2026",
+    "title": "Rename signalement_formulaire.html to _signalement_formulaire.html",
+    "description": ""
+  },
+  {
+    "hash": "0f38c5c",
+    "date": "28/07/2026",
+    "title": "chore: mise a jour automatique du changelog [skip ci]",
+    "description": ""
+  },
+  {
     "hash": "72077f8",
     "date": "28/07/2026",
     "title": "Add files via upload",
