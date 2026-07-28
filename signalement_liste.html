@@ -213,7 +213,7 @@ fetch('./changelog-data.json?t=' + Date.now())
     <div style="display:flex; gap:10px;">
       <a href="trousses_secours.html" style="text-decoration:none;display:inline-flex;align-items:center;font-size:12.5px;font-weight:600;color:#6B6873;border:1px solid #E4E0D8;padding:9px 16px;border-radius:20px;">🩹 Trousses de secours</a>
       <a href="dashboard.html" style="text-decoration:none;display:inline-flex;align-items:center;font-size:12.5px;font-weight:600;color:#6B6873;border:1px solid #E4E0D8;padding:9px 16px;border-radius:20px;">📊 Tableau de bord</a>
-      <a class="new-btn" href="nouveau_signalement.html" style="text-decoration:none;display:inline-block;">+ Nouveau signalement</a>
+      <a class="new-btn" href="index.html" style="text-decoration:none;display:inline-block;">+ Nouveau signalement</a>
     </div>
   </header>
 
@@ -539,8 +539,16 @@ function openDrawer(numero){
 
   let suiviHtml;
   if(d.suivi.length){
-    suiviHtml = d.suivi.map(function(s){
-      return '<div class="suivi-entry"><div class="sdate">' + s.date + '</div><div class="stext">' + s.text + '</div></div>';
+    suiviHtml = d.suivi.map(function(s, idx){
+      return '<div class="suivi-entry" data-suivi-idx="' + idx + '">' +
+        '<div class="suivi-view">' +
+          '<div class="sdate">' + esc(s.date) + '</div><div class="stext">' + esc(s.text) + '</div>' +
+          '<div style="margin-top:6px;display:flex;gap:12px;">' +
+            '<button type="button" class="edit-link" onclick="editSuiviEntry(\'' + d.id + '\', ' + idx + ')">Modifier</button>' +
+            '<button type="button" class="edit-link" style="color:var(--danger);" onclick="deleteSuiviEntry(\'' + d.id + '\', ' + idx + ')">Supprimer</button>' +
+          '</div>' +
+        '</div>' +
+      '</div>';
     }).join('');
   } else {
     suiviHtml = '<div class="dval empty">Aucune entree de suivi pour le moment.</div>';
@@ -672,6 +680,46 @@ function addSuivi(dossierNum){
   });
   d.suivi = (d.suivi||[]).concat([entry]); // optimistic local update
   openDrawer(dossierNum);
+}
+
+function editSuiviEntry(dossierId, idx){
+  const d = findDossier(dossierId);
+  const entry = d.suivi[idx];
+  const wrap = document.querySelector('.suivi-entry[data-suivi-idx="' + idx + '"]');
+  if(!wrap) return;
+  wrap.innerHTML =
+    '<input type="date" id="editSuiviDate" value="' + esc(entry.date) + '" style="margin-bottom:6px;">' +
+    '<textarea id="editSuiviText" style="width:100%;min-height:60px;padding:8px 10px;border:1px solid var(--line);border-radius:7px;font-family:Inter,sans-serif;font-size:13px;">' + esc(entry.text) + '</textarea>' +
+    '<div class="edit-actions">' +
+      '<button class="save-btn" onclick="saveSuiviEntry(\'' + dossierId + '\', ' + idx + ')">Enregistrer</button>' +
+      '<button class="cancel-btn" onclick="openDrawer(\'' + dossierId + '\')">Annuler</button>' +
+    '</div>';
+}
+
+function saveSuiviEntry(dossierId, idx){
+  const d = findDossier(dossierId);
+  const newDate = document.getElementById('editSuiviDate').value;
+  const newText = document.getElementById('editSuiviText').value.trim();
+  if(!newText){ showToast('Le texte ne peut pas etre vide.'); return; }
+  const newSuivi = d.suivi.slice();
+  newSuivi[idx] = { date: newDate, text: newText };
+  window.CSSCT_FIREBASE.updateFields(d.id, { suivi: newSuivi }).then(function(){
+    showToast('Entree de suivi modifiee');
+  }).catch(function(err){ showToast('Erreur : ' + err.message); });
+  d.suivi = newSuivi;
+  openDrawer(dossierId);
+}
+
+function deleteSuiviEntry(dossierId, idx){
+  if(!confirm('Supprimer cette entree de suivi ?')) return;
+  const d = findDossier(dossierId);
+  const newSuivi = d.suivi.slice();
+  newSuivi.splice(idx, 1);
+  window.CSSCT_FIREBASE.updateFields(d.id, { suivi: newSuivi }).then(function(){
+    showToast('Entree de suivi supprimee');
+  }).catch(function(err){ showToast('Erreur : ' + err.message); });
+  d.suivi = newSuivi;
+  openDrawer(dossierId);
 }
 
 function esc(s){ return (s||'').toString(); }
