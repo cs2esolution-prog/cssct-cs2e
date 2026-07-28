@@ -1,5 +1,17 @@
 [
   {
+    "hash": "efb1176",
+    "date": "28/07/2026",
+    "title": "Add files via upload",
+    "description": "Navigation vers l'accueil, icône de mise à jour, et déconnexion\r\n\r\nLe logo CS2E-CSSCT ramène désormais à la page d'accueil depuis n'importe quel écran. Le lien vers les notes de mise à jour est devenu une simple icône. Ajout d'un bouton de déconnexion sur toutes les pages."
+  },
+  {
+    "hash": "f2312b6",
+    "date": "28/07/2026",
+    "title": "chore: mise a jour automatique du changelog [skip ci]",
+    "description": ""
+  },
+  {
     "hash": "14ab8a3",
     "date": "28/07/2026",
     "title": "Update signalement_liste.html",
