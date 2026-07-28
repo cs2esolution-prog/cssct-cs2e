@@ -1,5 +1,17 @@
 [
   {
+    "hash": "68cfd48",
+    "date": "28/07/2026",
+    "title": "Add files via upload",
+    "description": ""
+  },
+  {
+    "hash": "406d49c",
+    "date": "28/07/2026",
+    "title": "chore: mise a jour automatique du changelog [skip ci]",
+    "description": ""
+  },
+  {
     "hash": "a5ef0e9",
     "date": "28/07/2026",
     "title": "Update nouveau_signalement.html",
