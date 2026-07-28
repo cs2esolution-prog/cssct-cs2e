@@ -58,6 +58,27 @@
   <div class="timeline">
 
     <div class="entry">
+      <div class="ver">v0.9 <span class="date">28 juillet 2026</span></div>
+      <h2>Correction : echec du telechargement du PDF <span class="tag tag-fix">Correction</span></h2>
+      <ul>
+        <li>La librairie utilisee pour generer le PDF (html2canvas) est incompatible avec les styles modernes de certains navigateurs recents, ce qui provoquait un echec systematique</li>
+        <li>Remplacee par l'impression native du navigateur : les boutons "Imprimer" et "Enregistrer en PDF" ouvrent tous les deux la fenetre d'impression du navigateur (choisir "Enregistrer au format PDF" comme destination pour telecharger)</li>
+        <li>Solution plus fiable, sans dependance externe fragile</li>
+      </ul>
+    </div>
+
+    <div class="entry">
+      <div class="ver">v0.8 <span class="date">28 juillet 2026</span></div>
+      <h2>Rapport formate, imprimable et telechargeable <span class="tag tag-feature">Nouveaute</span></h2>
+      <ul>
+        <li>L'apercu du rapport reprend maintenant la mise en forme du document Word (en-tete CS2E, badge CSSCT, titres de section en vert)</li>
+        <li>Bouton "Imprimer" : lance l'impression du rapport uniquement (le reste de l'ecran est masque)</li>
+        <li>Bouton "Telecharger en PDF" : genere et telecharge directement un fichier PDF du dossier</li>
+        <li>Bouton "Envoyer par mail" : telecharge le PDF puis ouvre la messagerie avec un message pre-rempli (le fichier doit etre joint manuellement, les navigateurs ne permettent pas l'attachement automatique)</li>
+      </ul>
+    </div>
+
+    <div class="entry">
       <div class="ver">v0.7 <span class="date">28 juillet 2026</span></div>
       <h2>Suppression du flash de la fenetre de connexion <span class="tag tag-fix">Amelioration</span></h2>
       <ul>
