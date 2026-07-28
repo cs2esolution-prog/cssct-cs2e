@@ -1,5 +1,17 @@
 [
   {
+    "hash": "b47a713",
+    "date": "28/07/2026",
+    "title": "Affichage de la dernière mise à jour dans l'appli",
+    "description": "Le bandeau qui renvoie vers les notes de mise à jour affiche maintenant le titre de la dernière évolution, au lieu d'un numéro de version à mettre à jour manuellement."
+  },
+  {
+    "hash": "4bb5a9e",
+    "date": "28/07/2026",
+    "title": "chore: mise a jour automatique du changelog [skip ci]",
+    "description": ""
+  },
+  {
     "hash": "228381d",
     "date": "28/07/2026",
     "title": "Add files via upload",
