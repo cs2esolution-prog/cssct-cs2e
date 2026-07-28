@@ -404,12 +404,12 @@ function render(){
     row.className='row';
     row.style.setProperty('--nature-color', NATURE_COLORS[d.natureIncident] || '#019682');
     row.innerHTML =
-      '<div class="col-num">N' + String.fromCharCode(176) + d.numero + '</div>' +
+      '<div class="col-num">N' + String.fromCharCode(176) + (isBadNumero(d.numero) ? '?' : d.numero) + '</div>' +
       '<div class="col-main"><div class="objet">' + d.objet + '</div><div class="meta">' + (d.rapporteur || '-') + '</div></div>' +
       '<div class="col-nature" style="color:' + (NATURE_COLORS[d.natureIncident]||'#019682') + '">' + d.natureIncident + '</div>' +
       '<div class="col-site">' + d.site + (d.lieu ? ' - '+d.lieu : '') + '<br><span style="font-size:11px;">' + d.date + '</span></div>' +
       '<div><span class="status-chip ' + statusClass(d.statut) + '">' + d.statut + '</span></div>';
-    row.addEventListener('click', function(){ openDrawer(d.numero); });
+    row.addEventListener('click', function(){ openDrawer(d.id); });
     list.appendChild(row);
   });
 }
@@ -423,7 +423,8 @@ const overlay = document.getElementById('drawerOverlay');
 const drawerEl = document.getElementById('drawer');
 let openDrawerNumero = null;
 
-function findDossier(numero){ return dossiers.find(function(d){ return d.numero===numero; }); }
+function findDossier(id){ return dossiers.find(function(d){ return d.id===id; }); }
+function isBadNumero(n){ return n === undefined || n === null || n === '' || String(n) === 'NaN'; }
 
 function fieldBlock(id, label, value){
   return '<div class="dfield" data-field="' + id + '"><div class="dlabel">' + label + '</div><div class="dval ' + (value?'':'empty') + '">' + (value || 'Non renseigne') + '</div></div>';
@@ -431,7 +432,7 @@ function fieldBlock(id, label, value){
 
 function sectionCard(title, num, dossierNum, fields){
   const rows = fields.map(function(f){ return fieldBlock(f.id,f.label,f.value); }).join('');
-  return '<div class="dsection" data-section="' + num + '"><h3>' + title + ' <button class="edit-link" onclick="toggleEdit(' + dossierNum + ', ' + num + ')">Modifier</button></h3><div class="section-view">' + rows + '</div></div>';
+  return '<div class="dsection" data-section="' + num + '"><h3>' + title + ' <button class="edit-link" onclick="toggleEdit(\'' + dossierNum + '\', ' + num + ')">Modifier</button></h3><div class="section-view">' + rows + '</div></div>';
 }
 
 function openDrawer(numero){
@@ -450,12 +451,13 @@ function openDrawer(numero){
 
   drawerEl.innerHTML =
     '<div class="drawer-head" style="border-left:6px solid ' + color + '">' +
-      '<div class="dh-left"><div class="dh-num" style="color:' + color + '">N ' + d.numero + '</div>' +
+      '<div class="dh-left"><div class="dh-num" style="color:' + color + '">N ' + (isBadNumero(d.numero) ? '?? (à corriger)' : d.numero) + '</div>' +
       '<span class="status-chip ' + statusClass(d.statut) + '">' + d.statut + '</span></div>' +
       '<button class="drawer-close" onclick="closeDrawer()">' + String.fromCharCode(215) + '</button>' +
     '</div>' +
     '<div class="drawer-body">' +
-      sectionCard('Contexte', 1, d.numero, [
+      sectionCard('Contexte', 1, d.id, [
+        {id:'numero', label:'Numero de dossier', value:d.numero},
         {id:'natureIncident', label:'Nature', value:d.natureIncident},
         {id:'site', label:'Site', value:d.site},
         {id:'lieu', label:'Localisation', value:d.lieu},
@@ -463,33 +465,33 @@ function openDrawer(numero){
         {id:'rapporteur', label:'Rapporteur', value:d.rapporteur},
         {id:'temoins', label:'Temoins', value:d.temoins}
       ]) +
-      sectionCard('Salarie concerne', 2, d.numero, [
+      sectionCard('Salarie concerne', 2, d.id, [
         {id:'nom', label:'Nom', value:d.nom},
         {id:'prenom', label:'Prenom', value:d.prenom},
         {id:'matricule', label:'Matricule', value:d.matricule},
         {id:'service', label:'Service', value:d.service},
         {id:'bu', label:'BU', value:d.bu}
       ]) +
-      sectionCard('Contenu', 3, d.numero, [
+      sectionCard('Contenu', 3, d.id, [
         {id:'objet', label:'Objet', value:d.objet},
         {id:'description', label:'Description', value:d.description},
         {id:'impactCorporel', label:'Impact corporel', value:d.impactCorporel},
         {id:'impactPsychologique', label:'Impact psychologique', value:d.impactPsychologique},
         {id:'risque', label:'Risque identifie', value:d.risque}
       ]) +
-      sectionCard('Traitement', 4, d.numero, [
+      sectionCard('Traitement', 4, d.id, [
         {id:'actionRealisee', label:"Action realisee sur l'instant", value:d.actionRealisee},
         {id:'actionEnvisagee', label:'Actions preconisees par le CSSCT', value:d.actionEnvisagee}
       ]) +
       '<div class="dsection"><h3>Suivi</h3><div id="suiviList">' + suiviHtml + '</div>' +
       '<div class="add-suivi"><input type="date" id="newSuiviDate">' +
       '<textarea id="newSuiviText" placeholder="Decrire la relance, l\'echange, l\'avancee..."></textarea>' +
-      '<button onclick="addSuivi(' + d.numero + ')">Ajouter au suivi</button></div></div>' +
+      '<button onclick="addSuivi(\'' + d.id + '\')">Ajouter au suivi</button></div></div>' +
       '<div class="dsection danger-zone"><h3>Actions sur le dossier</h3><div class="action-row">' +
-      '<button class="btn btn-export" onclick="previewReport(' + d.numero + ')">🔍 Prévisualiser le rapport</button>' +
-      '<button class="btn btn-export" onclick="exportWord(' + d.numero + ')">Exporter en Word</button>' +
-      '<button class="btn btn-close-dossier" onclick="closeDossier(' + d.numero + ')" ' + (d.statut==='3-Clos'?'disabled':'') + '>Cloturer le dossier</button>' +
-      '<button class="btn btn-danger" onclick="deleteDossier(' + d.numero + ')">Supprimer le dossier</button>' +
+      '<button class="btn btn-export" onclick="previewReport(\'' + d.id + '\')">🔍 Prévisualiser le rapport</button>' +
+      '<button class="btn btn-export" onclick="exportWord(\'' + d.id + '\')">Exporter en Word</button>' +
+      '<button class="btn btn-close-dossier" onclick="closeDossier(\'' + d.id + '\')" ' + (d.statut==='3-Clos'?'disabled':'') + '>Cloturer le dossier</button>' +
+      '<button class="btn btn-danger" onclick="deleteDossier(\'' + d.id + '\')">Supprimer le dossier</button>' +
       '</div></div>' +
     '</div>';
 
@@ -522,8 +524,8 @@ function toggleEdit(dossierNum, sectionNum){
     });
     view.insertAdjacentHTML('afterend',
       '<div class="edit-actions" data-actions="' + sectionNum + '">' +
-      '<button class="save-btn" onclick="saveSection(' + dossierNum + ', ' + sectionNum + ')">Enregistrer</button>' +
-      '<button class="cancel-btn" onclick="openDrawer(' + dossierNum + ')">Annuler</button>' +
+      '<button class="save-btn" onclick="saveSection(\'' + dossierNum + '\', ' + sectionNum + ')">Enregistrer</button>' +
+      '<button class="cancel-btn" onclick="openDrawer(\'' + dossierNum + '\')">Annuler</button>' +
       '</div>');
     sec.classList.add('editing');
   }
