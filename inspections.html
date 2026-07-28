@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Inspections . CSSCT</title>
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-title" content="Mon appli CSSCT">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#2B2A2E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,500;8..60,600;8..60,700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/docx"></script>
+<style>
+  :root{
+    --teal:#019682; --teal-dark:#017162; --purple:#5A4570; --gold:#C6AB76;
+    --paper:#F7F5F1; --paper-raised:#fff; --ink:#2B2A2E; --ink-soft:#6B6873; --line:#E4E0D8; --danger:#A85D45; --radius:10px;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0; background:var(--paper); color:var(--ink); font-family:'Inter',system-ui,sans-serif; line-height:1.5;}
+  .wrap{max-width:1000px; margin:0 auto; padding:32px 24px 90px;}
+  header.top{display:flex; align-items:center; justify-content:space-between; padding-bottom:20px; border-bottom:2px solid var(--ink); margin-bottom:24px; flex-wrap:wrap; gap:10px;}
+  .brand{display:flex; align-items:center; gap:12px; cursor:pointer;}
+  .brand-mark{width:38px; height:38px; border-radius:50%;
+    background:conic-gradient(var(--teal) 0deg 120deg, var(--gold) 120deg 240deg, var(--purple) 240deg 360deg); flex:none;}
+  .brand-text{font-family:'Source Serif 4', serif; font-weight:700; font-size:19px;}
+  .brand-text span{color:var(--teal);}
+  .back-link{font-size:12.5px; font-weight:600; color:var(--ink-soft); text-decoration:none; border:1px solid var(--line); padding:6px 14px; border-radius:20px;}
+  .new-btn{background:var(--ink); color:#fff; border:none; padding:10px 18px; border-radius:22px; font-weight:600; font-size:13px; cursor:pointer;}
+
+  h1{font-family:'Source Serif 4',serif; font-size:20px; margin:0 0 4px;}
+  .subtitle{font-size:12.5px; color:var(--ink-soft); margin:0 0 20px;}
+
+  .list{display:flex; flex-direction:column; gap:8px;}
+  .row{
+    display:flex; justify-content:space-between; align-items:center; gap:14px;
+    background:#fff; border:1px solid var(--line); border-left:4px solid var(--teal);
+    border-radius:var(--radius); padding:14px 18px; cursor:pointer;
+  }
+  .row:hover{box-shadow:0 4px 14px rgba(0,0,0,.06);}
+  .row .r-title{font-weight:600; font-size:14px;}
+  .row .r-meta{font-size:11.5px; color:var(--ink-soft); margin-top:2px;}
+  .row .r-count{font-family:'IBM Plex Mono',monospace; font-size:11.5px; color:var(--ink-soft);}
+
+  .drawer-overlay{position:fixed; inset:0; background:rgba(30,28,32,.5); display:none; z-index:80; justify-content:flex-end;}
+  .drawer-overlay.show{display:flex;}
+  .drawer{width:min(680px,100%); height:100%; background:var(--paper); overflow-y:auto; box-shadow:-16px 0 40px rgba(0,0,0,.25);}
+  .drawer-head{position:sticky; top:0; background:#fff; z-index:2; border-bottom:1px solid var(--line); padding:18px 24px; display:flex; align-items:center; justify-content:space-between;}
+  .drawer-head h2{font-family:'Source Serif 4',serif; font-size:16px; margin:0;}
+  .drawer-close{background:none; border:none; font-size:22px; cursor:pointer; color:var(--ink-soft);}
+  .drawer-body{padding:20px 24px 100px;}
+
+  .dsection{background:#fff; border:1px solid var(--line); border-radius:var(--radius); padding:18px 20px; margin-bottom:14px;}
+  .dsection h3{font-family:'Source Serif 4',serif; font-size:14.5px; margin:0 0 10px; display:flex; align-items:center; justify-content:space-between;}
+  .edit-link{font-family:'Inter',sans-serif; font-size:11.5px; font-weight:600; color:var(--teal-dark); cursor:pointer; background:none; border:none; padding:2px 0;}
+  .dfield{margin-bottom:10px;}
+  .dfield .dlabel{font-size:10.5px; text-transform:uppercase; letter-spacing:.06em; color:var(--ink-soft); margin-bottom:2px;}
+  .dfield .dval{font-size:13.5px; white-space:pre-wrap;}
+  .dfield .dval.empty{color:#B8B4AC; font-style:italic;}
+  .dfield input, .dfield textarea, .dfield select{width:100%; font-family:'Inter',sans-serif; font-size:13.5px; padding:8px 10px; border:1px solid var(--line); border-radius:7px;}
+  .dfield textarea{min-height:70px;}
+  .edit-actions{display:flex; gap:8px; margin-top:8px;}
+  .edit-actions button{padding:6px 14px; border-radius:16px; font-size:12px; font-weight:600; border:none; cursor:pointer;}
+  .save-btn{background:var(--ink); color:#fff;}
+  .cancel-btn{background:transparent; border:1px solid var(--line) !important; color:var(--ink-soft);}
+
+  .guide-ref{font-size:12.5px; color:var(--ink-soft); background:#FBFAF7; border-left:3px solid var(--gold); padding:10px 14px; border-radius:8px; margin-bottom:8px;}
+  .guide-ref strong{color:var(--ink);}
+
+  .entretien-card{border:1px solid var(--line); border-radius:8px; padding:12px 14px; margin-bottom:10px; background:#FBFAF7;}
+  .entretien-card .e-top{display:flex; justify-content:space-between; font-size:12.5px; font-weight:600;}
+  .entretien-card .e-meta{font-size:11px; color:var(--ink-soft); margin-bottom:6px;}
+  table.entretien-table{width:100%; border-collapse:collapse; font-size:12px; margin-top:6px;}
+  table.entretien-table th, table.entretien-table td{border:1px solid var(--line); padding:6px 8px; text-align:left; vertical-align:top;}
+  table.entretien-table th{background:#fff; font-size:10.5px; text-transform:uppercase; color:var(--ink-soft);}
+
+  .ai-btn{display:inline-flex; align-items:center; gap:6px; background:#fff; border:1px solid var(--line); color:var(--ink); font-size:12px; font-weight:600; padding:8px 14px; border-radius:20px; cursor:pointer; margin-top:8px;}
+  .ai-btn:hover{border-color:var(--teal); color:var(--teal-dark);}
+
+  .action-row{display:flex; gap:10px; flex-wrap:wrap;}
+  .btn{padding:9px 16px; border-radius:20px; font-size:12.5px; font-weight:600; cursor:pointer; border:1px solid var(--line); background:#fff;}
+  .btn-danger{color:var(--danger); border-color:#E7D3CB;}
+  .danger-zone{border:1px solid #E7D3CB; background:#FBF3F0;}
+  .danger-zone h3{color:var(--danger);}
+
+  .modal-overlay{position:fixed; inset:0; background:rgba(30,28,32,.55); display:none; align-items:flex-start; justify-content:center; padding:32px 16px; z-index:150; overflow:auto;}
+  .modal-overlay.show{display:flex;}
+  .modal{background:#fff; border-radius:var(--radius); max-width:600px; width:100%; box-shadow:0 20px 60px rgba(0,0,0,.3);}
+  .modal-head{display:flex; align-items:center; justify-content:space-between; padding:18px 24px; border-bottom:1px solid var(--line);}
+  .modal-head h3{font-family:'Source Serif 4',serif; margin:0; font-size:16px;}
+  .modal-close{background:none; border:none; font-size:20px; cursor:pointer; color:var(--ink-soft);}
+  .modal-body{padding:20px 24px;}
+  .modal-actions{display:flex; justify-content:flex-end; gap:8px; padding:14px 24px; border-top:1px solid var(--line);}
+  button.primary{background:var(--ink); color:#fff; border:none; padding:10px 18px; border-radius:20px; font-weight:600; font-size:13px; cursor:pointer;}
+  button.ghost{background:none; border:1px solid var(--line); padding:10px 18px; border-radius:20px; font-weight:600; font-size:13px; cursor:pointer; color:var(--ink-soft);}
+  .grid2{display:grid; grid-template-columns:1fr 1fr; gap:12px;}
+
+  #toast{position:fixed; left:50%; bottom:24px; transform:translate(-50%,120%); background:var(--ink); color:#fff; padding:12px 20px; border-radius:12px; font-size:13.5px; transition:transform .3s ease; z-index:250; max-width:90vw;}
+  #toast.show{transform:translate(-50%,0);}
+  #toast pre{margin:8px 0 0; font-size:11px; white-space:pre-wrap; color:#ffffffcc; max-height:200px; overflow:auto;}
+
+  #authGate{position:fixed;inset:0;background:#2B2A2E;display:flex;align-items:center;justify-content:center;z-index:200;padding:20px;}
+  #authForm{display:none;background:#fff;border-radius:14px;padding:32px;max-width:360px;width:100%;text-align:center;}
+</style>
+</head>
+<body>
+
+<div id="authGate">
+  <div id="authChecking" style="color:#ffffffaa;font-size:13.5px;">Vérification de la connexion…</div>
+  <div id="authForm">
+    <div style="font-family:'Source Serif 4',serif;font-weight:700;font-size:18px;margin-bottom:6px;">CS<span style="color:#019682;">2E</span> · CSSCT</div>
+    <p style="font-size:13px;color:#6B6873;margin:0 0 18px;">Connecte-toi avec ton email professionnel.</p>
+    <input type="email" id="authEmail" placeholder="prenom.nom@entreprise.com" style="width:100%;padding:10px 12px;border:1px solid #E4E0D8;border-radius:8px;font-size:13.5px;margin-bottom:10px;">
+    <button id="authSendLink" style="width:100%;background:#2B2A2E;color:#fff;border:none;padding:11px;border-radius:20px;font-weight:600;cursor:pointer;">Recevoir un lien de connexion</button>
+    <div id="authMsg" style="font-size:12px;color:#A85D45;margin-top:10px;min-height:14px;"></div>
+  </div>
+</div>
+
+<div class="wrap">
+  <header class="top">
+    <div class="brand" onclick="window.location.href='index.html'">
+      <div class="brand-mark"></div>
+      <div class="brand-text">CS<span>2E</span> · CSSCT</div>
+    </div>
+    <div style="display:flex; gap:10px; align-items:center;">
+      <a class="back-link" href="signalement_liste.html">Retour aux dossiers</a>
+      <button class="new-btn" onclick="openNewInspectionModal()">+ Nouvelle inspection</button>
+      <button id="logoutBtn" title="Se déconnecter" style="background:#fff;border:1px solid #E4E0D8;color:#A85D45;width:34px;height:34px;border-radius:50%;font-weight:700;cursor:pointer;font-size:14px;">✕</button>
+    </div>
+  </header>
+
+  <h1>Inspections</h1>
+  <p class="subtitle">Préparation, guide d'entretien et suivi des inspections CSSCT.</p>
+
+  <div class="list" id="list"><div style="font-size:13px;color:var(--ink-soft);">Chargement…</div></div>
+</div>
+
+<div class="drawer-overlay" id="drawerOverlay"><div class="drawer" id="drawer"></div></div>
+
+<div class="modal-overlay" id="newInspectionModal">
+  <div class="modal">
+    <div class="modal-head"><h3>Nouvelle inspection</h3><button class="modal-close" onclick="document.getElementById('newInspectionModal').classList.remove('show')">×</button></div>
+    <div class="modal-body">
+      <div class="grid2">
+        <div class="dfield"><label class="dlabel">Site</label><input type="text" id="newSite" placeholder="Ex : Milly-la-Forêt"></div>
+        <div class="dfield"><label class="dlabel">Date</label><input type="date" id="newDate"></div>
+      </div>
+      <div class="dfield"><label class="dlabel">Sujet de l'inspection</label><input type="text" id="newSujet" placeholder="Ex : Conditions de travail terrain"></div>
+    </div>
+    <div class="modal-actions">
+      <button class="ghost" onclick="document.getElementById('newInspectionModal').classList.remove('show')">Annuler</button>
+      <button class="primary" onclick="createInspection()">Créer</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="entretienModal">
+  <div class="modal" style="max-width:700px;">
+    <div class="modal-head"><h3>Ajouter un entretien</h3><button class="modal-close" onclick="document.getElementById('entretienModal').classList.remove('show')">×</button></div>
+    <div class="modal-body" id="entretienModalBody"></div>
+    <div class="modal-actions">
+      <button class="ghost" onclick="document.getElementById('entretienModal').classList.remove('show')">Annuler</button>
+      <button class="primary" onclick="saveEntretien()">Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="promptModal">
+  <div class="modal">
+    <div class="modal-head"><h3>Prompt IA — dossier d'inspection</h3><button class="modal-close" onclick="document.getElementById('promptModal').classList.remove('show')">×</button></div>
+    <div class="modal-body">
+      <p style="font-size:12.5px;color:var(--ink-soft);">Ce texte a été copié dans ton presse-papiers. Colle-le dans ton IA préférée pour obtenir un dossier complet, structuré et détaillé.</p>
+      <textarea id="promptPreview" readonly style="width:100%;min-height:260px;font-size:12px;padding:10px;border:1px solid var(--line);border-radius:8px;"></textarea>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js";
+  import { getAuth, sendSignInLinkToEmail, isSignInWithEmailLink, signInWithEmailLink, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js";
+  import { getFirestore, collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyB6c5xe4bg5JVUCJXsHcJBj3mFniALh39E",
+    authDomain: "cssct-cs2e.firebaseapp.com",
+    projectId: "cssct-cs2e",
+    storageBucket: "cssct-cs2e.firebasestorage.app",
+    messagingSenderId: "921964040050",
+    appId: "1:921964040050:web:578fcc81ca212b741697eb"
+  };
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+  const col = collection(db, "inspections");
+
+  const actionCodeSettings = { url: window.location.origin + window.location.pathname, handleCodeInApp: true };
+
+  if (isSignInWithEmailLink(auth, window.location.href)) {
+    let email = window.prompt("Confirme ton adresse email pour terminer la connexion :");
+    signInWithEmailLink(auth, email, window.location.href)
+      .then(() => window.history.replaceState({}, document.title, window.location.pathname))
+      .catch(err => alert("Connexion impossible : " + err.message));
+  }
+
+  let unsubscribe = null;
+  onAuthStateChanged(auth, (user) => {
+    document.getElementById('authChecking').style.display = 'none';
+    if (user) {
+      document.getElementById('authGate').style.display = 'none';
+      if(!unsubscribe){
+        unsubscribe = onSnapshot(col, (snap) => {
+          window._inspections = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+          window.renderList();
+          if(window._openDrawerId && document.getElementById('drawerOverlay').classList.contains('show')){
+            window.openDrawer(window._openDrawerId);
+          }
+        });
+      }
+    } else {
+      document.getElementById('authGate').style.display = 'flex';
+      document.getElementById('authForm').style.display = 'block';
+    }
+  });
+
+  document.getElementById('authSendLink').addEventListener('click', () => {
+    const email = document.getElementById('authEmail').value.trim();
+    const msg = document.getElementById('authMsg');
+    if (!email) { msg.textContent = "Merci de saisir ton email."; return; }
+    sendSignInLinkToEmail(auth, email, actionCodeSettings)
+      .then(() => { msg.style.color = '#019682'; msg.textContent = "Lien envoyé, vérifie ta boîte mail."; })
+      .catch(err => { msg.textContent = "Erreur : " + err.message; });
+  });
+
+  window.INSP_FIREBASE = {
+    async add(item){ return await addDoc(col, item); },
+    async update(id, fields){ await updateDoc(doc(db,'inspections', id), fields); },
+    async remove(id){ await deleteDoc(doc(db,'inspections', id)); }
+  };
+
+  document.getElementById('logoutBtn').addEventListener('click', () => {
+    if(confirm('Se déconnecter ?')){
+      signOut(auth).then(() => { window.location.href = 'index.html'; });
+    }
+  });
+</script>
+
+<script>
+function esc(s){ return (s==null?'':String(s)).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+
+const THEMES = [
+  "Activité réelle vs prescrite",
+  "Risques physiques et météo",
+  "Outils, machines et conduite",
+  "Produits chimiques et biologiques",
+  "Travail isolé",
+  "Accidents et prévention",
+  "Risques psycho-sociaux",
+  "Bilan et DUERP"
+];
+
+const GUIDE_TEXT = [
+  ["A. Introduction (5 min)", "Rappeler le rôle du CSSCT et l'objectif de l'entretien. Garantir la confidentialité des échanges vis-à-vis de la direction pour libérer la parole."],
+  ["B. Activité réelle vs prescrite (5 min)", "Décrire une journée ou semaine type. Comparer avec la fiche de poste. Identifier les tâches non écrites. Ce qui est le plus difficile au quotidien."],
+  ["C. Risques physiques et environnement (10 min)", "Évaluation du matériel et des outils (EPI compris). Douleurs liées aux postures, port de charges, gestes répétitifs. Gestion des contraintes climatiques."],
+  ["D. Accidents et situations à risques (10 min)", "Accidents ou presque-accidents vécus. Retour sur les accidents précédents et mesures correctives. Visites d'Observation Préventive (VOP)."],
+  ["E. Risques psycho-sociaux (10 min)", "Rythme et charge de travail. Horaires et équilibre vie pro/perso. Précision des objectifs. Tensions, soutien hiérarchique, autonomie."],
+  ["F. Confrontation au DUERP (5 min)", "Présenter les risques identifiés dans le DUERP actuel pour le poste. Vérifier s'ils correspondent à la réalité, et si un danger n'est pas listé."]
+];
+
+window.renderList = function(){
+  const list = document.getElementById('list');
+  const items = (window._inspections||[]).slice().sort(function(a,b){ return (b.date||'').localeCompare(a.date||''); });
+  if(!items.length){
+    list.innerHTML = '<div style="font-size:13px;color:var(--ink-soft);">Aucune inspection enregistrée. Clique sur "+ Nouvelle inspection" pour commencer.</div>';
+    return;
+  }
+  list.innerHTML = items.map(function(it){
+    const nbEntretiens = (it.entretiens||[]).length;
+    return '<div class="row" onclick="openDrawer(\'' + it.id + '\')">' +
+      '<div><div class="r-title">' + esc(it.sujet||'Sans sujet') + '</div><div class="r-meta">' + esc(it.site) + ' · ' + esc(it.date) + '</div></div>' +
+      '<div class="r-count">' + nbEntretiens + ' entretien' + (nbEntretiens>1?'s':'') + '</div>' +
+    '</div>';
+  }).join('');
+};
+
+window.openNewInspectionModal = function(){
+  document.getElementById('newSite').value = '';
+  document.getElementById('newDate').valueAsDate = new Date();
+  document.getElementById('newSujet').value = '';
+  document.getElementById('newInspectionModal').classList.add('show');
+};
+
+window.createInspection = async function(){
+  const site = document.getElementById('newSite').value.trim();
+  const date = document.getElementById('newDate').value;
+  const sujet = document.getElementById('newSujet').value.trim();
+  if(!site || !sujet){ showToast('Site et sujet sont obligatoires.'); return; }
+  const item = {
+    site: site, date: date, sujet: sujet,
+    contexte: '', intervenants: '', documentsNecessaires: '', modalite: '', infoSalaries: '',
+    dateRetourCR: '', pointsComplementaires: '', notesSuiteInspection: '',
+    entretiens: [], createdAt: new Date().toISOString()
+  };
+  try{
+    const ref = await window.INSP_FIREBASE.add(item);
+    document.getElementById('newInspectionModal').classList.remove('show');
+    showToast('Inspection créée');
+    setTimeout(function(){ openDrawer(ref.id); }, 300);
+  }catch(err){ showToast('Erreur : ' + err.message); }
+};
+
+function findInspection(id){ return (window._inspections||[]).find(function(x){ return x.id === id; }); }
+
+function fieldBlock(id, label, value){
+  return '<div class="dfield" data-field="' + id + '"><div class="dlabel">' + label + '</div><div class="dval ' + (value?'':'empty') + '">' + (esc(value) || 'Non renseigné') + '</div></div>';
+}
+function sectionCard(title, num, inspId, fields){
+  const rows = fields.map(function(f){ return fieldBlock(f.id, f.label, f.value); }).join('');
+  return '<div class="dsection" data-section="' + num + '"><h3>' + title + ' <button class="edit-link" onclick="toggleEdit(\'' + inspId + '\', ' + num + ')">Modifier</button></h3><div class="section-view">' + rows + '</div></div>';
+}
+
+window.openDrawer = function(id){
+  const it = findInspection(id);
+  if(!it) return;
+  window._openDrawerId = id;
+  const overlay = document.getElementById('drawerOverlay');
+  const drawer = document.getElementById('drawer');
+
+  const entretiensHtml = (it.entretiens||[]).length
+    ? it.entretiens.map(function(e, idx){
+        const tableRows = THEMES.map(function(t){
+          const row = (e.rows||[]).find(function(r){ return r.theme === t; }) || {};
+          return '<tr><td>' + esc(t) + '</td><td>' + esc(row.notes) + '</td><td>' + esc(row.vigilance) + '</td></tr>';
+        }).join('');
+        return '<div class="entretien-card">' +
+          '<div class="e-top"><span>' + esc(e.salarie || 'Entretien anonyme') + '</span><button class="edit-link" style="color:var(--danger);" onclick="deleteEntretien(\'' + id + '\', ' + idx + ')">Supprimer</button></div>' +
+          '<div class="e-meta">' + esc(e.date) + ' · ' + esc(e.unite) + ' · Ancienneté : ' + esc(e.anciennete) + '</div>' +
+          '<table class="entretien-table"><thead><tr><th>Thème</th><th>Notes</th><th>Vigilance / écart</th></tr></thead><tbody>' + tableRows + '</tbody></table>' +
+        '</div>';
+      }).join('')
+    : '<div class="dval empty">Aucun entretien enregistré pour le moment.</div>';
+
+  drawer.innerHTML =
+    '<div class="drawer-head"><h2>' + esc(it.sujet) + '</h2><button class="drawer-close" onclick="closeDrawer()">×</button></div>' +
+    '<div class="drawer-body">' +
+      sectionCard('Informations générales', 1, id, [
+        {id:'site', label:'Site', value:it.site},
+        {id:'date', label:'Date', value:it.date},
+        {id:'sujet', label:'Sujet', value:it.sujet},
+        {id:'contexte', label:'Contexte / objectif', value:it.contexte}
+      ]) +
+      sectionCard('Préparation', 2, id, [
+        {id:'intervenants', label:'Intervenants', value:it.intervenants},
+        {id:'documentsNecessaires', label:'Documents nécessaires', value:it.documentsNecessaires},
+        {id:'modalite', label:"Modalité d'inspection", value:it.modalite},
+        {id:'infoSalaries', label:'Information aux salariés', value:it.infoSalaries},
+        {id:'dateRetourCR', label:'Date de retour du CR au CSE', value:it.dateRetourCR},
+        {id:'pointsComplementaires', label:'Points complémentaires à vérifier', value:it.pointsComplementaires}
+      ]) +
+      '<div class="dsection"><h3>Guide d\'entretien (méthodologie de référence)</h3>' +
+      GUIDE_TEXT.map(function(g){ return '<div class="guide-ref"><strong>' + esc(g[0]) + '</strong><br>' + esc(g[1]) + '</div>'; }).join('') +
+      '</div>' +
+      '<div class="dsection"><h3>Entretiens réalisés <button class="edit-link" onclick="openEntretienModal(\'' + id + '\')">+ Ajouter un entretien</button></h3>' + entretiensHtml + '</div>' +
+      sectionCard('Notes suite inspection', 5, id, [
+        {id:'notesSuiteInspection', label:'Notes', value:it.notesSuiteInspection}
+      ]) +
+      '<div class="dsection"><button class="ai-btn" onclick="copyInspectionPrompt(\'' + id + '\')">✦ Générer un prompt IA pour structurer le dossier</button></div>' +
+      '<div class="dsection danger-zone"><h3>Actions</h3><div class="action-row">' +
+        '<button class="btn" onclick="exportInspectionDocx(\'' + id + '\')">⬇️ Exporter en Word</button>' +
+        '<button class="btn btn-danger" onclick="deleteInspection(\'' + id + '\')">Supprimer l\'inspection</button>' +
+      '</div></div>' +
+    '</div>';
+
+  overlay.classList.add('show');
+};
+function closeDrawer(){ document.getElementById('drawerOverlay').classList.remove('show'); window._openDrawerId = null; }
+
+window.toggleEdit = function(inspId, sectionNum){
+  const it = findInspection(inspId);
+  const sec = document.querySelector('.dsection[data-section="' + sectionNum + '"]');
+  const view = sec.querySelector('.section-view');
+  const longFields = ['contexte','documentsNecessaires','modalite','infoSalaries','pointsComplementaires','notesSuiteInspection'];
+  view.querySelectorAll('.dfield').forEach(function(f){
+    const id = f.dataset.field;
+    const val = it[id] || '';
+    const long = longFields.indexOf(id) !== -1;
+    const label = f.querySelector('.dlabel').textContent;
+    const inputType = id === 'date' || id === 'dateRetourCR' ? 'date' : 'text';
+    f.innerHTML = '<div class="dlabel">' + label + '</div>' + (long
+      ? '<textarea data-edit="' + id + '">' + esc(val) + '</textarea>'
+      : '<input type="' + inputType + '" data-edit="' + id + '" value="' + esc(val).replace(/"/g,'&quot;') + '">');
+  });
+  view.insertAdjacentHTML('afterend', '<div class="edit-actions" data-actions="' + sectionNum + '">' +
+    '<button class="save-btn" onclick="saveSection(\'' + inspId + '\', ' + sectionNum + ')">Enregistrer</button>' +
+    '<button class="cancel-btn" onclick="openDrawer(\'' + inspId + '\')">Annuler</button></div>');
+  sec.classList.add('editing');
+};
+
+window.saveSection = async function(inspId, sectionNum){
+  const it = findInspection(inspId);
+  const sec = document.querySelector('.dsection[data-section="' + sectionNum + '"]');
+  const fields = {};
+  sec.querySelectorAll('[data-edit]').forEach(function(el){ fields[el.dataset.edit] = el.value; Object.assign(it, fields); });
+  try{
+    await window.INSP_FIREBASE.update(inspId, fields);
+    showToast('Mis à jour');
+  }catch(err){ showToast('Erreur : ' + err.message); }
+  openDrawer(inspId);
+};
+
+window.deleteInspection = async function(inspId){
+  if(!confirm('Supprimer définitivement cette inspection ?')) return;
+  try{
+    await window.INSP_FIREBASE.remove(inspId);
+    closeDrawer();
+    showToast('Inspection supprimée');
+  }catch(err){ showToast('Erreur : ' + err.message); }
+};
+
+// ---- Entretiens ----
+window.openEntretienModal = function(inspId){
+  const body = document.getElementById('entretienModalBody');
+  body.dataset.inspId = inspId;
+  const rowsHtml = THEMES.map(function(t, i){
+    return '<tr>' +
+      '<td style="font-size:12px;font-weight:600;padding:6px 4px;width:170px;">' + esc(t) + '</td>' +
+      '<td style="padding:4px;"><textarea data-theme-notes="' + i + '" style="width:100%;min-height:40px;font-size:12px;padding:6px;border:1px solid var(--line);border-radius:6px;"></textarea></td>' +
+      '<td style="padding:4px;"><textarea data-theme-vigilance="' + i + '" style="width:100%;min-height:40px;font-size:12px;padding:6px;border:1px solid var(--line);border-radius:6px;"></textarea></td>' +
+    '</tr>';
+  }).join('');
+  body.innerHTML =
+    '<div class="grid2">' +
+      '<div class="dfield"><label class="dlabel">Date</label><input type="date" id="entDate"></div>' +
+      '<div class="dfield"><label class="dlabel">Salarié (facultatif)</label><input type="text" id="entSalarie" placeholder="Anonyme si besoin"></div>' +
+      '<div class="dfield"><label class="dlabel">Unité de travail</label><input type="text" id="entUnite" placeholder="Ex : Serres, champs..."></div>' +
+      '<div class="dfield"><label class="dlabel">Ancienneté</label><input type="text" id="entAnciennete"></div>' +
+    '</div>' +
+    '<div style="max-height:340px;overflow:auto;margin-top:10px;">' +
+    '<table style="width:100%;border-collapse:collapse;"><thead><tr><th style="text-align:left;font-size:11px;padding:6px 4px;">Thème</th><th style="text-align:left;font-size:11px;">Notes</th><th style="text-align:left;font-size:11px;">Vigilance</th></tr></thead><tbody>' + rowsHtml + '</tbody></table>' +
+    '</div>';
+  document.getElementById('entDate').valueAsDate = new Date();
+  document.getElementById('entretienModal').classList.add('show');
+};
+
+window.saveEntretien = async function(){
+  const body = document.getElementById('entretienModalBody');
+  const inspId = body.dataset.inspId;
+  const it = findInspection(inspId);
+  const rows = THEMES.map(function(t, i){
+    return {
+      theme: t,
+      notes: (document.querySelector('[data-theme-notes="' + i + '"]')||{}).value || '',
+      vigilance: (document.querySelector('[data-theme-vigilance="' + i + '"]')||{}).value || ''
+    };
+  });
+  const entry = {
+    date: document.getElementById('entDate').value,
+    salarie: document.getElementById('entSalarie').value.trim(),
+    unite: document.getElementById('entUnite').value.trim(),
+    anciennete: document.getElementById('entAnciennete').value.trim(),
+    rows: rows
+  };
+  const newEntretiens = (it.entretiens||[]).concat([entry]);
+  try{
+    await window.INSP_FIREBASE.update(inspId, { entretiens: newEntretiens });
+    it.entretiens = newEntretiens;
+    document.getElementById('entretienModal').classList.remove('show');
+    showToast('Entretien ajouté');
+    openDrawer(inspId);
+  }catch(err){ showToast('Erreur : ' + err.message); }
+};
+
+window.deleteEntretien = async function(inspId, idx){
+  if(!confirm('Supprimer cet entretien ?')) return;
+  const it = findInspection(inspId);
+  const newEntretiens = (it.entretiens||[]).slice();
+  newEntretiens.splice(idx, 1);
+  try{
+    await window.INSP_FIREBASE.update(inspId, { entretiens: newEntretiens });
+    it.entretiens = newEntretiens;
+    showToast('Entretien supprimé');
+    openDrawer(inspId);
+  }catch(err){ showToast('Erreur : ' + err.message); }
+};
+
+// ---- Prompt IA ----
+window.copyInspectionPrompt = async function(inspId){
+  const it = findInspection(inspId);
+  const entretiensSummary = (it.entretiens||[]).map(function(e, i){
+    const lignes = (e.rows||[]).filter(function(r){ return r.notes || r.vigilance; })
+      .map(function(r){ return '- ' + r.theme + ' : ' + (r.notes||'') + (r.vigilance ? ' (vigilance : ' + r.vigilance + ')' : ''); }).join('\n');
+    return 'Entretien ' + (i+1) + ' (' + (e.unite||'unité non précisée') + ', ancienneté ' + (e.anciennete||'?') + ') :\n' + (lignes || '(pas de notes)');
+  }).join('\n\n');
+
+  const prompt = 'Tu es un membre d\'une commission santé, sécurité et conditions de travail (CSSCT) en France. ' +
+    'Rédige un dossier de préparation et de restitution d\'inspection complet, structuré et détaillé, à partir des éléments bruts ci-dessous (les noms de personnes doivent rester anonymisés). ' +
+    'Structure le document selon ces sections : 1) Sujet, lieu et date de l\'inspection ; 2) Intervenants ; 3) Documents nécessaires ; 4) Méthode et information aux salariés ; 5) Guide d\'entretien détaillé (avec des questions concrètes par thématique) ; 6) Synthèse des entretiens réalisés et points de vigilance identifiés ; 7) Recommandations et points complémentaires à vérifier. ' +
+    'Complète, reformule et détaille chaque partie de façon professionnelle, sans te limiter à ce qui est donné si des éléments logiques peuvent être ajoutés.\n\n' +
+    '--- ELEMENTS BRUTS ---\n' +
+    'Sujet : ' + (it.sujet||'') + '\n' +
+    'Site : ' + (it.site||'') + '\n' +
+    'Date : ' + (it.date||'') + '\n' +
+    'Contexte : ' + (it.contexte||'') + '\n' +
+    'Intervenants : ' + (it.intervenants||'') + '\n' +
+    'Documents nécessaires : ' + (it.documentsNecessaires||'') + '\n' +
+    'Modalité : ' + (it.modalite||'') + '\n' +
+    'Information aux salariés : ' + (it.infoSalaries||'') + '\n' +
+    'Points complémentaires à vérifier : ' + (it.pointsComplementaires||'') + '\n' +
+    'Notes suite inspection : ' + (it.notesSuiteInspection||'') + '\n\n' +
+    (entretiensSummary ? '--- ENTRETIENS REALISES ---\n' + entretiensSummary : '(Aucun entretien enregistré pour le moment)');
+
+  document.getElementById('promptPreview').value = prompt;
+  try{
+    await navigator.clipboard.writeText(prompt);
+    showToast('Prompt copié dans le presse-papiers ✓');
+  }catch(err){
+    showToast('Copie automatique impossible, le texte est affiché ci-dessous.');
+  }
+  document.getElementById('promptModal').classList.add('show');
+};
+
+// ---- Export Word ----
+window.exportInspectionDocx = function(inspId){
+  const it = findInspection(inspId);
+  const { Document, Packer, Paragraph, TextRun, AlignmentType, Table, TableRow, TableCell, WidthType, BorderStyle } = docx;
+  const GREEN = "019682";
+  function P(text){ return (text||'').split('\n').map(function(line){ return new Paragraph({ children:[ new TextRun(line) ] }); }); }
+  function GH(label){ return new Paragraph({ children:[ new TextRun({ text: label, bold:true, color: GREEN }) ] }); }
+  function PBC(text){ return new Paragraph({ alignment: AlignmentType.CENTER, children:[ new TextRun({ text: text||'', bold:true }) ] }); }
+  function blank(){ return new Paragraph({ text:'' }); }
+
+  const children = [
+    PBC('Dossier d\'inspection CSSCT'),
+    new Paragraph({ alignment: AlignmentType.CENTER, children:[ new TextRun(esc(it.sujet)) ] }),
+    new Paragraph({ alignment: AlignmentType.CENTER, children:[ new TextRun((it.site||'') + ' — ' + (it.date||'')) ] }),
+    blank(),
+    GH('Contexte / objectif'), ...P(it.contexte),
+    blank(), GH('Intervenants'), ...P(it.intervenants),
+    blank(), GH('Documents nécessaires'), ...P(it.documentsNecessaires),
+    blank(), GH('Modalité d\'inspection'), ...P(it.modalite),
+    blank(), GH('Information aux salariés'), ...P(it.infoSalaries),
+    blank(), GH('Points complémentaires à vérifier'), ...P(it.pointsComplementaires),
+    blank(), GH('Notes suite inspection'), ...P(it.notesSuiteInspection),
+    blank(), GH('Guide d\'entretien (méthodologie)')
+  ];
+  GUIDE_TEXT.forEach(function(g){
+    children.push(new Paragraph({ children:[ new TextRun({ text:g[0], bold:true }) ] }));
+    children.push(...P(g[1]));
+    children.push(blank());
+  });
+
+  children.push(GH('Entretiens réalisés'));
+  if((it.entretiens||[]).length){
+    it.entretiens.forEach(function(e, i){
+      children.push(new Paragraph({ children:[ new TextRun({ text:'Entretien ' + (i+1) + ' — ' + (e.unite||'') + ' (ancienneté : ' + (e.anciennete||'?') + ')', bold:true }) ] }));
+      const rows = [new TableRow({ children: ['Thème','Notes','Vigilance'].map(function(h){
+        return new TableCell({ children:[new Paragraph({children:[new TextRun({text:h,bold:true})]})] });
+      })})];
+      (e.rows||[]).forEach(function(r){
+        rows.push(new TableRow({ children: [r.theme, r.notes, r.vigilance].map(function(v){
+          return new TableCell({ children:[new Paragraph({children:[new TextRun(v||'')]})] });
+        })}));
+      });
+      children.push(new Table({ width:{size:100,type:WidthType.PERCENTAGE}, rows: rows }));
+      children.push(blank());
+    });
+  } else {
+    children.push(...P('Aucun entretien enregistré.'));
+  }
+
+  const doc = new Document({ sections: [{ properties:{}, children: children }] });
+  Packer.toBlob(doc).then(function(blob){
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = 'Inspection_' + (it.site||'').replace(/\s+/g,'_') + '_' + (it.date||'') + '.docx';
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function(){ URL.revokeObjectURL(url); }, 2000);
+    showToast('Word téléchargé');
+  }).catch(function(err){ showToast('Erreur : ' + err.message); });
+};
+
+let toastTimer;
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  clearTimeout(toastTimer); toastTimer = setTimeout(function(){ t.classList.remove('show'); }, 3200);
+}
+</script>
+</body>
+</html>
