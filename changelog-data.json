@@ -1,5 +1,17 @@
 [
   {
+    "hash": "81001f0",
+    "date": "28/07/2026",
+    "title": "Automatisation des notes de mise à jour",
+    "description": "Le changelog se génère maintenant automatiquement à partir des messages de commit, au lieu d'être modifié à la main à chaque fois."
+  },
+  {
+    "hash": "5ff7247",
+    "date": "28/07/2026",
+    "title": "chore: mise a jour automatique du changelog [skip ci]",
+    "description": ""
+  },
+  {
     "hash": "4ec077b",
     "date": "28/07/2026",
     "title": "Add files via upload",
