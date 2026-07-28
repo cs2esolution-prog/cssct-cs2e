@@ -426,6 +426,55 @@ let openDrawerNumero = null;
 function findDossier(id){ return dossiers.find(function(d){ return d.id===id; }); }
 function isBadNumero(n){ return n === undefined || n === null || n === '' || String(n) === 'NaN'; }
 
+function compressImageFile(file, maxDim, quality){
+  return new Promise(function(resolve, reject){
+    const reader = new FileReader();
+    reader.onload = function(e){
+      const img = new Image();
+      img.onload = function(){
+        let w = img.width, h = img.height;
+        if(w > h && w > maxDim){ h = Math.round(h * maxDim / w); w = maxDim; }
+        else if(h >= w && h > maxDim){ w = Math.round(w * maxDim / h); h = maxDim; }
+        const canvas = document.createElement('canvas');
+        canvas.width = w; canvas.height = h;
+        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+        resolve({ dataUrl: canvas.toDataURL('image/jpeg', quality), width: w, height: h });
+      };
+      img.onerror = reject;
+      img.src = e.target.result;
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+function bindEditPhotoInput(inputId, previewId, dossierId, base64Field, dimsField){
+  const input = document.getElementById(inputId);
+  if(!input) return;
+  input.addEventListener('change', async function(e){
+    const f = e.target.files[0];
+    if(!f) return;
+    const preview = document.getElementById(previewId);
+    preview.innerHTML = '<span style="font-size:11px;color:var(--ink-soft);">Compression en cours...</span>';
+    try{
+      let result = await compressImageFile(f, 1000, 0.65);
+      if(result.dataUrl.length > 700000){
+        result = await compressImageFile(f, 700, 0.5);
+      }
+      const fields = {};
+      fields[base64Field] = result.dataUrl;
+      fields[dimsField] = { w: result.width, h: result.height };
+      await window.CSSCT_FIREBASE.updateFields(dossierId, fields);
+      const d = findDossier(dossierId);
+      if(d){ d[base64Field] = result.dataUrl; d[dimsField] = { w: result.width, h: result.height }; }
+      preview.innerHTML = '<img src="' + result.dataUrl + '" style="max-width:140px;border-radius:6px;border:1px solid var(--line);">';
+      showToast('Photo enregistree');
+    }catch(err){
+      preview.innerHTML = '<span style="font-size:11px;color:#A85D45;">Erreur de lecture de l\'image.</span>';
+    }
+  });
+}
+
 function fieldBlock(id, label, value){
   return '<div class="dfield" data-field="' + id + '"><div class="dlabel">' + label + '</div><div class="dval ' + (value?'':'empty') + '">' + (value || 'Non renseigne') + '</div></div>';
 }
@@ -483,6 +532,18 @@ function openDrawer(numero){
         {id:'actionRealisee', label:"Action realisee sur l'instant", value:d.actionRealisee},
         {id:'actionEnvisagee', label:'Actions preconisees par le CSSCT', value:d.actionEnvisagee}
       ]) +
+      '<div class="dsection"><h3>Pieces jointes</h3><div class="grid2">' +
+        '<div>' +
+          '<div class="dlabel">Photo de l\'incident</div>' +
+          '<div id="photoIncidentPreview" style="margin:6px 0;">' + (d.photoIncidentBase64 ? '<img src="'+d.photoIncidentBase64+'" style="max-width:140px;border-radius:6px;border:1px solid var(--line);">' : '<span class="dval empty">Aucune photo</span>') + '</div>' +
+          '<label class="filebox" for="editPhotoIncident" style="display:inline-block;padding:8px 12px;font-size:12px;">📎 Ajouter / remplacer<input type="file" id="editPhotoIncident" accept="image/*"></label>' +
+        '</div>' +
+        '<div>' +
+          '<div class="dlabel">Photo de localisation</div>' +
+          '<div id="photoLocalisationPreview" style="margin:6px 0;">' + (d.photoLocalisationBase64 ? '<img src="'+d.photoLocalisationBase64+'" style="max-width:140px;border-radius:6px;border:1px solid var(--line);">' : '<span class="dval empty">Aucune photo</span>') + '</div>' +
+          '<label class="filebox" for="editPhotoLocalisation" style="display:inline-block;padding:8px 12px;font-size:12px;">📎 Ajouter / remplacer<input type="file" id="editPhotoLocalisation" accept="image/*"></label>' +
+        '</div>' +
+      '</div></div>' +
       '<div class="dsection"><h3>Suivi</h3><div id="suiviList">' + suiviHtml + '</div>' +
       '<div class="add-suivi"><input type="date" id="newSuiviDate">' +
       '<textarea id="newSuiviText" placeholder="Decrire la relance, l\'echange, l\'avancee..."></textarea>' +
@@ -494,6 +555,9 @@ function openDrawer(numero){
       '<button class="btn btn-danger" onclick="deleteDossier(\'' + d.id + '\')">Supprimer le dossier</button>' +
       '</div></div>' +
     '</div>';
+
+  bindEditPhotoInput('editPhotoIncident', 'photoIncidentPreview', d.id, 'photoIncidentBase64', 'photoIncidentDims');
+  bindEditPhotoInput('editPhotoLocalisation', 'photoLocalisationPreview', d.id, 'photoLocalisationBase64', 'photoLocalisationDims');
 
   document.getElementById('newSuiviDate').valueAsDate = new Date();
   overlay.classList.add('show');
@@ -617,7 +681,15 @@ function buildReportHtml(d){
     html += '<div class="rp-v">(pas encore d\u2019entree de suivi)</div>';
   }
 
-  html += '<div class="rp-blank"></div><div class="rp-h">Document joint :</div><div class="rp-v">Voir la fiche du dossier pour les photos jointes.</div>';
+  html += '<div class="rp-blank"></div><div class="rp-h">Document joint :</div>';
+  if(d.photoIncidentBase64 || d.photoLocalisationBase64){
+    html += '<div class="rp-v" style="display:flex;gap:10px;flex-wrap:wrap;">';
+    if(d.photoIncidentBase64) html += '<img src="' + d.photoIncidentBase64 + '" alt="Photo incident" style="max-width:220px;border:1px solid #ddd;border-radius:6px;">';
+    if(d.photoLocalisationBase64) html += '<img src="' + d.photoLocalisationBase64 + '" alt="Photo localisation" style="max-width:220px;border:1px solid #ddd;border-radius:6px;">';
+    html += '</div>';
+  } else {
+    html += '<div class="rp-v">Aucune piece jointe.</div>';
+  }
   html += '<div class="rp-blank"></div><div class="rp-h">Localisation :</div><div class="rp-v">' + esc(d.site) + (d.lieu ? ' - ' + esc(d.lieu) : '') + '</div>';
   html += '<div class="rp-footer">Le CSSCT vous informe que ce document sera transmis aux membres du CS2E ainsi qu' + String.fromCharCode(39) + 'au president du CSSCT</div>';
 
@@ -698,6 +770,11 @@ function generateDocxFile(d){
     for(let i=0; i<binary.length; i++){ bytes[i] = binary.charCodeAt(i); }
     return bytes;
   }
+  function scaleToMaxWidth(dims, maxWidth){
+    if(!dims || !dims.w || !dims.h) return { width: maxWidth, height: Math.round(maxWidth*0.75) };
+    const ratio = dims.h / dims.w;
+    return { width: maxWidth, height: Math.round(maxWidth * ratio) };
+  }
 
   const headerTable = new Table({
     width: { size: 100, type: WidthType.PERCENTAGE },
@@ -773,7 +850,18 @@ function generateDocxFile(d){
 
   children.push(blank());
   children.push(GH('Document joint :'));
-  children.push(P('Voir la fiche du dossier pour les photos jointes.'));
+  if(d.photoIncidentBase64 || d.photoLocalisationBase64){
+    if(d.photoIncidentBase64){
+      const dims1 = scaleToMaxWidth(d.photoIncidentDims, 240);
+      children.push(new Paragraph({ children: [ new ImageRun({ data: base64ToUint8Array(d.photoIncidentBase64.split(',')[1]), transformation: dims1, type: "jpg" }) ] }));
+    }
+    if(d.photoLocalisationBase64){
+      const dims2 = scaleToMaxWidth(d.photoLocalisationDims, 240);
+      children.push(new Paragraph({ children: [ new ImageRun({ data: base64ToUint8Array(d.photoLocalisationBase64.split(',')[1]), transformation: dims2, type: "jpg" }) ] }));
+    }
+  } else {
+    children.push(P('Aucune piece jointe.'));
+  }
   children.push(blank());
   children.push(GH('Localisation :'));
   children.push(P((d.site || '') + (d.lieu ? ' - ' + d.lieu : '')));
@@ -857,3 +945,4 @@ function showToast(msg){
 </script>
 </body>
 </html>
+
