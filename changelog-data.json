@@ -1,5 +1,17 @@
 [
   {
+    "hash": "72077f8",
+    "date": "28/07/2026",
+    "title": "Add files via upload",
+    "description": "Modale de clôture, réouverture de dossier, et icône d'écran d'accueil\r\n\r\nLa clôture d'un dossier demande maintenant une information obligatoire, intégrée au suivi. Un dossier clos peut être repassé en cours. Ajout d'une icône et d'un nom personnalisés pour l'ajout de l'application à l'écran d'accueil du téléphone."
+  },
+  {
+    "hash": "da37563",
+    "date": "28/07/2026",
+    "title": "chore: mise a jour automatique du changelog [skip ci]",
+    "description": ""
+  },
+  {
     "hash": "efb1176",
     "date": "28/07/2026",
     "title": "Add files via upload",
