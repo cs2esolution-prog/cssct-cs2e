@@ -1282,7 +1282,7 @@ function generateDocxFile(p){
   const GREEN = "019682";
   const noBorder = { style: BorderStyle.NONE, size: 0, color: "FFFFFF" };
 
-  const P = (text) => new Paragraph({ children: [ new TextRun(text || '') ] });
+  const P = (text) => (text || '').split('\n').map(line => new Paragraph({ children: [ new TextRun(line) ] }));
   const PC = (text) => new Paragraph({ alignment: AlignmentType.CENTER, children: [ new TextRun(text || '') ] });
   const PBC = (text) => new Paragraph({ alignment: AlignmentType.CENTER, children: [ new TextRun({ text: text || '', bold: true }) ] });
   const PH = (label, value) => new Paragraph({ children: [
@@ -1315,11 +1315,11 @@ function generateDocxFile(p){
     PBC('Etat : ' + (p.statut || '')),
     PC(nature),
     blank(),
-    P('Salarié : ' + salarie + ' ( – ) Matricule : ' + (p.matricule || '')),
-    P('Le : ' + toFR(p.date) + (p.heureDebut ? ' — ' + p.heureDebut + (heureFin ? ' à ' + heureFin : '') : '')),
-    P('Localisation : ' + (p.site || '') + (p.lieu ? ' — ' + p.lieu : '')),
-    P('Rapporteur : ' + (p.rapporteur || '')),
-    P('Témoins : ' + (p.temoins || '')),
+    ...P('Salarié : ' + salarie + ' ( – ) Matricule : ' + (p.matricule || '')),
+    ...P('Le : ' + toFR(p.date) + (p.heureDebut ? ' — ' + p.heureDebut + (heureFin ? ' à ' + heureFin : '') : '')),
+    ...P('Localisation : ' + (p.site || '') + (p.lieu ? ' — ' + p.lieu : '')),
+    ...P('Rapporteur : ' + (p.rapporteur || '')),
+    ...P('Témoins : ' + (p.temoins || '')),
     blank(),
     PH('Objet', p.objet),
     blank(),
@@ -1330,39 +1330,39 @@ function generateDocxFile(p){
     PH('Info si clôture', p.infoCloture),
     blank(),
     GH('Description ou recueil des propos :'),
-    P(p.description)
+    ...P(p.description)
   ];
 
   if(p.impactCorporel){
     children.push(blank());
     children.push(GH('Impact corporel remonté par le collaborateur :'));
-    children.push(P(p.impactCorporel));
+    children.push(...P(p.impactCorporel));
   }
   if(p.impactPsychologique){
     children.push(blank());
     children.push(GH('Impact psychologique remonté par le collaborateur :'));
-    children.push(P(p.impactPsychologique));
+    children.push(...P(p.impactPsychologique));
   }
 
   children.push(blank());
   children.push(GH('Risque :'));
-  children.push(P(p.risque));
+  children.push(...P(p.risque));
   children.push(blank());
   children.push(GH('Actions réalisées :'));
-  children.push(P(p.actionRealisee));
+  children.push(...P(p.actionRealisee));
   children.push(blank());
   children.push(GH('Actions préconisées par le CSSCT :'));
-  children.push(P(p.actionEnvisagee));
+  children.push(...P(p.actionEnvisagee));
 
   children.push(blank());
   children.push(GH('Suivi :'));
   if(p.suivi && p.suivi.length){
     p.suivi.forEach(function(s){
-      children.push(P(toFR(s.date) + ' — ' + s.text));
+      children.push(...P(toFR(s.date) + ' — ' + s.text));
       children.push(blank());
     });
   } else {
-    children.push(P("(pas encore d'entrée de suivi)"));
+    children.push(...P("(pas encore d'entrée de suivi)"));
   }
 
   children.push(blank());
@@ -1379,11 +1379,11 @@ function generateDocxFile(p){
     }
     photoRuns.forEach(function(run){ children.push(new Paragraph({ children: [run] })); });
   } else {
-    children.push(P('Aucune pièce jointe.'));
+    children.push(...P('Aucune pièce jointe.'));
   }
   children.push(blank());
   children.push(GH('Localisation :'));
-  children.push(P((p.site || '') + (p.lieu ? ' — ' + p.lieu : '')));
+  children.push(...P((p.site || '') + (p.lieu ? ' — ' + p.lieu : '')));
 
   const footer = new Footer({
     children: [
