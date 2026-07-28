@@ -1,0 +1,1063 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nouveau signalement · CSSCT</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,500;8..60,600;8..60,700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --teal:#019682;
+    --teal-dark:#017162;
+    --purple:#5A4570;
+    --gold:#C6AB76;
+    --paper:#F7F5F1;
+    --paper-raised:#FFFFFF;
+    --ink:#2B2A2E;
+    --ink-soft:#6B6873;
+    --line:#E4E0D8;
+    --danger:#A85D45;
+    --accent: var(--teal);
+    --radius: 10px;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--paper);
+    color:var(--ink);
+    font-family:'Inter',system-ui,sans-serif;
+    line-height:1.5;
+    padding-bottom:70px; /* room for mobile nav bar */
+  }
+  .wrap{
+    max-width:1180px;
+    margin:0 auto;
+    padding:32px 24px 120px;
+    display:grid;
+    grid-template-columns: 1fr 300px;
+    gap:32px;
+  }
+  @media (max-width: 880px){
+    .wrap{grid-template-columns:1fr; padding:20px 16px 100px;}
+    .preview{position:static !important; order:-1;}
+  }
+
+  header.top{
+    grid-column:1/-1;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding-bottom:20px;
+    border-bottom:2px solid var(--ink);
+    margin-bottom:8px;
+  }
+  .brand{display:flex; align-items:center; gap:12px;}
+  .brand-mark{
+    width:38px; height:38px; border-radius:50%;
+    background:conic-gradient(var(--teal) 0deg 120deg, var(--gold) 120deg 240deg, var(--purple) 240deg 360deg);
+    flex:none;
+  }
+  .brand-text{font-family:'Source Serif 4', serif; font-weight:700; font-size:19px; letter-spacing:.2px;}
+  .brand-text span{color:var(--teal);}
+  .top-right{text-align:right;}
+  .top-right .eyebrow{font-size:11px; text-transform:uppercase; letter-spacing:.12em; color:var(--ink-soft);}
+  .top-right .dossier-no{font-family:'IBM Plex Mono',monospace; font-size:22px; font-weight:600; color:var(--accent); transition:color .25s;}
+
+  form{display:flex; flex-direction:column; gap:6px;}
+
+  .section{
+    background:var(--paper-raised);
+    border:1px solid var(--line);
+    border-left:4px solid var(--accent);
+    border-radius:var(--radius);
+    margin-bottom:16px;
+    transition:border-color .25s;
+    overflow:hidden;
+  }
+  .section-head{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+    padding:18px 22px;
+    cursor:pointer;
+    user-select:none;
+    background:transparent;
+    border:none;
+    width:100%;
+    text-align:left;
+    font:inherit;
+  }
+  .section-head h2{
+    font-family:'Source Serif 4', serif;
+    font-size:17px;
+    font-weight:600;
+    margin:0;
+    display:flex;
+    align-items:baseline;
+    gap:10px;
+    color:var(--ink);
+  }
+  .section-head h2 .idx{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:12px;
+    color:var(--ink-soft);
+    font-weight:500;
+  }
+  .chevron{
+    width:20px; height:20px; flex:none;
+    transition:transform .2s ease;
+    color:var(--ink-soft);
+  }
+  .section.open .chevron{transform:rotate(180deg);}
+  .section-body{
+    max-height:0;
+    overflow:hidden;
+    transition:max-height .25s ease;
+  }
+  .section.open .section-body{max-height:2400px;}
+  .section-body-inner{padding:0 22px 24px;}
+  .section .hint{font-size:12.5px; color:var(--ink-soft); margin:0 0 16px;}
+
+  .grid2{display:grid; grid-template-columns:1fr 1fr; gap:14px 18px;}
+  .grid3{display:grid; grid-template-columns:1fr 1fr 1fr; gap:14px 18px;}
+  @media (max-width:600px){ .grid2,.grid3{grid-template-columns:1fr;} }
+
+  .field{display:flex; flex-direction:column; gap:6px; margin-bottom:14px;}
+  .field label{font-size:12.5px; font-weight:600; color:var(--ink);}
+  .field .req{color:var(--danger);}
+  .field small.hint-small{font-size:11px; color:var(--ink-soft); font-weight:400; margin-top:-2px;}
+
+  input, select, textarea{
+    font-family:'Inter',sans-serif;
+    font-size:14px;
+    padding:10px 12px;
+    border:1px solid var(--line);
+    border-radius:7px;
+    background:#fff;
+    color:var(--ink);
+    width:100%;
+  }
+  textarea{resize:vertical; min-height:64px; font-family:'Inter',sans-serif;}
+  input:focus, select:focus, textarea:focus{
+    outline:2px solid var(--accent);
+    outline-offset:1px;
+    border-color:var(--accent);
+  }
+  .field.error input, .field.error select, .field.error textarea{ border-color:var(--danger); }
+  .errmsg{font-size:11.5px; color:var(--danger); display:none;}
+  .field.error .errmsg{display:block;}
+
+  .nature-grid{display:grid; grid-template-columns:repeat(4,1fr); gap:8px;}
+  @media (max-width:700px){ .nature-grid{grid-template-columns:repeat(2,1fr);} }
+  .nature-pill{
+    border:1px solid var(--line);
+    border-radius:20px;
+    padding:9px 10px;
+    font-size:12.5px;
+    text-align:center;
+    cursor:pointer;
+    background:#fff;
+    user-select:none;
+    transition:all .15s;
+  }
+  .nature-pill.active{ color:#fff; border-color:transparent; font-weight:600; }
+
+  .conditional{
+    margin-top:12px;
+    display:none;
+  }
+  .conditional.show{display:flex; flex-direction:column; gap:6px;}
+
+  .inline-check{display:flex; align-items:center; gap:7px; font-size:12.5px; color:var(--ink-soft); margin-top:6px;}
+  .inline-check input{width:auto;}
+
+  .filebox{
+    border:1.5px dashed var(--line);
+    border-radius:var(--radius);
+    padding:16px;
+    text-align:center;
+    font-size:12.5px;
+    color:var(--ink-soft);
+    cursor:pointer;
+    background:#fdfcfa;
+  }
+  .filebox:hover{border-color:var(--accent); color:var(--accent);}
+  .filebox input{display:none;}
+  .thumb-row{display:flex; gap:8px; margin-top:8px; flex-wrap:wrap;}
+  .thumb-row img{width:56px; height:56px; object-fit:cover; border:1px solid var(--line); border-radius:8px;}
+
+  .suivi-note{
+    background:#FBFAF7;
+    border:1px solid var(--line);
+    border-left:3px solid var(--gold);
+    padding:10px 12px;
+    font-size:12.5px;
+    color:var(--ink-soft);
+    border-radius:8px;
+    margin-top:8px;
+  }
+
+  .ai-btn{
+    display:inline-flex; align-items:center; gap:6px;
+    background:#fff; border:1px solid var(--line); color:var(--ink);
+    font-size:12px; font-weight:600; padding:8px 14px; border-radius:20px;
+    cursor:pointer; margin-top:8px;
+  }
+  .ai-btn:hover{border-color:var(--accent); color:var(--accent);}
+
+  .submitbar{
+    position:sticky;
+    bottom:0;
+    background:linear-gradient(to top, var(--paper) 60%, transparent);
+    padding:18px 0 0;
+    display:flex;
+    align-items:center;
+    gap:12px;
+    justify-content:flex-end;
+    flex-wrap:wrap;
+  }
+  button{
+    font-family:'Inter',sans-serif;
+    font-weight:600;
+    font-size:14px;
+    padding:12px 22px;
+    border-radius:24px;
+    border:none;
+    cursor:pointer;
+  }
+  .btn-primary{background:var(--ink); color:#fff;}
+  .btn-primary:hover{background:#000;}
+  .btn-ghost{background:transparent; color:var(--ink-soft); border:1px solid var(--line);}
+  .submit-note{font-size:11.5px; color:var(--ink-soft); margin-right:auto;}
+
+  .preview{
+    position:sticky;
+    top:24px;
+    align-self:start;
+    background:var(--ink);
+    color:#fff;
+    border-radius:var(--radius);
+    padding:22px;
+    height:fit-content;
+  }
+  .preview .eyebrow{font-size:10.5px; text-transform:uppercase; letter-spacing:.14em; color:#ffffff99; margin-bottom:14px;}
+  .preview .status-chip{
+    display:inline-block; font-size:11px; font-weight:600; padding:3px 9px;
+    border-radius:20px; background:var(--accent); color:#fff; margin-bottom:14px;
+  }
+  .preview dl{margin:0;}
+  .preview dt{font-size:10.5px; text-transform:uppercase; letter-spacing:.06em; color:#ffffff77; margin-top:14px;}
+  .preview dd{margin:2px 0 0; font-size:13.5px; color:#fff; word-break:break-word;}
+  .preview dd.empty{color:#ffffff55; font-style:italic;}
+  .preview hr{border:none; border-top:1px solid #ffffff22; margin:16px 0;}
+  .preview .foot{font-size:10.5px; color:#ffffff55; margin-top:18px; line-height:1.5;}
+
+  #toast{
+    position:fixed; left:50%; bottom:80px; transform:translate(-50%,120%);
+    background:var(--ink); color:#fff; padding:14px 20px; border-radius:12px;
+    font-size:13.5px; box-shadow:0 8px 24px rgba(0,0,0,.25);
+    transition:transform .3s ease; z-index:60; max-width:90vw;
+  }
+  #toast.show{transform:translate(-50%,0);}
+  #toast pre{margin:8px 0 0; font-size:11px; white-space:pre-wrap; color:#ffffffcc; max-height:160px; overflow:auto;}
+
+  /* mobile field nav bar */
+  #fieldNav{
+    position:fixed; left:0; right:0; bottom:0;
+    background:#fff; border-top:1px solid var(--line);
+    display:none; align-items:center; justify-content:space-between;
+    padding:8px 14px; z-index:55; box-shadow:0 -4px 16px rgba(0,0,0,.06);
+  }
+  #fieldNav.show{display:flex;}
+  #fieldNav button{
+    padding:8px 16px; border-radius:20px; font-size:13px; font-weight:600;
+    background:var(--paper); color:var(--ink); border:1px solid var(--line);
+  }
+  #fieldNav button:disabled{opacity:.35;}
+  #fieldNav .pos{font-size:11px; color:var(--ink-soft); font-family:'IBM Plex Mono',monospace;}
+
+  /* modal */
+  .modal-overlay{
+    position:fixed; inset:0; background:rgba(30,28,32,.55);
+    display:none; align-items:flex-start; justify-content:center;
+    padding:32px 16px; z-index:70; overflow:auto;
+  }
+  .modal-overlay.show{display:flex;}
+  .modal{
+    background:#fff; border-radius:var(--radius); max-width:680px; width:100%;
+    padding:0; box-shadow:0 20px 60px rgba(0,0,0,.3);
+  }
+  .modal-head{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:18px 24px; border-bottom:1px solid var(--line);
+  }
+  .modal-head h3{font-family:'Source Serif 4',serif; margin:0; font-size:16px;}
+  .modal-close{background:none; border:none; font-size:20px; cursor:pointer; color:var(--ink-soft); padding:4px;}
+  .modal-body{padding:22px 26px; font-size:13.5px;}
+  .report-h{color:var(--teal-dark); font-weight:700; font-size:12.5px; text-transform:uppercase; letter-spacing:.05em; margin:16px 0 4px;}
+  .report-h:first-child{margin-top:0;}
+  .report-v{margin:0 0 4px; white-space:pre-wrap;}
+  .report-meta{font-size:12px; color:var(--ink-soft); border-bottom:1px solid var(--line); padding-bottom:12px; margin-bottom:6px;}
+
+  .link-search-btn{
+    align-self:flex-start; background:#fff; border:1px solid var(--line); color:var(--ink-soft);
+    font-size:12.5px; font-weight:600; padding:9px 14px; border-radius:20px; cursor:pointer;
+  }
+  .link-search-btn:hover{border-color:var(--accent); color:var(--accent);}
+  .linked-chip{
+    display:flex; align-items:center; gap:8px; margin-top:8px; padding:8px 12px;
+    background:#FBFAF7; border:1px solid var(--line); border-left:3px solid var(--gold); border-radius:8px;
+    font-size:12.5px;
+  }
+  .linked-chip .lc-num{font-family:'IBM Plex Mono',monospace; font-weight:700; color:var(--ink);}
+  .linked-chip .lc-remove{margin-left:auto; background:none; border:none; cursor:pointer; color:var(--ink-soft); font-size:15px;}
+
+  #incidentSearchModal .modal-body{padding-top:16px;}
+  .search-input-wrap input{
+    width:100%; padding:10px 14px; border:1px solid var(--line); border-radius:20px; font-size:13.5px; margin-bottom:14px;
+  }
+  .search-results{display:flex; flex-direction:column; gap:8px; max-height:340px; overflow-y:auto;}
+  .search-result{
+    border:1px solid var(--line); border-radius:8px; padding:10px 14px; cursor:pointer; transition:background .12s;
+  }
+  .search-result:hover{background:#FBFAF7; border-color:var(--accent);}
+  .search-result .sr-top{display:flex; justify-content:space-between; font-size:13px; font-weight:600;}
+  .search-result .sr-num{font-family:'IBM Plex Mono',monospace; color:var(--ink-soft); font-weight:600;}
+  .search-result .sr-meta{font-size:11.5px; color:var(--ink-soft); margin-top:2px;}
+  .search-empty{font-size:13px; color:var(--ink-soft); text-align:center; padding:24px 0;}
+</style>
+</head>
+<body>
+
+<div id="authGate" style="position:fixed;inset:0;background:#2B2A2E;display:flex;align-items:center;justify-content:center;z-index:200;padding:20px;">
+  <div style="background:#fff;border-radius:14px;padding:32px;max-width:360px;width:100%;text-align:center;font-family:'Inter',sans-serif;">
+    <div style="font-family:'Source Serif 4',serif;font-weight:700;font-size:18px;margin-bottom:6px;">CS<span style="color:#019682;">2E</span> · CSSCT</div>
+    <p style="font-size:13px;color:#6B6873;margin:0 0 18px;">Connecte-toi avec ton email professionnel pour accéder aux dossiers.</p>
+    <div id="authStep1">
+      <input type="email" id="authEmail" placeholder="prenom.nom@entreprise.com" style="width:100%;padding:10px 12px;border:1px solid #E4E0D8;border-radius:8px;font-size:13.5px;margin-bottom:10px;">
+      <button id="authSendLink" style="width:100%;background:#2B2A2E;color:#fff;border:none;padding:11px;border-radius:20px;font-weight:600;font-size:13.5px;cursor:pointer;">Recevoir un lien de connexion</button>
+      <div id="authMsg" style="font-size:12px;color:#A85D45;margin-top:10px;min-height:14px;"></div>
+    </div>
+    <div id="authStep2" style="display:none;font-size:13.5px;color:#019682;">✓ Lien envoyé — ouvre ta boîte mail et clique sur le lien pour revenir ici connecté(e).</div>
+  </div>
+</div>
+
+<div class="wrap">
+  <header class="top">
+    <div class="brand">
+      <div class="brand-mark"></div>
+      <div class="brand-text">CS<span>2E</span> · CSSCT</div>
+    </div>
+    <div class="top-right">
+      <div class="eyebrow">Nouveau dossier</div>
+      <div class="dossier-no" id="dossierNo">N° À ATTRIBUER</div>
+    </div>
+  </header>
+
+  <form id="signalementForm" novalidate>
+
+    <div class="section open" data-section="nature">
+      <button type="button" class="section-head">
+        <h2><span class="idx">01</span> Nature du signalement</h2>
+        <svg class="chevron" viewBox="0 0 20 20" fill="none"><path d="M5 7l5 6 5-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <div class="section-body"><div class="section-body-inner">
+        <p class="hint">Cette sélection colore l'ensemble du dossier et détermine son classement.</p>
+        <div class="nature-grid" id="natureGrid"></div>
+        <input type="hidden" id="natureIncident" required>
+        <div class="errmsg" id="err-nature">Sélectionnez une nature d'incident.</div>
+        <div class="conditional" id="natureAutreWrap">
+          <label for="natureAutrePrecision">Précisez la nature <span class="req">*</span></label>
+          <input type="text" id="natureAutrePrecision" placeholder="Ex : nuisance sonore, conflit d'usage de salle…">
+        </div>
+      </div></div>
+    </div>
+
+    <div class="section" data-section="contexte">
+      <button type="button" class="section-head">
+        <h2><span class="idx">02</span> Contexte</h2>
+        <svg class="chevron" viewBox="0 0 20 20" fill="none"><path d="M5 7l5 6 5-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <div class="section-body"><div class="section-body-inner">
+        <div class="grid2">
+          <div class="field">
+            <label>Site <span class="req">*</span></label>
+            <select id="site" required></select>
+            <div class="errmsg">Champ requis.</div>
+          </div>
+          <div class="field">
+            <label>Date <span class="req">*</span></label>
+            <input type="date" id="date" required>
+            <div class="errmsg">Champ requis.</div>
+          </div>
+        </div>
+        <div class="field">
+          <label>Localisation précise</label>
+          <input type="text" id="lieu" placeholder="Ex : R+2, bas de l'escalier principal">
+        </div>
+        <div class="grid3">
+          <div class="field">
+            <label>Heure début</label>
+            <input type="time" id="heureDebut">
+          </div>
+          <div class="field">
+            <label>Heure fin</label>
+            <input type="time" id="heureFin">
+            <label class="inline-check"><input type="checkbox" id="heureFinLendemain"> Le lendemain</label>
+          </div>
+          <div class="field">
+            <label>Incident d'origine lié</label>
+            <button type="button" class="link-search-btn" id="openIncidentSearch">🔍 Rechercher un dossier</button>
+            <input type="hidden" id="incidentOrigineLie" value="">
+            <div id="linkedIncidentChip" class="linked-chip" style="display:none;"></div>
+          </div>
+        </div>
+        <div class="grid2">
+          <div class="field">
+            <label>Rapporteur <span class="req">*</span></label>
+            <input type="text" id="rapporteur" required placeholder="Nom Prénom">
+            <div class="errmsg">Champ requis.</div>
+          </div>
+          <div class="field">
+            <label>Témoins</label>
+            <input type="text" id="temoins" placeholder="Nom Prénom, Nom Prénom…">
+          </div>
+        </div>
+      </div></div>
+    </div>
+
+    <div class="section" data-section="salarie">
+      <button type="button" class="section-head">
+        <h2><span class="idx">03</span> Salarié concerné</h2>
+        <svg class="chevron" viewBox="0 0 20 20" fill="none"><path d="M5 7l5 6 5-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <div class="section-body"><div class="section-body-inner">
+        <p class="hint">Laisser vide si le signalement ne concerne pas un salarié identifié.</p>
+        <div class="grid3">
+          <div class="field"><label>Nom</label><input type="text" id="nom"></div>
+          <div class="field"><label>Prénom</label><input type="text" id="prenom"></div>
+          <div class="field"><label>Matricule</label><input type="text" id="matricule"></div>
+          <div class="field"><label>Service</label><input type="text" id="service"></div>
+          <div class="field">
+            <label>BU</label>
+            <select id="bu">
+              <option value="">—</option>
+              <option>Agri</option>
+              <option>Agro</option>
+              <option value="Autre">Autre</option>
+            </select>
+          </div>
+        </div>
+        <div class="conditional" id="buAutreWrap">
+          <label for="buAutre">Préciser la BU</label>
+          <input type="text" id="buAutre" placeholder="Ex : Corporate, IT…">
+        </div>
+      </div></div>
+    </div>
+
+    <div class="section" data-section="contenu">
+      <button type="button" class="section-head">
+        <h2><span class="idx">04</span> Contenu du signalement</h2>
+        <svg class="chevron" viewBox="0 0 20 20" fill="none"><path d="M5 7l5 6 5-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <div class="section-body"><div class="section-body-inner">
+        <div class="field">
+          <label>Objet <span class="req">*</span></label>
+          <input type="text" id="objet" required placeholder="Résumé en une phrase">
+          <div class="errmsg">Champ requis.</div>
+        </div>
+        <div class="field">
+          <label>Description / recueil des propos <span class="req">*</span></label>
+          <textarea id="description" required placeholder="Décrire la situation, les propos recueillis…"></textarea>
+          <div class="errmsg">Champ requis.</div>
+        </div>
+        <div class="grid2">
+          <div class="field">
+            <label>Impact corporel</label>
+            <textarea id="impactCorporel" placeholder="Néant si sans objet"></textarea>
+          </div>
+          <div class="field">
+            <label>Impact psychologique</label>
+            <textarea id="impactPsychologique" placeholder="Néant si sans objet"></textarea>
+          </div>
+        </div>
+        <div class="field">
+          <label>Risque identifié</label>
+          <textarea id="risque" placeholder="Quel risque cette situation fait-elle courir ?"></textarea>
+        </div>
+      </div></div>
+    </div>
+
+    <div class="section" data-section="traitement">
+      <button type="button" class="section-head">
+        <h2><span class="idx">05</span> Traitement initial</h2>
+        <svg class="chevron" viewBox="0 0 20 20" fill="none"><path d="M5 7l5 6 5-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <div class="section-body"><div class="section-body-inner">
+        <div class="grid2">
+          <div class="field">
+            <label>Action réalisée sur l'instant</label>
+            <textarea id="actionRealisee"></textarea>
+          </div>
+          <div class="field">
+            <label>Action(s) préconisées par le CSSCT</label>
+            <textarea id="actionEnvisagee"></textarea>
+            <button type="button" class="ai-btn" id="copyPromptBtn">✦ Copier un prompt IA anonymisé</button>
+          </div>
+        </div>
+        <div class="suivi-note">Le suivi (relances, échanges datés) s'ajoutera après création, via des entrées horodatées dédiées.</div>
+      </div></div>
+    </div>
+
+    <div class="section" data-section="pieces">
+      <button type="button" class="section-head">
+        <h2><span class="idx">06</span> Pièces jointes</h2>
+        <svg class="chevron" viewBox="0 0 20 20" fill="none"><path d="M5 7l5 6 5-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <div class="section-body"><div class="section-body-inner">
+        <div class="grid2">
+          <div class="field">
+            <label>Photo de l'incident</label>
+            <label class="filebox" for="photoIncident">📎 Cliquer pour ajouter une image<input type="file" id="photoIncident" accept="image/*"></label>
+            <div class="thumb-row" id="thumbIncident"></div>
+          </div>
+          <div class="field">
+            <label>Photo de localisation</label>
+            <label class="filebox" for="photoLocalisation">📎 Cliquer pour ajouter une image<input type="file" id="photoLocalisation" accept="image/*"></label>
+            <div class="thumb-row" id="thumbLocalisation"></div>
+          </div>
+        </div>
+      </div></div>
+    </div>
+
+    <div class="submitbar">
+      <div class="submit-note">Statut initial : <strong>1-En Cours</strong> — N° attribué à l'enregistrement.</div>
+      <button type="button" class="btn-ghost" id="previewReportBtn">Prévisualiser le rapport</button>
+      <button type="button" class="btn-ghost" id="resetBtn">Réinitialiser</button>
+      <button type="submit" class="btn-primary">Enregistrer le signalement</button>
+    </div>
+  </form>
+
+  <aside class="preview">
+    <div class="eyebrow">Aperçu du dossier</div>
+    <span class="status-chip" id="previewStatus">1-En Cours</span>
+    <dl>
+      <dt>Nature</dt><dd id="pv-nature" class="empty">Non renseignée</dd>
+      <dt>Site / Lieu</dt><dd id="pv-site" class="empty">—</dd>
+      <dt>Date</dt><dd id="pv-date" class="empty">—</dd>
+      <dt>Rapporteur</dt><dd id="pv-rapporteur" class="empty">—</dd>
+      <dt>Objet</dt><dd id="pv-objet" class="empty">—</dd>
+    </dl>
+    <hr>
+    <div class="foot">À l'enregistrement : les données sont envoyées à la base de l'application et transmises au flux Power Automate qui alimente le fichier Excel Teams. Un export Word au format CSSCT reste disponible depuis la fiche du dossier — où tu pourras aussi modifier, compléter ou supprimer le dossier.</div>
+  </aside>
+</div>
+
+<div id="toast"></div>
+
+<div id="fieldNav">
+  <button type="button" id="navPrev">‹ Précédent</button>
+  <span class="pos" id="navPos"></span>
+  <button type="button" id="navNext">Suivant ›</button>
+</div>
+
+<div class="modal-overlay" id="reportModal">
+  <div class="modal">
+    <div class="modal-head">
+      <h3>Aperçu du rapport</h3>
+      <button class="modal-close" id="closeModal">×</button>
+    </div>
+    <div class="modal-body" id="reportBody"></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="incidentSearchModal">
+  <div class="modal">
+    <div class="modal-head">
+      <h3>Lier un dossier existant</h3>
+      <button class="modal-close" id="closeIncidentSearch">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="search-input-wrap">
+        <input type="text" id="incidentSearchInput" placeholder="Nom, prénom, date (aaaa-mm-jj), mot-clé…">
+      </div>
+      <div class="search-results" id="incidentSearchResults"></div>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js";
+  import {
+    getAuth, sendSignInLinkToEmail, isSignInWithEmailLink, signInWithEmailLink, onAuthStateChanged
+  } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js";
+  import {
+    getFirestore, collection, addDoc, getDocs, query, orderBy, limit
+  } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyB6c5xe4bg5JVUCJXsHcJBj3mFniALh39E",
+    authDomain: "cssct-cs2e.firebaseapp.com",
+    projectId: "cssct-cs2e",
+    storageBucket: "cssct-cs2e.firebasestorage.app",
+    messagingSenderId: "921964040050",
+    appId: "1:921964040050:web:578fcc81ca212b741697eb"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+  const signalementsCol = collection(db, "signalements");
+
+  const actionCodeSettings = {
+    url: window.location.origin + window.location.pathname,
+    handleCodeInApp: true,
+  };
+
+  // --- Finish sign-in if we just came back from the emailed link ---
+  if (isSignInWithEmailLink(auth, window.location.href)) {
+    let email = window.prompt("Confirme ton adresse email pour terminer la connexion :");
+    signInWithEmailLink(auth, email, window.location.href)
+      .then(() => window.history.replaceState({}, document.title, window.location.pathname))
+      .catch(err => alert("Connexion impossible : " + err.message));
+  }
+
+  onAuthStateChanged(auth, (user) => {
+    document.getElementById('authGate').style.display = user ? 'none' : 'flex';
+  });
+
+  document.getElementById('authSendLink').addEventListener('click', () => {
+    const email = document.getElementById('authEmail').value.trim();
+    const msg = document.getElementById('authMsg');
+    if (!email) { msg.textContent = "Merci de saisir ton email."; return; }
+    sendSignInLinkToEmail(auth, email, actionCodeSettings)
+      .then(() => {
+        document.getElementById('authStep1').style.display = 'none';
+        document.getElementById('authStep2').style.display = 'block';
+      })
+      .catch(err => { msg.textContent = "Erreur : " + err.message; });
+  });
+
+  // --- Firestore helpers exposed to the main script below ---
+  async function getNextNumero(){
+    const q = query(signalementsCol, orderBy('numero','desc'), limit(1));
+    const snap = await getDocs(q);
+    if (snap.empty) return 1;
+    return (snap.docs[0].data().numero || 0) + 1;
+  }
+
+  window.CSSCT_FIREBASE = {
+    async createSignalement(payload){
+      payload.numero = await getNextNumero();
+      payload.createdAt = new Date().toISOString();
+      const ref = await addDoc(signalementsCol, payload);
+      return { id: ref.id, ...payload };
+    },
+    isReady(){ return !!auth.currentUser; }
+  };
+</script>
+<script>
+const SITES = ["Bezannes","Chalons-en-Champagne","Evreux","Milly-la-Forêt","Montpellier","Nancy","Paris","Poitiers","Reims","Télétravail","Wavre"].sort((a,b)=>a.localeCompare(b,'fr'));
+const siteSelect = document.getElementById('site');
+siteSelect.innerHTML = '<option value="">Choisir…</option>' + SITES.map(s=>`<option>${s}</option>`).join('');
+
+const NATURES = [
+  {v:"Situation dangereuse", c:"#A85D45"},
+  {v:"Risque Psycho sociaux", c:"#5A4570"},
+  {v:"Accident de travail", c:"#A85D45"},
+  {v:"Accident de trajet", c:"#A85D45"},
+  {v:"Prévention", c:"#C6AB76"},
+  {v:"Trouble musculo squelettique", c:"#5A4570"},
+  {v:"Intervention du CSSCT", c:"#019682"},
+  {v:"Signalement autre", c:"#6B6873"},
+];
+
+const grid = document.getElementById('natureGrid');
+NATURES.forEach(n=>{
+  const el = document.createElement('div');
+  el.className='nature-pill';
+  el.textContent=n.v;
+  el.dataset.value=n.v;
+  el.dataset.color=n.c;
+  el.addEventListener('click', ()=>selectNature(n));
+  grid.appendChild(el);
+});
+
+function selectNature(n){
+  document.getElementById('natureIncident').value = n.v;
+  document.querySelectorAll('.nature-pill').forEach(p=>{
+    const active = p.dataset.value === n.v;
+    p.classList.toggle('active', active);
+    p.style.background = active ? n.c : '#fff';
+    p.style.borderColor = active ? n.c : '';
+    p.style.color = active ? '#fff' : '';
+  });
+  document.documentElement.style.setProperty('--accent', n.c);
+  document.getElementById('dossierNo').style.color = n.c;
+  document.getElementById('previewStatus').style.background = n.c;
+  document.getElementById('natureAutreWrap').classList.toggle('show', n.v === "Signalement autre");
+  updatePreview();
+}
+
+document.getElementById('bu').addEventListener('change', e=>{
+  document.getElementById('buAutreWrap').classList.toggle('show', e.target.value === 'Autre');
+});
+
+document.getElementById('date').valueAsDate = new Date();
+
+function bindFile(inputId, thumbId){
+  document.getElementById(inputId).addEventListener('change', e=>{
+    const f = e.target.files[0];
+    const box = document.getElementById(thumbId);
+    box.innerHTML='';
+    if(f){
+      const img = document.createElement('img');
+      img.src = URL.createObjectURL(f);
+      box.appendChild(img);
+    }
+  });
+}
+bindFile('photoIncident','thumbIncident');
+bindFile('photoLocalisation','thumbLocalisation');
+
+// accordion
+document.querySelectorAll('.section-head').forEach(head=>{
+  head.addEventListener('click', ()=>{
+    const section = head.closest('.section');
+    section.classList.toggle('open');
+  });
+});
+
+// live preview
+['site','lieu','date','rapporteur','objet'].forEach(id=>{
+  document.getElementById(id).addEventListener('input', updatePreview);
+  document.getElementById(id).addEventListener('change', updatePreview);
+});
+
+function setPv(id, value){
+  const el = document.getElementById(id);
+  if(value){ el.textContent = value; el.classList.remove('empty'); }
+  else { el.textContent = '—'; el.classList.add('empty'); }
+}
+function updatePreview(){
+  setPv('pv-nature', document.getElementById('natureIncident').value);
+  const site = document.getElementById('site').value;
+  const lieu = document.getElementById('lieu').value;
+  setPv('pv-site', [site, lieu].filter(Boolean).join(' · '));
+  setPv('pv-date', document.getElementById('date').value);
+  setPv('pv-rapporteur', document.getElementById('rapporteur').value);
+  setPv('pv-objet', document.getElementById('objet').value);
+}
+updatePreview();
+
+function gatherPayload(){
+  return {
+    numero: null,
+    statut: "1-En Cours",
+    natureIncident: document.getElementById('natureIncident').value,
+    natureAutrePrecision: document.getElementById('natureAutrePrecision').value,
+    site: document.getElementById('site').value,
+    lieu: document.getElementById('lieu').value,
+    date: document.getElementById('date').value,
+    heureDebut: document.getElementById('heureDebut').value,
+    heureFin: document.getElementById('heureFin').value,
+    heureFinLendemain: document.getElementById('heureFinLendemain').checked,
+    incidentOrigineLie: document.getElementById('incidentOrigineLie').value,
+    rapporteur: document.getElementById('rapporteur').value,
+    temoins: document.getElementById('temoins').value,
+    nom: document.getElementById('nom').value,
+    prenom: document.getElementById('prenom').value,
+    matricule: document.getElementById('matricule').value,
+    service: document.getElementById('service').value,
+    bu: document.getElementById('bu').value === 'Autre' ? document.getElementById('buAutre').value : document.getElementById('bu').value,
+    objet: document.getElementById('objet').value,
+    description: document.getElementById('description').value,
+    impactCorporel: document.getElementById('impactCorporel').value,
+    impactPsychologique: document.getElementById('impactPsychologique').value,
+    risque: document.getElementById('risque').value,
+    actionRealisee: document.getElementById('actionRealisee').value,
+    actionEnvisagee: document.getElementById('actionEnvisagee').value,
+    infoCloture: "",
+    dateCloture: "",
+    suivi: ""
+  };
+}
+
+// validation + submit
+const form = document.getElementById('signalementForm');
+const requiredFields = ['site','date','rapporteur','objet','description'];
+
+form.addEventListener('submit', e=>{
+  e.preventDefault();
+  let valid = true;
+
+  if(!document.getElementById('natureIncident').value){
+    document.getElementById('err-nature').style.display='block';
+    valid = false;
+  } else {
+    document.getElementById('err-nature').style.display='none';
+  }
+
+  if(document.getElementById('natureIncident').value === "Signalement autre" && !document.getElementById('natureAutrePrecision').value.trim()){
+    valid = false;
+  }
+
+  requiredFields.forEach(id=>{
+    const el = document.getElementById(id);
+    const wrap = el.closest('.field');
+    if(!el.value.trim()){
+      valid = false;
+      if(wrap) wrap.classList.add('error');
+      const sec = el.closest('.section'); if(sec) sec.classList.add('open');
+    } else if(wrap){
+      wrap.classList.remove('error');
+    }
+  });
+
+  if(!valid){
+    showToast('Merci de compléter les champs obligatoires (marqués *).');
+    return;
+  }
+
+  const payload = gatherPayload();
+
+  if(!window.CSSCT_FIREBASE || !window.CSSCT_FIREBASE.isReady()){
+    showToast('Connecte-toi (voir la fenêtre de connexion) avant d\'enregistrer.');
+    return;
+  }
+
+  window.CSSCT_FIREBASE.createSignalement(payload).then(saved=>{
+    document.getElementById('dossierNo').textContent = 'N° ' + saved.numero;
+    showToast('Signalement N°' + saved.numero + ' enregistré dans Firestore ✓ (le webhook Power Automate sera branché à l\'étape suivante)', payload);
+  }).catch(err=>{
+    showToast('Erreur d\'enregistrement : ' + err.message);
+  });
+});
+
+document.getElementById('resetBtn').addEventListener('click', ()=>{
+  form.reset();
+  document.getElementById('date').valueAsDate = new Date();
+  document.querySelectorAll('.nature-pill').forEach(p=>{p.classList.remove('active'); p.style.background='#fff'; p.style.color=''; p.style.borderColor='';});
+  document.getElementById('natureIncident').value='';
+  document.getElementById('natureAutreWrap').classList.remove('show');
+  document.getElementById('buAutreWrap').classList.remove('show');
+  document.getElementById('linkedIncidentChip').style.display = 'none';
+  document.getElementById('incidentOrigineLie').value = '';
+  document.querySelectorAll('.thumb-row').forEach(b=>b.innerHTML='');
+  document.querySelectorAll('.field.error').forEach(f=>f.classList.remove('error'));
+  document.querySelectorAll('.section').forEach((s,i)=>s.classList.toggle('open', i===0));
+  updatePreview();
+});
+
+let toastTimer;
+function showToast(msg, obj){
+  const t = document.getElementById('toast');
+  t.innerHTML = msg + (obj ? '<pre>'+JSON.stringify(obj,null,2)+'</pre>' : '');
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=>t.classList.remove('show'), obj ? 9000 : 3500);
+}
+
+// ---- Anonymized AI prompt ----
+document.getElementById('copyPromptBtn').addEventListener('click', async ()=>{
+  const nom = document.getElementById('nom').value.trim();
+  const prenom = document.getElementById('prenom').value.trim();
+  const temoinsRaw = document.getElementById('temoins').value.trim();
+  const rapporteur = document.getElementById('rapporteur').value.trim();
+
+  let text = [
+    document.getElementById('objet').value,
+    document.getElementById('description').value,
+    document.getElementById('impactCorporel').value,
+    document.getElementById('impactPsychologique').value,
+    document.getElementById('risque').value
+  ].filter(Boolean).join('\n\n');
+
+  const namesToMask = [];
+  if(nom) namesToMask.push(nom);
+  if(prenom) namesToMask.push(prenom);
+  if(rapporteur) rapporteur.split(/\s+/).forEach(w=>{ if(w.length>2) namesToMask.push(w); });
+  temoinsRaw.split(',').map(s=>s.trim()).filter(Boolean).forEach(t=>{
+    t.split(/\s+/).forEach(w=>{ if(w.length>2) namesToMask.push(w); });
+  });
+
+  let counter = 1;
+  const seen = {};
+  namesToMask
+    .filter((v,i,arr)=>v && arr.indexOf(v)===i)
+    .sort((a,b)=>b.length-a.length)
+    .forEach(name=>{
+      const key = name.toLowerCase();
+      if(!(key in seen)) { seen[key] = `[Personne ${counter}]`; counter++; }
+      const re = new RegExp('\\b'+name.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'\\b','gi');
+      text = text.replace(re, seen[key]);
+    });
+
+  const nature = document.getElementById('natureIncident').value || "non précisée";
+
+  const prompt = `Tu es membre d'une commission santé, sécurité et conditions de travail (CSSCT). Voici un signalement anonymisé (les noms de personnes ont été remplacés par des repères génériques du type [Personne 1]).
+
+Nature du signalement : ${nature}
+
+Éléments du dossier :
+${text}
+
+Propose 3 à 5 actions correctives ou préventives concrètes, réalistes et priorisées que le CSSCT pourrait préconiser à la direction pour traiter cette situation et éviter qu'elle ne se reproduise. Distingue les actions à court terme des actions de fond.`;
+
+  try{
+    await navigator.clipboard.writeText(prompt);
+    showToast('Prompt anonymisé copié dans le presse-papiers ✓ Colle-le dans ton IA préférée.');
+  }catch(err){
+    showToast('Impossible de copier automatiquement — voici le texte à copier manuellement :', {prompt});
+  }
+});
+
+// ---- Recherche d'un dossier d'origine à lier ----
+// Jeu de données de démonstration (à remplacer par une requête Firebase réelle)
+const EXISTING_DOSSIERS = [
+  {numero:24, objet:"Porte-fenêtre qui ne se verrouille plus", date:"2026-02-20", rapporteur:"Charles-Henri HOUDAYER", nom:"", prenom:"", natureIncident:"Prévention", description:"La porte-fenêtre de la cafétéria ne ferme plus."},
+  {numero:23, objet:"Problèmes d'ascenseur", date:"2025-12-04", rapporteur:"Caroline DIZIEN", nom:"", prenom:"", natureIncident:"Situation dangereuse", description:"Bruit anormal entre le 3e et le 4e étage."},
+  {numero:27, objet:"Charge de travail ressentie comme excessive", date:"2026-06-02", rapporteur:"Vincent PITHON", nom:"[Personne 1]", prenom:"", natureIncident:"Risque Psycho sociaux", description:"Accumulation de dossiers en cours difficile à absorber."}
+];
+
+function renderIncidentSearchResults(query){
+  const q = (query||'').toLowerCase().trim();
+  const results = EXISTING_DOSSIERS.filter(d=>{
+    if(!q) return true;
+    const hay = [d.numero, d.objet, d.date, d.rapporteur, d.nom, d.prenom, d.natureIncident, d.description].join(' ').toLowerCase();
+    return hay.includes(q);
+  });
+  const box = document.getElementById('incidentSearchResults');
+  if(!results.length){
+    box.innerHTML = '<div class="search-empty">Aucun dossier ne correspond à cette recherche.</div>';
+    return;
+  }
+  box.innerHTML = results.map(d=>`
+    <div class="search-result" data-numero="${d.numero}">
+      <div class="sr-top"><span>${d.objet}</span><span class="sr-num">N°${d.numero}</span></div>
+      <div class="sr-meta">${d.date} · ${d.natureIncident} · ${d.rapporteur}</div>
+    </div>
+  `).join('');
+  box.querySelectorAll('.search-result').forEach(el=>{
+    el.addEventListener('click', ()=>selectLinkedIncident(parseInt(el.dataset.numero,10)));
+  });
+}
+
+function selectLinkedIncident(numero){
+  const d = EXISTING_DOSSIERS.find(x=>x.numero===numero);
+  if(!d) return;
+  document.getElementById('incidentOrigineLie').value = numero;
+  const chip = document.getElementById('linkedIncidentChip');
+  chip.style.display = 'flex';
+  chip.innerHTML = `<span class="lc-num">N°${d.numero}</span><span>${d.objet}</span><button type="button" class="lc-remove" id="removeLinkedIncident">✕</button>`;
+  document.getElementById('removeLinkedIncident').addEventListener('click', e=>{
+    e.stopPropagation();
+    document.getElementById('incidentOrigineLie').value = '';
+    chip.style.display = 'none';
+  });
+  document.getElementById('incidentSearchModal').classList.remove('show');
+}
+
+document.getElementById('openIncidentSearch').addEventListener('click', ()=>{
+  document.getElementById('incidentSearchInput').value = '';
+  renderIncidentSearchResults('');
+  document.getElementById('incidentSearchModal').classList.add('show');
+  setTimeout(()=>document.getElementById('incidentSearchInput').focus(), 50);
+});
+document.getElementById('incidentSearchInput').addEventListener('input', e=>renderIncidentSearchResults(e.target.value));
+document.getElementById('closeIncidentSearch').addEventListener('click', ()=>document.getElementById('incidentSearchModal').classList.remove('show'));
+document.getElementById('incidentSearchModal').addEventListener('click', e=>{
+  if(e.target.id === 'incidentSearchModal') e.currentTarget.classList.remove('show');
+});
+
+// ---- Report preview modal ----
+function esc(s){ return (s||'').toString(); }
+document.getElementById('previewReportBtn').addEventListener('click', ()=>{
+  const p = gatherPayload();
+  const nature = p.natureIncident === "Signalement autre" && p.natureAutrePrecision
+    ? `${p.natureIncident} — ${p.natureAutrePrecision}` : (p.natureIncident || '—');
+  const heureFin = p.heureFin ? (p.heureFin + (p.heureFinLendemain ? ' (J+1)' : '')) : '';
+
+  const rows = [
+    ['Statut', p.statut], ['Nature', nature], ['Site', p.site], ['Localisation', p.lieu],
+    ['Date', p.date], ['Heure', [p.heureDebut, heureFin].filter(Boolean).join(' → ')],
+    ['Rapporteur', p.rapporteur], ['Témoins', p.temoins],
+    ['Salarié', [p.prenom, p.nom].filter(Boolean).join(' ')], ['Matricule', p.matricule],
+    ['Service / BU', [p.service, p.bu].filter(Boolean).join(' · ')]
+  ].filter(r=>r[1]);
+
+  let html = `<div class="report-meta">${rows.map(r=>`<div><strong>${esc(r[0])} :</strong> ${esc(r[1])}</div>`).join('')}</div>`;
+
+  const blocks = [
+    ['Objet', p.objet],
+    ['Description / recueil des propos', p.description],
+    ['Impact corporel', p.impactCorporel],
+    ['Impact psychologique', p.impactPsychologique],
+    ['Risque identifié', p.risque],
+    ["Action réalisée sur l'instant", p.actionRealisee],
+    ['Actions préconisées par le CSSCT', p.actionEnvisagee],
+  ];
+  blocks.forEach(([title, val])=>{
+    if(val){
+      html += `<div class="report-h">${esc(title)}</div><p class="report-v">${esc(val)}</p>`;
+    }
+  });
+
+  document.getElementById('reportBody').innerHTML = html || "<p>Complète le formulaire pour voir l'aperçu.</p>";
+  document.getElementById('reportModal').classList.add('show');
+});
+document.getElementById('closeModal').addEventListener('click', ()=>document.getElementById('reportModal').classList.remove('show'));
+document.getElementById('reportModal').addEventListener('click', e=>{
+  if(e.target.id === 'reportModal') e.currentTarget.classList.remove('show');
+});
+
+// ---- Mobile field-to-field navigation bar ----
+const fieldNav = document.getElementById('fieldNav');
+const navPrev = document.getElementById('navPrev');
+const navNext = document.getElementById('navNext');
+const navPos = document.getElementById('navPos');
+
+function isNavField(el){
+  return el && ['INPUT','SELECT','TEXTAREA'].includes(el.tagName) && el.type !== 'hidden' && el.type !== 'checkbox' && el.type !== 'file' && el.offsetParent !== null;
+}
+function getVisibleFields(){
+  return Array.from(form.querySelectorAll('input,select,textarea')).filter(isNavField);
+}
+function updateNavPos(current){
+  const fields = getVisibleFields();
+  const idx = fields.indexOf(current);
+  navPrev.disabled = idx <= 0;
+  navNext.disabled = idx === -1 || idx >= fields.length-1;
+  navPos.textContent = idx>=0 ? (idx+1)+' / '+fields.length : '';
+}
+[navPrev,navNext].forEach(b=>b.addEventListener('mousedown', e=>e.preventDefault()));
+navPrev.addEventListener('click', ()=>{
+  const fields = getVisibleFields();
+  const idx = fields.indexOf(document.activeElement);
+  if(idx > 0){ const t=fields[idx-1]; openParentSection(t); t.focus(); }
+});
+navNext.addEventListener('click', ()=>{
+  const fields = getVisibleFields();
+  const idx = fields.indexOf(document.activeElement);
+  if(idx > -1 && idx < fields.length-1){ const t=fields[idx+1]; openParentSection(t); t.focus(); }
+});
+function openParentSection(el){
+  const sec = el.closest('.section');
+  if(sec && !sec.classList.contains('open')) sec.classList.add('open');
+}
+document.addEventListener('focusin', e=>{
+  if(isNavField(e.target)){
+    fieldNav.classList.add('show');
+    updateNavPos(e.target);
+  }
+});
+document.addEventListener('focusout', e=>{
+  setTimeout(()=>{
+    if(!isNavField(document.activeElement)) fieldNav.classList.remove('show');
+  }, 120);
+});
+</script>
+</body>
+</html>

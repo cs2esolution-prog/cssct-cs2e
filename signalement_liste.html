@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dossiers de signalement · CSSCT</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,500;8..60,600;8..60,700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --teal:#019682; --teal-dark:#017162; --purple:#5A4570; --gold:#C6AB76;
+    --paper:#F7F5F1; --paper-raised:#FFFFFF; --ink:#2B2A2E; --ink-soft:#6B6873;
+    --line:#E4E0D8; --danger:#A85D45; --radius:10px;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0; background:var(--paper); color:var(--ink); font-family:'Inter',system-ui,sans-serif; line-height:1.5;}
+  .wrap{max-width:1180px; margin:0 auto; padding:32px 24px 80px;}
+  header.top{
+    display:flex; align-items:center; justify-content:space-between;
+    padding-bottom:20px; border-bottom:2px solid var(--ink); margin-bottom:20px;
+  }
+  .brand{display:flex; align-items:center; gap:12px;}
+  .brand-mark{width:38px; height:38px; border-radius:50%;
+    background:conic-gradient(var(--teal) 0deg 120deg, var(--gold) 120deg 240deg, var(--purple) 240deg 360deg); flex:none;}
+  .brand-text{font-family:'Source Serif 4', serif; font-weight:700; font-size:19px;}
+  .brand-text span{color:var(--teal);}
+  .new-btn{background:var(--ink); color:#fff; border:none; padding:11px 20px; border-radius:24px; font-weight:600; font-size:13.5px; cursor:pointer;}
+  .new-btn:hover{background:#000;}
+
+  .toolbar{display:flex; flex-wrap:wrap; gap:10px; margin-bottom:18px; align-items:center;}
+  .search{
+    flex:1; min-width:200px; padding:10px 14px; border:1px solid var(--line); border-radius:20px;
+    font-size:13.5px; background:#fff;
+  }
+  select.filter{
+    padding:9px 12px; border:1px solid var(--line); border-radius:20px; background:#fff; font-size:13px; color:var(--ink-soft);
+  }
+  .count-tag{font-size:12px; color:var(--ink-soft); margin-left:auto; font-family:'IBM Plex Mono',monospace;}
+
+  .list{display:flex; flex-direction:column; gap:8px;}
+  .row{
+    display:grid; grid-template-columns: 54px 1fr 140px 120px 110px;
+    align-items:center; gap:14px;
+    background:#fff; border:1px solid var(--line); border-left:4px solid var(--nature-color, var(--teal));
+    border-radius:var(--radius); padding:13px 16px; cursor:pointer; transition:box-shadow .15s, transform .1s;
+  }
+  .row:hover{box-shadow:0 4px 14px rgba(0,0,0,.06); transform:translateY(-1px);}
+  @media (max-width:760px){
+    .row{grid-template-columns:1fr; gap:6px;}
+    .row .col-num{font-size:11px; color:var(--ink-soft);}
+  }
+  .col-num{font-family:'IBM Plex Mono',monospace; font-weight:600; color:var(--ink-soft); font-size:13px;}
+  .col-main .objet{font-weight:600; font-size:14px;}
+  .col-main .meta{font-size:12px; color:var(--ink-soft); margin-top:2px;}
+  .col-nature{font-size:11.5px; font-weight:600;}
+  .col-site{font-size:12.5px; color:var(--ink-soft);}
+  .status-chip{
+    display:inline-block; font-size:11px; font-weight:600; padding:4px 10px; border-radius:20px; color:#fff; text-align:center;
+  }
+  .status-1{background:#3E7CB1;}
+  .status-2{background:#C6AB76; color:#3a2f10;}
+  .status-3{background:#8C8A86;}
+
+  .empty-state{
+    text-align:center; padding:60px 20px; color:var(--ink-soft); font-size:14px;
+    border:1.5px dashed var(--line); border-radius:var(--radius);
+  }
+
+  .drawer-overlay{
+    position:fixed; inset:0; background:rgba(30,28,32,.5); display:none; z-index:80;
+    justify-content:flex-end;
+  }
+  .drawer-overlay.show{display:flex;}
+  .drawer{
+    width:min(620px,100%); height:100%; background:var(--paper); overflow-y:auto;
+    box-shadow:-16px 0 40px rgba(0,0,0,.25);
+  }
+  .drawer-head{
+    position:sticky; top:0; background:#fff; z-index:2; border-bottom:1px solid var(--line);
+    padding:18px 24px; display:flex; align-items:center; justify-content:space-between;
+  }
+  .drawer-head .dh-left{display:flex; align-items:center; gap:12px;}
+  .drawer-head .dh-num{font-family:'IBM Plex Mono',monospace; font-weight:700; font-size:18px;}
+  .drawer-close{background:none; border:none; font-size:22px; cursor:pointer; color:var(--ink-soft);}
+  .drawer-body{padding:20px 24px 100px;}
+
+  .dsection{
+    background:#fff; border:1px solid var(--line); border-radius:var(--radius); padding:18px 20px; margin-bottom:14px;
+  }
+  .dsection h3{
+    font-family:'Source Serif 4',serif; font-size:14.5px; margin:0 0 10px; display:flex; align-items:center; justify-content:space-between;
+  }
+  .edit-link{font-family:'Inter',sans-serif; font-size:11.5px; font-weight:600; color:var(--teal-dark); cursor:pointer; background:none; border:none; padding:2px 0;}
+  .dfield{margin-bottom:10px;}
+  .dfield .dlabel{font-size:10.5px; text-transform:uppercase; letter-spacing:.06em; color:var(--ink-soft); margin-bottom:2px;}
+  .dfield .dval{font-size:13.5px; white-space:pre-wrap;}
+  .dfield .dval.empty{color:#B8B4AC; font-style:italic;}
+  .dfield input, .dfield textarea, .dfield select{
+    width:100%; font-family:'Inter',sans-serif; font-size:13.5px; padding:8px 10px; border:1px solid var(--line); border-radius:7px;
+  }
+  .dfield textarea{min-height:60px;}
+  .edit-actions{display:flex; gap:8px; margin-top:8px;}
+  .edit-actions button{padding:6px 14px; border-radius:16px; font-size:12px; font-weight:600; border:none; cursor:pointer;}
+  .save-btn{background:var(--ink); color:#fff;}
+  .cancel-btn{background:transparent; border:1px solid var(--line) !important; color:var(--ink-soft);}
+
+  .suivi-entry{border-left:3px solid var(--gold); padding:8px 12px; margin-bottom:8px; background:#FBFAF7; border-radius:6px;}
+  .suivi-entry .sdate{font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--ink-soft); margin-bottom:3px;}
+  .suivi-entry .stext{font-size:13px; white-space:pre-wrap;}
+  .add-suivi{display:flex; flex-direction:column; gap:8px; margin-top:10px;}
+  .add-suivi input, .add-suivi textarea{width:100%; padding:8px 10px; border:1px solid var(--line); border-radius:7px; font-family:'Inter',sans-serif; font-size:13px;}
+  .add-suivi button{align-self:flex-end; background:var(--teal); color:#fff; border:none; padding:8px 16px; border-radius:16px; font-size:12.5px; font-weight:600; cursor:pointer;}
+
+  .danger-zone{border:1px solid #E7D3CB; background:#FBF3F0;}
+  .danger-zone h3{color:var(--danger);}
+  .action-row{display:flex; gap:10px; flex-wrap:wrap;}
+  .btn{padding:9px 16px; border-radius:20px; font-size:12.5px; font-weight:600; cursor:pointer; border:1px solid var(--line); background:#fff;}
+  .btn-danger{color:var(--danger); border-color:#E7D3CB;}
+  .btn-close-dossier{color:var(--teal-dark); border-color:#BFE3DC;}
+  .btn-export{color:var(--ink); border-color:var(--line);}
+
+  #toast{
+    position:fixed; left:50%; bottom:24px; transform:translate(-50%,120%);
+    background:var(--ink); color:#fff; padding:12px 20px; border-radius:12px; font-size:13.5px;
+    transition:transform .3s ease; z-index:95;
+  }
+  #toast.show{transform:translate(-50%,0);}
+
+  .confirm-overlay{position:fixed; inset:0; background:rgba(30,28,32,.55); display:none; align-items:center; justify-content:center; z-index:99;}
+  .confirm-overlay.show{display:flex;}
+  .confirm-box{background:#fff; border-radius:var(--radius); padding:22px 24px; max-width:360px; width:90%; text-align:center;}
+  .confirm-box p{font-size:13.5px; margin:0 0 16px;}
+  .confirm-actions{display:flex; gap:10px; justify-content:center;}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header class="top">
+    <div class="brand">
+      <div class="brand-mark"></div>
+      <div class="brand-text">CS<span>2E</span> · CSSCT</div>
+    </div>
+    <button class="new-btn">+ Nouveau signalement</button>
+  </header>
+
+  <div class="toolbar">
+    <input type="text" class="search" id="searchInput" placeholder="Rechercher un objet, un site, un rapporteur…">
+    <select class="filter" id="filterStatut">
+      <option value="">Tous les statuts</option>
+      <option value="1-En Cours">1-En Cours</option>
+      <option value="2-A suivre">2-À suivre</option>
+      <option value="3-Clos">3-Clos</option>
+    </select>
+    <select class="filter" id="filterNature"><option value="">Toutes natures</option></select>
+    <select class="filter" id="filterSite"><option value="">Tous les sites</option></select>
+    <span class="count-tag" id="countTag"></span>
+  </div>
+
+  <div class="list" id="list"></div>
+  <div class="empty-state" id="emptyState" style="display:none;">Aucun dossier ne correspond a ta recherche.</div>
+</div>
+
+<div class="drawer-overlay" id="drawerOverlay">
+  <div class="drawer" id="drawer"></div>
+</div>
+
+<div class="confirm-overlay" id="confirmOverlay">
+  <div class="confirm-box">
+    <p id="confirmText"></p>
+    <div class="confirm-actions">
+      <button class="btn cancel-btn" id="confirmCancel">Annuler</button>
+      <button class="btn btn-danger" id="confirmOk">Confirmer</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+const NATURE_COLORS = {
+  "Situation dangereuse": "#A85D45",
+  "Risque Psycho sociaux": "#5A4570",
+  "Accident de travail": "#A85D45",
+  "Accident de trajet": "#A85D45",
+  "Prevention": "#C6AB76",
+  "Trouble musculo squelettique": "#5A4570",
+  "Intervention du CSSCT": "#019682",
+  "Signalement autre": "#6B6873",
+};
+
+let dossiers = [
+  {
+    numero: 24, statut: "1-En Cours", natureIncident: "Prevention", site: "Montpellier", lieu: "Cafeteria, 3e etage",
+    date: "2026-02-20", heureDebut: "", heureFin: "", rapporteur: "Charles-Henri HOUDAYER", temoins: "",
+    nom:"", prenom:"", matricule:"", service:"", bu:"",
+    objet: "Porte-fenetre qui ne se verrouille plus",
+    description: "La porte-fenetre de la cafeteria, cote babyfoot, ne ferme plus ni d'un cote ni de l'autre.",
+    impactCorporel:"", impactPsychologique:"",
+    risque: "Mauvaise isolation avec l'exterieur, entree de froid/chaud en concurrence de la regulation thermique interieure.",
+    actionRealisee: "Tire au maximum mais sans pouvoir verrouiller.",
+    actionEnvisagee: "Reparation des verrous.",
+    infoCloture:"", dateCloture:"",
+    suivi: [
+      {date:"2026-03-18", text:"Le gerant est prevenu, c'est un probleme recurrent et la fenetre n'a jamais tres bien ferme. Reparation a venir."},
+      {date:"2026-07-15", text:"Le gerant de l'immeuble a ete prevenu mais n'a pas encore donne de retour, malgre les relances."},
+      {date:"2026-07-20", text:"Les reparations ne seront pas faites avant le mois de septembre (pas de creneaux disponibles du reparateur)."}
+    ]
+  },
+  {
+    numero: 23, statut: "3-Clos", natureIncident: "Situation dangereuse", site: "Reims", lieu: "",
+    date: "2025-12-04", heureDebut: "", heureFin: "", rapporteur: "Caroline DIZIEN", temoins: "Severine V., Tiphaine V.",
+    nom:"", prenom:"", matricule:"", service:"", bu:"",
+    objet: "Problemes d'ascenseur",
+    description: "L'ascenseur du site a regulierement des soucis, avec de frequentes interventions techniciens. Bruit anormal entre le 3e et le 4e etage pendant 2 jours.",
+    impactCorporel:"", impactPsychologique:"",
+    risque: "Angoisse pour les salaries qui prennent l'ascenseur.",
+    actionRealisee: "Information de l'accueil du site et reparation.",
+    actionEnvisagee: "Vigilance sur un possible probleme de conception.",
+    infoCloture:"Il n'y a pas eu de soucis recemment, on cloture ce dossier en restant en vigilance avec option de reouverture.", dateCloture:"2026-07-15",
+    suivi: [
+      {date:"2026-02-24", text:"Bruit suspect signale a l'accueil, technicien prevenu."},
+      {date:"2026-03-18", text:"Le gerant est prevenu, des interventions et maintenances sont realisees regulierement."}
+    ]
+  },
+  {
+    numero: 27, statut: "2-A suivre", natureIncident: "Risque Psycho sociaux", site: "Chalons-en-Champagne", lieu: "Open space",
+    date: "2026-06-02", heureDebut: "", heureFin: "", rapporteur: "Vincent PITHON", temoins: "",
+    nom:"[Personne 1]", prenom:"", matricule:"", service:"Support", bu:"Agri",
+    objet: "Charge de travail ressentie comme excessive",
+    description: "Un collaborateur remonte une accumulation de dossiers en cours difficile a absorber, avec un sentiment de ne plus arriver a faire un travail de qualite.",
+    impactCorporel:"Neant", impactPsychologique:"Fatigue, troubles du sommeil signales par l'interesse.",
+    risque: "Epuisement professionnel si la situation perdure.",
+    actionRealisee: "Echange avec le manager pour redefinir les priorites.",
+    actionEnvisagee: "Point de suivi mensuel avec le CSSCT et la RH.",
+    infoCloture:"", dateCloture:"",
+    suivi: []
+  }
+];
+
+function uniqueSorted(arr){ return [...new Set(arr)].filter(Boolean).sort((a,b)=>a.localeCompare(b,'fr')); }
+
+function populateFilters(){
+  const natureSel = document.getElementById('filterNature');
+  uniqueSorted(dossiers.map(d=>d.natureIncident)).forEach(n=>{
+    const o=document.createElement('option'); o.value=n; o.textContent=n; natureSel.appendChild(o);
+  });
+  const siteSel = document.getElementById('filterSite');
+  uniqueSorted(dossiers.map(d=>d.site)).forEach(s=>{
+    const o=document.createElement('option'); o.value=s; o.textContent=s; siteSel.appendChild(o);
+  });
+}
+populateFilters();
+
+function statusClass(s){
+  if(s.indexOf('1')===0) return 'status-1';
+  if(s.indexOf('2')===0) return 'status-2';
+  return 'status-3';
+}
+
+function render(){
+  const q = document.getElementById('searchInput').value.toLowerCase();
+  const fStatut = document.getElementById('filterStatut').value;
+  const fNature = document.getElementById('filterNature').value;
+  const fSite = document.getElementById('filterSite').value;
+
+  const filtered = dossiers.filter(function(d){
+    if(fStatut && d.statut !== fStatut) return false;
+    if(fNature && d.natureIncident !== fNature) return false;
+    if(fSite && d.site !== fSite) return false;
+    if(q){
+      const hay = [d.objet,d.description,d.site,d.rapporteur,String(d.numero)].join(' ').toLowerCase();
+      if(hay.indexOf(q) === -1) return false;
+    }
+    return true;
+  }).sort(function(a,b){ return b.numero-a.numero; });
+
+  const list = document.getElementById('list');
+  list.innerHTML='';
+  document.getElementById('emptyState').style.display = filtered.length ? 'none' : 'block';
+  document.getElementById('countTag').textContent = filtered.length + ' dossier' + (filtered.length>1?'s':'');
+
+  filtered.forEach(function(d){
+    const row = document.createElement('div');
+    row.className='row';
+    row.style.setProperty('--nature-color', NATURE_COLORS[d.natureIncident] || '#019682');
+    row.innerHTML =
+      '<div class="col-num">N' + String.fromCharCode(176) + d.numero + '</div>' +
+      '<div class="col-main"><div class="objet">' + d.objet + '</div><div class="meta">' + (d.rapporteur || '-') + '</div></div>' +
+      '<div class="col-nature" style="color:' + (NATURE_COLORS[d.natureIncident]||'#019682') + '">' + d.natureIncident + '</div>' +
+      '<div class="col-site">' + d.site + (d.lieu ? ' - '+d.lieu : '') + '<br><span style="font-size:11px;">' + d.date + '</span></div>' +
+      '<div><span class="status-chip ' + statusClass(d.statut) + '">' + d.statut + '</span></div>';
+    row.addEventListener('click', function(){ openDrawer(d.numero); });
+    list.appendChild(row);
+  });
+}
+['searchInput','filterStatut','filterNature','filterSite'].forEach(function(id){
+  document.getElementById(id).addEventListener('input', render);
+  document.getElementById(id).addEventListener('change', render);
+});
+render();
+
+const overlay = document.getElementById('drawerOverlay');
+const drawerEl = document.getElementById('drawer');
+
+function findDossier(numero){ return dossiers.find(function(d){ return d.numero===numero; }); }
+
+function fieldBlock(id, label, value){
+  return '<div class="dfield" data-field="' + id + '"><div class="dlabel">' + label + '</div><div class="dval ' + (value?'':'empty') + '">' + (value || 'Non renseigne') + '</div></div>';
+}
+
+function sectionCard(title, num, dossierNum, fields){
+  const rows = fields.map(function(f){ return fieldBlock(f.id,f.label,f.value); }).join('');
+  return '<div class="dsection" data-section="' + num + '"><h3>' + title + ' <button class="edit-link" onclick="toggleEdit(' + dossierNum + ', ' + num + ')">Modifier</button></h3><div class="section-view">' + rows + '</div></div>';
+}
+
+function openDrawer(numero){
+  const d = findDossier(numero);
+  if(!d) return;
+  const color = NATURE_COLORS[d.natureIncident] || '#019682';
+
+  let suiviHtml;
+  if(d.suivi.length){
+    suiviHtml = d.suivi.map(function(s){
+      return '<div class="suivi-entry"><div class="sdate">' + s.date + '</div><div class="stext">' + s.text + '</div></div>';
+    }).join('');
+  } else {
+    suiviHtml = '<div class="dval empty">Aucune entree de suivi pour le moment.</div>';
+  }
+
+  drawerEl.innerHTML =
+    '<div class="drawer-head" style="border-left:6px solid ' + color + '">' +
+      '<div class="dh-left"><div class="dh-num" style="color:' + color + '">N ' + d.numero + '</div>' +
+      '<span class="status-chip ' + statusClass(d.statut) + '">' + d.statut + '</span></div>' +
+      '<button class="drawer-close" onclick="closeDrawer()">' + String.fromCharCode(215) + '</button>' +
+    '</div>' +
+    '<div class="drawer-body">' +
+      sectionCard('Contexte', 1, d.numero, [
+        {id:'natureIncident', label:'Nature', value:d.natureIncident},
+        {id:'site', label:'Site', value:d.site},
+        {id:'lieu', label:'Localisation', value:d.lieu},
+        {id:'date', label:'Date', value:d.date},
+        {id:'rapporteur', label:'Rapporteur', value:d.rapporteur},
+        {id:'temoins', label:'Temoins', value:d.temoins}
+      ]) +
+      sectionCard('Salarie concerne', 2, d.numero, [
+        {id:'nom', label:'Nom', value:d.nom},
+        {id:'prenom', label:'Prenom', value:d.prenom},
+        {id:'matricule', label:'Matricule', value:d.matricule},
+        {id:'service', label:'Service', value:d.service},
+        {id:'bu', label:'BU', value:d.bu}
+      ]) +
+      sectionCard('Contenu', 3, d.numero, [
+        {id:'objet', label:'Objet', value:d.objet},
+        {id:'description', label:'Description', value:d.description},
+        {id:'impactCorporel', label:'Impact corporel', value:d.impactCorporel},
+        {id:'impactPsychologique', label:'Impact psychologique', value:d.impactPsychologique},
+        {id:'risque', label:'Risque identifie', value:d.risque}
+      ]) +
+      sectionCard('Traitement', 4, d.numero, [
+        {id:'actionRealisee', label:"Action realisee sur l'instant", value:d.actionRealisee},
+        {id:'actionEnvisagee', label:'Actions preconisees par le CSSCT', value:d.actionEnvisagee}
+      ]) +
+      '<div class="dsection"><h3>Suivi</h3><div id="suiviList">' + suiviHtml + '</div>' +
+      '<div class="add-suivi"><input type="date" id="newSuiviDate">' +
+      '<textarea id="newSuiviText" placeholder="Decrire la relance, l\'echange, l\'avancee..."></textarea>' +
+      '<button onclick="addSuivi(' + d.numero + ')">Ajouter au suivi</button></div></div>' +
+      '<div class="dsection danger-zone"><h3>Actions sur le dossier</h3><div class="action-row">' +
+      '<button class="btn btn-export" onclick="exportWord(' + d.numero + ')">Exporter en Word</button>' +
+      '<button class="btn btn-close-dossier" onclick="closeDossier(' + d.numero + ')" ' + (d.statut==='3-Clos'?'disabled':'') + '>Cloturer le dossier</button>' +
+      '<button class="btn btn-danger" onclick="deleteDossier(' + d.numero + ')">Supprimer le dossier</button>' +
+      '</div></div>' +
+    '</div>';
+
+  document.getElementById('newSuiviDate').valueAsDate = new Date();
+  overlay.classList.add('show');
+}
+function closeDrawer(){ overlay.classList.remove('show'); }
+overlay.addEventListener('click', function(e){ if(e.target===overlay) closeDrawer(); });
+
+function toggleEdit(dossierNum, sectionNum){
+  const d = findDossier(dossierNum);
+  const sec = document.querySelector('.dsection[data-section="' + sectionNum + '"]');
+  const view = sec.querySelector('.section-view');
+  const isEditing = sec.classList.contains('editing');
+
+  if(!isEditing){
+    const fieldsEls = view.querySelectorAll('.dfield');
+    const longFields = ['description','impactCorporel','impactPsychologique','risque','actionRealisee','actionEnvisagee'];
+    fieldsEls.forEach(function(f){
+      const id = f.dataset.field;
+      const val = d[id] || '';
+      const long = longFields.indexOf(id) !== -1;
+      const label = f.querySelector('.dlabel').textContent;
+      if(long){
+        f.innerHTML = '<div class="dlabel">' + label + '</div><textarea data-edit="' + id + '">' + val + '</textarea>';
+      } else {
+        f.innerHTML = '<div class="dlabel">' + label + '</div><input type="text" data-edit="' + id + '" value="' + val.replace(/"/g,'&quot;') + '">';
+      }
+    });
+    view.insertAdjacentHTML('afterend',
+      '<div class="edit-actions" data-actions="' + sectionNum + '">' +
+      '<button class="save-btn" onclick="saveSection(' + dossierNum + ', ' + sectionNum + ')">Enregistrer</button>' +
+      '<button class="cancel-btn" onclick="openDrawer(' + dossierNum + ')">Annuler</button>' +
+      '</div>');
+    sec.classList.add('editing');
+  }
+}
+
+function saveSection(dossierNum, sectionNum){
+  const d = findDossier(dossierNum);
+  const sec = document.querySelector('.dsection[data-section="' + sectionNum + '"]');
+  sec.querySelectorAll('[data-edit]').forEach(function(el){
+    d[el.dataset.edit] = el.value;
+  });
+  showToast('Rubrique mise a jour');
+  openDrawer(dossierNum);
+  render();
+}
+
+function addSuivi(dossierNum){
+  const d = findDossier(dossierNum);
+  const date = document.getElementById('newSuiviDate').value;
+  const text = document.getElementById('newSuiviText').value.trim();
+  if(!text){ showToast("Ecris un texte avant d'ajouter l'entree de suivi."); return; }
+  d.suivi.push({date: date, text: text});
+  showToast('Entree de suivi ajoutee');
+  openDrawer(dossierNum);
+}
+
+function exportWord(dossierNum){
+  showToast('Export Word - a brancher sur le generateur de document (modele PA23/PA24).');
+}
+
+let confirmCallback = null;
+function askConfirm(text, cb){
+  document.getElementById('confirmText').textContent = text;
+  confirmCallback = cb;
+  document.getElementById('confirmOverlay').classList.add('show');
+}
+document.getElementById('confirmCancel').addEventListener('click', function(){
+  document.getElementById('confirmOverlay').classList.remove('show'); confirmCallback=null;
+});
+document.getElementById('confirmOk').addEventListener('click', function(){
+  document.getElementById('confirmOverlay').classList.remove('show');
+  if(confirmCallback) confirmCallback();
+  confirmCallback=null;
+});
+
+function closeDossier(dossierNum){
+  askConfirm('Cloturer ce dossier ? Le statut passera a 3-Clos.', function(){
+    const d = findDossier(dossierNum);
+    d.statut = '3-Clos';
+    d.dateCloture = new Date().toISOString().slice(0,10);
+    showToast('Dossier cloture');
+    openDrawer(dossierNum);
+    render();
+  });
+}
+function deleteDossier(dossierNum){
+  askConfirm('Supprimer definitivement ce dossier ? Cette action est irreversible.', function(){
+    dossiers = dossiers.filter(function(d){ return d.numero!==dossierNum; });
+    closeDrawer();
+    showToast('Dossier supprime');
+    render();
+  });
+}
+
+let toastTimer;
+function showToast(msg){
+  const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show');
+  clearTimeout(toastTimer); toastTimer=setTimeout(function(){ t.classList.remove('show'); }, 3200);
+}
+</script>
+</body>
+</html>
