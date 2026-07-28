@@ -387,7 +387,7 @@
       <div class="top-right">
         <div class="eyebrow">Nouveau dossier</div>
         <div class="dossier-no" id="dossierNo">N° À ATTRIBUER</div>
-        <a href="changelog.html" style="display:block;margin-top:4px;font-size:10.5px;color:#6B6873;text-decoration:none;">v0.8 · Notes de mise à jour</a>
+        <a href="changelog.html" style="display:block;margin-top:4px;font-size:10.5px;color:#6B6873;text-decoration:none;">v0.9 · Notes de mise à jour</a>
       </div>
     </div>
   </header>
@@ -599,8 +599,6 @@
   <button type="button" id="navNext">Suivant ›</button>
 </div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js" integrity="sha512-GsLlZN/3F2ErC5ifS5QtgpiJtWd43JWSuIgh7mbzZ8zBps+dvLusV+eNQATqgA/HdeKFVgA5v3S/cIrLF7QnIg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-
 <div class="modal-overlay" id="reportModal">
   <div class="modal" style="max-width:640px;">
     <div class="modal-head">
@@ -612,7 +610,7 @@
     </div>
     <div class="modal-actions">
       <button id="btnPrintReport">🖨️ Imprimer</button>
-      <button id="btnDownloadPdf">⬇️ Télécharger en PDF</button>
+      <button id="btnDownloadPdf">⬇️ Enregistrer en PDF</button>
       <button class="maction-primary" id="btnMailReport">✉️ Envoyer par mail</button>
     </div>
   </div>
@@ -1079,7 +1077,7 @@ document.getElementById('reportModal').addEventListener('click', e=>{
 
 function reportFileName(){
   const num = document.getElementById('dossierNo').textContent.replace(/[^\w\-]+/g,'_');
-  return `Signalement_${num}.pdf`;
+  return `Signalement_${num}`;
 }
 
 document.getElementById('btnPrintReport').addEventListener('click', ()=>{
@@ -1087,35 +1085,18 @@ document.getElementById('btnPrintReport').addEventListener('click', ()=>{
 });
 
 document.getElementById('btnDownloadPdf').addEventListener('click', ()=>{
-  const el = document.getElementById('reportPrintArea');
-  showToast('Génération du PDF…');
-  html2pdf().set({
-    margin: 12,
-    filename: reportFileName(),
-    image: { type: 'jpeg', quality: 0.98 },
-    html2canvas: { scale: 2 },
-    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-  }).from(el).save();
+  showToast("Dans la fenêtre qui s'ouvre, choisis « Enregistrer au format PDF » comme destination, puis Enregistrer.");
+  setTimeout(()=>window.print(), 400);
 });
 
 document.getElementById('btnMailReport').addEventListener('click', ()=>{
   const p = gatherPayload();
-  const el = document.getElementById('reportPrintArea');
-  html2pdf().set({
-    margin: 12,
-    filename: reportFileName(),
-    image: { type: 'jpeg', quality: 0.98 },
-    html2canvas: { scale: 2 },
-    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-  }).from(el).save().then(()=>{
-    const subject = encodeURIComponent('Signalement CSSCT — ' + (p.objet || document.getElementById('dossierNo').textContent));
-    const body = encodeURIComponent(
-      "Bonjour,\n\nVeuillez trouver ci-joint le signalement CSSCT concernant : " + (p.objet||'') +
-      ".\n\n(Le PDF vient d'être téléchargé sur ton ordinateur — pense à le joindre manuellement à ce mail, ton navigateur ne peut pas l'attacher automatiquement.)\n\nCordialement,"
-    );
-    showToast("PDF téléchargé — ta messagerie va s'ouvrir, pense à joindre le fichier.");
-    setTimeout(()=>{ window.location.href = `mailto:?subject=${subject}&body=${body}`; }, 600);
-  });
+  const subject = encodeURIComponent('Signalement CSSCT — ' + (p.objet || document.getElementById('dossierNo').textContent));
+  const body = encodeURIComponent(
+    "Bonjour,\n\nVeuillez trouver ci-joint le signalement CSSCT concernant : " + (p.objet||'') +
+    ".\n\n(Pense à joindre le PDF à ce mail : utilise d'abord le bouton « Enregistrer en PDF » pour le générer, si ce n'est pas déjà fait.)\n\nCordialement,"
+  );
+  window.location.href = `mailto:?subject=${subject}&body=${body}`;
 });
 
 // ---- Mobile field-to-field navigation bar ----
