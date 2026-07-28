@@ -1,5 +1,17 @@
 [
   {
+    "hash": "6aa7c98",
+    "date": "28/07/2026",
+    "title": "Stockage réel des photos (compressées, gratuit)",
+    "description": "Les photos jointes à un signalement sont désormais vraiment enregistrées et visibles dans le rapport, sans passer par un service de stockage payant. Possibilité d'ajouter ou remplacer une photo directement depuis la fiche d'un dossier existant."
+  },
+  {
+    "hash": "1e81db3",
+    "date": "28/07/2026",
+    "title": "chore: mise a jour automatique du changelog [skip ci]",
+    "description": ""
+  },
+  {
     "hash": "34c8f67",
     "date": "28/07/2026",
     "title": "Add files via upload",
