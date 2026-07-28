@@ -786,20 +786,58 @@ document.getElementById('bu').addEventListener('change', e=>{
 
 document.getElementById('date').valueAsDate = new Date();
 
-function bindFile(inputId, thumbId){
-  document.getElementById(inputId).addEventListener('change', e=>{
+// Compresse une image côté navigateur avant stockage (Firestore limite un document à 1 Mo)
+function compressImageFile(file, maxDim, quality){
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        let w = img.width, h = img.height;
+        if(w > h && w > maxDim){ h = Math.round(h * maxDim / w); w = maxDim; }
+        else if(h >= w && h > maxDim){ w = Math.round(w * maxDim / h); h = maxDim; }
+        const canvas = document.createElement('canvas');
+        canvas.width = w; canvas.height = h;
+        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+        resolve({ dataUrl: canvas.toDataURL('image/jpeg', quality), width: w, height: h });
+      };
+      img.onerror = reject;
+      img.src = e.target.result;
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+let photoIncidentDataURL = '';
+let photoLocalisationDataURL = '';
+let photoIncidentDims = null;
+let photoLocalisationDims = null;
+
+function bindFile(inputId, thumbId, setter){
+  document.getElementById(inputId).addEventListener('change', async (e)=>{
     const f = e.target.files[0];
     const box = document.getElementById(thumbId);
     box.innerHTML='';
-    if(f){
+    if(!f) return;
+    box.innerHTML = '<span style="font-size:11px;color:var(--ink-soft);">Compression en cours…</span>';
+    try{
+      let result = await compressImageFile(f, 1000, 0.65);
+      if(result.dataUrl.length > 700000){
+        result = await compressImageFile(f, 700, 0.5);
+      }
+      setter(result.dataUrl, { w: result.width, h: result.height });
+      box.innerHTML = '';
       const img = document.createElement('img');
-      img.src = URL.createObjectURL(f);
+      img.src = result.dataUrl;
       box.appendChild(img);
+    }catch(err){
+      box.innerHTML = '<span style="font-size:11px;color:#A85D45;">Erreur de lecture de l\'image.</span>';
     }
   });
 }
-bindFile('photoIncident','thumbIncident');
-bindFile('photoLocalisation','thumbLocalisation');
+bindFile('photoIncident','thumbIncident', (v,dims)=>{ photoIncidentDataURL = v; photoIncidentDims = dims; });
+bindFile('photoLocalisation','thumbLocalisation', (v,dims)=>{ photoLocalisationDataURL = v; photoLocalisationDims = dims; });
 
 // accordion
 document.querySelectorAll('.section-head').forEach(head=>{
@@ -862,8 +900,12 @@ function gatherPayload(){
     infoCloture: "",
     dateCloture: "",
     suivi: [],
-    _hasPhotoIncident: document.getElementById('photoIncident').files.length > 0,
-    _hasPhotoLocalisation: document.getElementById('photoLocalisation').files.length > 0
+    _hasPhotoIncident: !!photoIncidentDataURL,
+    _hasPhotoLocalisation: !!photoLocalisationDataURL,
+    photoIncidentBase64: photoIncidentDataURL || '',
+    photoLocalisationBase64: photoLocalisationDataURL || '',
+    photoIncidentDims: photoIncidentDims,
+    photoLocalisationDims: photoLocalisationDims
   };
 }
 
@@ -928,6 +970,10 @@ document.getElementById('resetBtn').addEventListener('click', ()=>{
   document.getElementById('linkedIncidentChip').style.display = 'none';
   document.getElementById('incidentOrigineLie').value = '';
   document.querySelectorAll('.thumb-row').forEach(b=>b.innerHTML='');
+  photoIncidentDataURL = '';
+  photoLocalisationDataURL = '';
+  photoIncidentDims = null;
+  photoLocalisationDims = null;
   document.querySelectorAll('.field.error').forEach(f=>f.classList.remove('error'));
   document.querySelectorAll('.section').forEach((s,i)=>s.classList.toggle('open', i===0));
   updatePreview();
@@ -1129,7 +1175,15 @@ function buildReportHtml(p){
     html += `<div class="rp-v">(pas encore d'entrée de suivi)</div>`;
   }
 
-  html += `<div class="rp-blank"></div><div class="rp-h">Document joint :</div><div class="rp-v">${(p._hasPhotoIncident ? "Photo de l'incident jointe. " : '')}${(p._hasPhotoLocalisation ? 'Photo de localisation jointe.' : (p._hasPhotoIncident ? '' : 'Aucune pièce jointe.'))}</div>`;
+  html += `<div class="rp-blank"></div><div class="rp-h">Document joint :</div>`;
+  if(p.photoIncidentBase64 || p.photoLocalisationBase64){
+    html += `<div class="rp-v" style="display:flex;gap:10px;flex-wrap:wrap;">`;
+    if(p.photoIncidentBase64) html += `<img src="${p.photoIncidentBase64}" alt="Photo incident" style="max-width:220px;border:1px solid #ddd;border-radius:6px;">`;
+    if(p.photoLocalisationBase64) html += `<img src="${p.photoLocalisationBase64}" alt="Photo localisation" style="max-width:220px;border:1px solid #ddd;border-radius:6px;">`;
+    html += `</div>`;
+  } else {
+    html += `<div class="rp-v">Aucune pièce jointe.</div>`;
+  }
   html += `<div class="rp-blank"></div><div class="rp-h">Localisation :</div><div class="rp-v">${esc(p.site)}${p.lieu ? ' — ' + esc(p.lieu) : ''}</div>`;
   html += `<div class="rp-footer">Le CSSCT vous informe que ce document sera transmis aux membres du CS2E ainsi qu'au président du CSSCT</div>`;
 
@@ -1202,6 +1256,12 @@ function base64ToUint8Array(base64){
   const bytes = new Uint8Array(binary.length);
   for(let i=0; i<binary.length; i++){ bytes[i] = binary.charCodeAt(i); }
   return bytes;
+}
+
+function scaleToMaxWidth(dims, maxWidth){
+  if(!dims || !dims.w || !dims.h) return { width: maxWidth, height: Math.round(maxWidth*0.75) };
+  const ratio = dims.h / dims.w;
+  return { width: maxWidth, height: Math.round(maxWidth * ratio) };
 }
 
 function generateDocxFile(p){
@@ -1303,7 +1363,20 @@ function generateDocxFile(p){
 
   children.push(blank());
   children.push(GH('Document joint :'));
-  children.push(P((p._hasPhotoIncident ? "Photo de l'incident jointe. " : '') + (p._hasPhotoLocalisation ? 'Photo de localisation jointe.' : (p._hasPhotoIncident ? '' : 'Aucune pièce jointe.'))));
+  if(p.photoIncidentBase64 || p.photoLocalisationBase64){
+    const photoRuns = [];
+    if(p.photoIncidentBase64){
+      const dims = scaleToMaxWidth(p.photoIncidentDims, 240);
+      photoRuns.push(new ImageRun({ data: base64ToUint8Array(p.photoIncidentBase64.split(',')[1]), transformation: dims, type: "jpg" }));
+    }
+    if(p.photoLocalisationBase64){
+      const dims = scaleToMaxWidth(p.photoLocalisationDims, 240);
+      photoRuns.push(new ImageRun({ data: base64ToUint8Array(p.photoLocalisationBase64.split(',')[1]), transformation: dims, type: "jpg" }));
+    }
+    photoRuns.forEach(function(run){ children.push(new Paragraph({ children: [run] })); });
+  } else {
+    children.push(P('Aucune pièce jointe.'));
+  }
   children.push(blank());
   children.push(GH('Localisation :'));
   children.push(P((p.site || '') + (p.lieu ? ' — ' + p.lieu : '')));
