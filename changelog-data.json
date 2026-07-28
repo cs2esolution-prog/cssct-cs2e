@@ -1,5 +1,17 @@
 [
   {
+    "hash": "e25a1d2",
+    "date": "28/07/2026",
+    "title": "Add files via upload",
+    "description": ""
+  },
+  {
+    "hash": "9843582",
+    "date": "28/07/2026",
+    "title": "chore: mise a jour automatique du changelog [skip ci]",
+    "description": ""
+  },
+  {
     "hash": "349f1d1",
     "date": "28/07/2026",
     "title": "Mise en forme fidèle du rapport (logos, mise en page, pied de page paginé)",
