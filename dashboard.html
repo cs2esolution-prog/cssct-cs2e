@@ -95,6 +95,12 @@
   <h1>Tableau de bord</h1>
   <p class="subtitle">Indicateurs calculés sur l'ensemble des dossiers de signalement.</p>
 
+  <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px;flex-wrap:wrap;">
+    <label style="font-size:12.5px;color:var(--ink-soft);">Bilan annuel pour :</label>
+    <select id="bilanYearSelect" style="padding:8px 12px;border:1px solid var(--line);border-radius:16px;font-size:12.5px;"></select>
+    <button id="downloadBilanBtn" style="background:var(--ink);color:#fff;border:none;padding:9px 18px;border-radius:20px;font-size:12.5px;font-weight:600;cursor:pointer;">🖨️ Télécharger le bilan annuel (PDF)</button>
+  </div>
+
   <div id="dashboardContent">
     <div class="empty-note">Chargement des dossiers…</div>
   </div>
@@ -173,6 +179,8 @@ function parseISO(s){ if(!s) return null; const m = String(s).match(/^(\d{4})-(\
 function daysBetween(a,b){ return Math.round((b-a)/(1000*60*60*24)); }
 
 window.renderDashboard = function(dossiers){
+  window._allDossiers = dossiers;
+  populateYearSelect(dossiers);
   const container = document.getElementById('dashboardContent');
   if(!dossiers.length){
     container.innerHTML = '<div class="empty-note">Aucun dossier enregistré pour le moment.</div>';
@@ -288,8 +296,181 @@ window.renderDashboard = function(dossiers){
   });
   html += '</div></div>';
 
+  // ---- Bloc 5 : comparaison par année civile ----
+  const byYear = {};
+  dossiers.forEach(function(d){
+    const a = parseISO(d.date);
+    if(!a) return;
+    const y = a.getFullYear();
+    if(!byYear[y]) byYear[y] = { total:0, enCours:0, aSuivre:0, clos:0 };
+    byYear[y].total++;
+    if((d.statut||'').startsWith('1')) byYear[y].enCours++;
+    else if((d.statut||'').startsWith('2')) byYear[y].aSuivre++;
+    else if((d.statut||'').startsWith('3')) byYear[y].clos++;
+  });
+  const years = Object.keys(byYear).map(Number).sort(function(a,b){ return a-b; });
+
+  if(years.length){
+    const maxYear = Math.max.apply(null, years.map(function(y){ return byYear[y].total; }));
+
+    html += '<div class="card"><h2>Comparaison par année civile</h2><p class="card-sub">Volume et clôture, année par année</p>';
+    html += '<div class="month-chart" style="height:110px;">';
+    years.forEach(function(y){
+      const val = byYear[y].total;
+      const h = Math.max(2, Math.round(val/maxYear*100));
+      html += '<div class="month-col"><div class="month-val">' + val + '</div><div class="month-bar" style="height:' + h + '%;background:var(--purple);"></div><div class="month-lbl">' + y + '</div></div>';
+    });
+    html += '</div>';
+
+    html += '<table style="margin-top:20px;"><thead><tr><th>Année</th><th>Total</th><th>En cours</th><th>A suivre</th><th>Clos</th><th>Taux clôture</th><th>Evolution</th></tr></thead><tbody>';
+    years.forEach(function(y, i){
+      const yr = byYear[y];
+      const taux = yr.total ? Math.round(yr.clos/yr.total*100) : 0;
+      let evo = '—';
+      if(i > 0){
+        const prev = byYear[years[i-1]].total;
+        if(prev > 0){
+          const pct = Math.round((yr.total - prev) / prev * 100);
+          evo = (pct > 0 ? '+' : '') + pct + '% vs ' + years[i-1];
+        }
+      }
+      html += '<tr><td><strong>' + y + '</strong></td><td>' + yr.total + '</td><td>' + yr.enCours + '</td><td>' + yr.aSuivre + '</td><td>' + yr.clos + '</td><td>' + taux + '%</td><td>' + evo + '</td></tr>';
+    });
+    html += '</tbody></table></div>';
+  }
+
   container.innerHTML = html;
 };
+
+function populateYearSelect(dossiers){
+  const sel = document.getElementById('bilanYearSelect');
+  const yearsSet = new Set();
+  dossiers.forEach(function(d){ const a = parseISO(d.date); if(a) yearsSet.add(a.getFullYear()); });
+  const currentYear = new Date().getFullYear();
+  yearsSet.add(currentYear);
+  const years = Array.from(yearsSet).sort(function(a,b){ return b-a; });
+  sel.innerHTML = years.map(function(y){ return '<option value="' + y + '">' + y + '</option>'; }).join('');
+  sel.value = String(currentYear);
+}
+
+function statutLabel(d){ return d.statut || 'Non renseigné'; }
+
+function buildBilanHtml(year){
+  const dossiers = window._allDossiers || [];
+  const prevYear = year - 1;
+
+  const inYear = function(y){ return dossiers.filter(function(d){ const a = parseISO(d.date); return a && a.getFullYear() === y; }); };
+  const current = inYear(year);
+  const previous = inYear(prevYear);
+
+  const enCours = current.filter(function(d){ return statutLabel(d).startsWith('1'); });
+  const aSuivre = current.filter(function(d){ return statutLabel(d).startsWith('2'); });
+  const clos = current.filter(function(d){ return statutLabel(d).startsWith('3'); });
+  const tauxCloture = current.length ? Math.round(clos.length/current.length*100) : 0;
+
+  // Comparaison par nature
+  function countByNature(arr){
+    const m = {};
+    arr.forEach(function(d){ const n = d.natureIncident || 'Non renseigné'; m[n] = (m[n]||0)+1; });
+    return m;
+  }
+  const natCur = countByNature(current), natPrev = countByNature(previous);
+  const allNatures = Array.from(new Set(Object.keys(natCur).concat(Object.keys(natPrev))));
+
+  // Comparaison par mois
+  const moisLabels = ['Janv','Fevr','Mars','Avr','Mai','Juin','Juil','Aout','Sept','Oct','Nov','Dec'];
+  const monthCur = new Array(12).fill(0), monthPrev = new Array(12).fill(0);
+  current.forEach(function(d){ const a = parseISO(d.date); if(a) monthCur[a.getMonth()]++; });
+  previous.forEach(function(d){ const a = parseISO(d.date); if(a) monthPrev[a.getMonth()]++; });
+
+  function rowsTable(list, cols){
+    if(!list.length) return '<p class="rp-v">Aucun dossier.</p>';
+    let t = '<table><thead><tr>' + cols.map(function(c){ return '<th>'+c.label+'</th>'; }).join('') + '</tr></thead><tbody>';
+    list.forEach(function(d){
+      t += '<tr>' + cols.map(function(c){ return '<td>' + esc(c.get(d)) + '</td>'; }).join('') + '</tr>';
+    });
+    t += '</tbody></table>';
+    return t;
+  }
+
+  let html = '<div class="rp-header" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">' +
+    '<div style="font-weight:700;font-size:16px;">CS2E Solutions</div>' +
+    '<div style="width:56px;height:56px;border-radius:10px;background:#A85D45;color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:9px;font-weight:700;text-align:center;">CSSCT<br>COMMISSION<br>SANTE SECURITE</div>' +
+  '</div>';
+  html += '<h1 style="text-align:center;font-size:19px;margin:0 0 4px;">Bilan annuel CSSCT — ' + year + '</h1>';
+  html += '<p style="text-align:center;color:#666;font-size:12.5px;margin:0 0 24px;">Comparaison avec l\u2019année ' + prevYear + '</p>';
+
+  html += '<h2 style="color:#019682;font-size:14px;">Résumé de l\u2019année ' + year + '</h2>';
+  html += '<table><thead><tr><th>Total</th><th>En cours</th><th>A suivre</th><th>Clos</th><th>Taux de clôture</th></tr></thead><tbody>' +
+    '<tr><td>' + current.length + '</td><td>' + enCours.length + '</td><td>' + aSuivre.length + '</td><td>' + clos.length + '</td><td>' + tauxCloture + '%</td></tr>' +
+  '</tbody></table>';
+
+  html += '<h2 style="color:#019682;font-size:14px;margin-top:24px;">Comparaison par nature d\u2019incident</h2>';
+  html += '<table><thead><tr><th>Nature</th><th>' + year + '</th><th>' + prevYear + '</th><th>Evolution</th></tr></thead><tbody>';
+  allNatures.forEach(function(n){
+    const c = natCur[n]||0, p = natPrev[n]||0;
+    const evo = p ? (Math.round((c-p)/p*100) > 0 ? '+' : '') + Math.round((c-p)/p*100) + '%' : (c ? 'Nouveau' : '—');
+    html += '<tr><td>' + esc(n) + '</td><td>' + c + '</td><td>' + p + '</td><td>' + evo + '</td></tr>';
+  });
+  html += '</tbody></table>';
+
+  html += '<h2 style="color:#019682;font-size:14px;margin-top:24px;">Comparaison par mois</h2>';
+  html += '<table><thead><tr><th>Mois</th>' + moisLabels.map(function(m){ return '<th>'+m+'</th>'; }).join('') + '</tr></thead><tbody>' +
+    '<tr><td><strong>' + year + '</strong></td>' + monthCur.map(function(v){ return '<td>'+v+'</td>'; }).join('') + '</tr>' +
+    '<tr><td><strong>' + prevYear + '</strong></td>' + monthPrev.map(function(v){ return '<td>'+v+'</td>'; }).join('') + '</tr>' +
+  '</tbody></table>';
+
+  html += '<h2 style="color:#019682;font-size:14px;margin-top:24px;page-break-before:always;">Dossiers en cours (' + enCours.length + ')</h2>';
+  html += rowsTable(enCours, [
+    {label:'N°', get:function(d){ return d.numero; }},
+    {label:'Objet', get:function(d){ return d.objet; }},
+    {label:'Nature', get:function(d){ return d.natureIncident; }},
+    {label:'Site', get:function(d){ return d.site; }},
+    {label:'Date', get:function(d){ return d.date; }}
+  ]);
+
+  html += '<h2 style="color:#019682;font-size:14px;margin-top:24px;">Dossiers à suivre (' + aSuivre.length + ')</h2>';
+  html += rowsTable(aSuivre, [
+    {label:'N°', get:function(d){ return d.numero; }},
+    {label:'Objet', get:function(d){ return d.objet; }},
+    {label:'Nature', get:function(d){ return d.natureIncident; }},
+    {label:'Site', get:function(d){ return d.site; }},
+    {label:'Date', get:function(d){ return d.date; }}
+  ]);
+
+  html += '<h2 style="color:#019682;font-size:14px;margin-top:24px;page-break-before:always;">Dossiers clos (' + clos.length + ')</h2>';
+  html += rowsTable(clos, [
+    {label:'N°', get:function(d){ return d.numero; }},
+    {label:'Objet', get:function(d){ return d.objet; }},
+    {label:'Nature', get:function(d){ return d.natureIncident; }},
+    {label:'Site', get:function(d){ return d.site; }},
+    {label:'Ouvert le', get:function(d){ return d.date; }},
+    {label:'Clos le', get:function(d){ return d.dateCloture; }}
+  ]);
+
+  html += '<p style="margin-top:24px;font-size:10.5px;color:#333;font-style:italic;">Le CSSCT vous informe que ce document sera transmis aux membres du CS2E ainsi qu\u2019au président du CSSCT</p>';
+
+  return html;
+}
+
+document.getElementById('downloadBilanBtn').addEventListener('click', function(){
+  const year = Number(document.getElementById('bilanYearSelect').value);
+  const html = buildBilanHtml(year);
+  const w = window.open('', '_blank');
+  if(!w){ alert("Le navigateur a bloqué l'ouverture de la fenêtre d'impression."); return; }
+  const css = `
+    body{font-family:Arial,Helvetica,sans-serif;color:#1a1a1a;padding:28px;max-width:900px;margin:0 auto;font-size:12.5px;}
+    table{width:100%;border-collapse:collapse;margin-top:8px;font-size:11.5px;}
+    th,td{border-bottom:1px solid #ddd;padding:5px 7px;text-align:left;}
+    th{background:#FBFAF7;font-size:10px;text-transform:uppercase;color:#666;}
+    h1,h2{margin:0 0 8px;}
+  `;
+  w.document.open();
+  w.document.write('<!DOCTYPE html><html><head><meta charset="utf-8"><title>Bilan annuel</title><style>' + css + '</style></head><body>' + html + '</body></html>');
+  w.document.close();
+  w.focus();
+  w.print();
+});
 </script>
 </body>
 </html>
