@@ -172,6 +172,12 @@
 </style>
 </head>
 <body>
+<script>
+window.onerror = function(msg, src, line, col, err){
+  alert('Erreur JS détectée :\n' + msg + '\n(ligne ' + line + ')');
+  return false;
+};
+</script>
 
 <div id="authGate" style="position:fixed;inset:0;background:#2B2A2E;display:flex;align-items:center;justify-content:center;z-index:200;padding:20px;">
   <div id="authChecking" style="color:#ffffffaa;font-family:'Inter',sans-serif;font-size:13.5px;">Vérification de la connexion…</div>
