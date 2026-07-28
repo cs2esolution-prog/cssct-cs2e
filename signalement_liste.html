@@ -4,6 +4,13 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Dossiers de signalement · CSSCT</title>
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-title" content="Mon appli CSSCT">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#2B2A2E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,500;8..60,600;8..60,700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
 <script src="https://unpkg.com/docx"></script>
@@ -235,6 +242,22 @@
     <div class="confirm-actions">
       <button class="btn cancel-btn" id="confirmCancel">Annuler</button>
       <button class="btn btn-danger" id="confirmOk">Confirmer</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="closeModal">
+  <div class="modal" style="max-width:480px;">
+    <div class="modal-head">
+      <h3>Clôturer le dossier</h3>
+      <button class="modal-close" id="closeModalCancel">×</button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:12.5px;color:var(--ink-soft);margin:0 0 10px;">Cette information sera enregistrée comme "Info si clôture" et ajoutée automatiquement au suivi du dossier.</p>
+      <textarea id="closeInfoText" placeholder="Ex : Réparation effectuée le 12/03, situation résolue." style="width:100%;min-height:100px;padding:10px 12px;border:1px solid var(--line);border-radius:8px;font-family:'Inter',sans-serif;font-size:13.5px;"></textarea>
+    </div>
+    <div class="modal-actions">
+      <button id="closeModalConfirm" class="maction-primary" style="margin-left:auto;">Clôturer le dossier</button>
     </div>
   </div>
 </div>
@@ -604,6 +627,7 @@ function openDrawer(numero){
       '<div class="dsection danger-zone"><h3>Actions sur le dossier</h3><div class="action-row">' +
       '<button class="btn btn-export" onclick="previewReport(\'' + d.id + '\')">🔍 Prévisualiser le rapport</button>' +
       '<button class="btn btn-close-dossier" onclick="closeDossier(\'' + d.id + '\')" ' + (d.statut==='3-Clos'?'disabled':'') + '>Cloturer le dossier</button>' +
+      (d.statut==='3-Clos' ? '<button class="btn btn-export" onclick="reopenDossier(\'' + d.id + '\')">↺ Repasser en cours</button>' : '') +
       '<button class="btn btn-danger" onclick="deleteDossier(\'' + d.id + '\')">Supprimer le dossier</button>' +
       '</div></div>' +
     '</div>';
@@ -1006,18 +1030,49 @@ document.getElementById('confirmOk').addEventListener('click', function(){
   confirmCallback=null;
 });
 
-function closeDossier(dossierNum){
-  askConfirm('Cloturer ce dossier ? Le statut passera a 3-Clos.', function(){
-    const d = findDossier(dossierNum);
-    const dateCloture = new Date().toISOString().slice(0,10);
-    window.CSSCT_FIREBASE.updateFields(d.id, {statut:'3-Clos', dateCloture: dateCloture}).then(()=>{
-      showToast('Dossier cloture');
+let closeDossierTargetId = null;
+function closeDossier(dossierId){
+  closeDossierTargetId = dossierId;
+  document.getElementById('closeInfoText').value = '';
+  document.getElementById('closeModal').classList.add('show');
+}
+document.getElementById('closeModalCancel').addEventListener('click', function(){
+  document.getElementById('closeModal').classList.remove('show');
+});
+document.getElementById('closeModal').addEventListener('click', function(e){
+  if(e.target.id === 'closeModal') e.currentTarget.classList.remove('show');
+});
+document.getElementById('closeModalConfirm').addEventListener('click', function(){
+  const info = document.getElementById('closeInfoText').value.trim();
+  if(!info){ showToast("Merci d'indiquer une information de clôture."); return; }
+  const d = findDossier(closeDossierTargetId);
+  const dateCloture = new Date().toISOString().slice(0,10);
+  const newSuivi = (d.suivi||[]).concat([{ date: dateCloture, text: 'Clôture : ' + info }]);
+  const fields = { statut:'3-Clos', dateCloture: dateCloture, infoCloture: info, suivi: newSuivi };
+  window.CSSCT_FIREBASE.updateFields(d.id, fields).then(()=>{
+    showToast('Dossier cloturé');
+  }).catch(err=>{ showToast('Erreur : ' + err.message); });
+  Object.assign(d, fields);
+  document.getElementById('closeModal').classList.remove('show');
+  openDrawer(closeDossierTargetId);
+  render();
+});
+
+function reopenDossier(dossierId){
+  askConfirm('Repasser ce dossier en "1-En Cours" ?', function(){
+    const d = findDossier(dossierId);
+    const today = new Date().toISOString().slice(0,10);
+    const newSuivi = (d.suivi||[]).concat([{ date: today, text: 'Dossier réouvert (repassé en cours).' }]);
+    const fields = { statut:'1-En Cours', suivi: newSuivi };
+    window.CSSCT_FIREBASE.updateFields(d.id, fields).then(()=>{
+      showToast('Dossier réouvert');
     }).catch(err=>{ showToast('Erreur : ' + err.message); });
-    d.statut = '3-Clos'; d.dateCloture = dateCloture;
-    openDrawer(dossierNum);
+    Object.assign(d, fields);
+    openDrawer(dossierId);
     render();
   });
 }
+
 function deleteDossier(dossierNum){
   askConfirm('Supprimer definitivement ce dossier ? Cette action est irreversible.', function(){
     const d = findDossier(dossierNum);
