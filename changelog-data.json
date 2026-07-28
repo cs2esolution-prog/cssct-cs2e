@@ -1,5 +1,17 @@
 [
   {
+    "hash": "aaceacd",
+    "date": "28/07/2026",
+    "title": "Update signalement_liste.html",
+    "description": ""
+  },
+  {
+    "hash": "0718f5e",
+    "date": "28/07/2026",
+    "title": "chore: mise a jour automatique du changelog [skip ci]",
+    "description": ""
+  },
+  {
     "hash": "6aa7c98",
     "date": "28/07/2026",
     "title": "Stockage réel des photos (compressées, gratuit)",
