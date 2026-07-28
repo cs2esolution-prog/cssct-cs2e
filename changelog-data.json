@@ -1,5 +1,17 @@
 [
   {
+    "hash": "349f1d1",
+    "date": "28/07/2026",
+    "title": "Mise en forme fidèle du rapport (logos, mise en page, pied de page paginé)",
+    "description": "Le rapport reprend maintenant les vrais logos CS2E et CSSCT, un titre centré, les dates au format français, le titre du dossier d'origine lié, des sauts de ligne avant chaque section et après chaque suivi, et un pied de page avec numérotation des pages dans le fichier Word."
+  },
+  {
+    "hash": "f819d6e",
+    "date": "28/07/2026",
+    "title": "chore: mise a jour automatique du changelog [skip ci]",
+    "description": ""
+  },
+  {
     "hash": "79aa370",
     "date": "28/07/2026",
     "title": "Add files via upload",
