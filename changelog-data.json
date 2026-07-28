@@ -1,158 +1,50 @@
 [
   {
-    "hash": "38fde8d",
+    "hash": "seed",
     "date": "28/07/2026",
-    "title": "Create changelog.yml",
-    "description": ""
+    "title": "Rapport Word fidèle au modèle + impression rapide",
+    "description": "Le rapport se télécharge maintenant en vrai fichier Word (plus une image), et l'impression est beaucoup plus rapide."
   },
   {
-    "hash": "a86c2ca",
+    "hash": "seed",
     "date": "28/07/2026",
-    "title": "Add files via upload",
-    "description": ""
+    "title": "Aperçu du rapport disponible sur les anciens dossiers",
+    "description": "On peut désormais prévisualiser, imprimer et envoyer le rapport directement depuis la fiche d'un dossier déjà enregistré."
   },
   {
-    "hash": "65a6b12",
+    "hash": "seed",
     "date": "28/07/2026",
-    "title": "Update index.html",
-    "description": ""
+    "title": "Rapport imprimable et téléchargeable",
+    "description": "Ajout de boutons pour imprimer le rapport, l'enregistrer et l'envoyer par mail, en reprenant la mise en forme du document CSSCT."
   },
   {
-    "hash": "53102d3",
+    "hash": "seed",
     "date": "28/07/2026",
-    "title": "Add files via upload",
-    "description": ""
+    "title": "Connexion et données réelles",
+    "description": "Mise en place d'une connexion sécurisée par email et enregistrement réel des signalements dans la base de données."
   },
   {
-    "hash": "69d4a19",
+    "hash": "seed",
     "date": "28/07/2026",
-    "title": "v0.11 - correction impression",
-    "description": "Les 2 corrections appliquées :\r\n\r\nOrdre d'affichage (z-index) : le message toast passait derrière la fenêtre du rapport — remonté au-dessus de tout\r\nLe vrai bug : j'ajoutais un petit délai avant d'ouvrir l'impression, et Safari iOS bloque silencieusement print() s'il n'est pas déclenché immédiatement au clic. Supprimé le délai — le clic ouvre maintenant l'impression tout de suite."
+    "title": "Recherche d'un dossier lié",
+    "description": "Le champ 'incident d'origine' permet maintenant de rechercher un dossier existant par nom, date ou mot-clé."
   },
   {
-    "hash": "de36c8c",
+    "hash": "seed",
     "date": "28/07/2026",
-    "title": "V11",
-    "description": "V11"
+    "title": "Écran de consultation des dossiers",
+    "description": "Nouvelle page listant tous les signalements, avec recherche, filtres, et possibilité de modifier, clore ou supprimer un dossier."
   },
   {
-    "hash": "aa69854",
+    "hash": "seed",
     "date": "28/07/2026",
-    "title": "Add files via upload",
-    "description": ""
+    "title": "Ajustements du formulaire de saisie",
+    "description": "Rubriques repliables sur mobile, navigation entre champs, aperçu du rapport avant enregistrement, et plusieurs petites corrections."
   },
   {
-    "hash": "5eb3af5",
+    "hash": "seed",
     "date": "28/07/2026",
-    "title": "Add files via upload",
-    "description": ""
-  },
-  {
-    "hash": "24d6416",
-    "date": "28/07/2026",
-    "title": "Récapitulatif de ce qu'ils contiennent (v0.10)",
-    "description": "Nouveautés incluses : bouton \"Prévisualiser le rapport\" maintenant présent aussi sur la fiche d'un dossier existant, avec impression / enregistrement PDF / envoi par mail — en plus de tout ce qu'on avait déjà (formulaire, liste, connexion, Firestore)."
-  },
-  {
-    "hash": "ea315b4",
-    "date": "28/07/2026",
-    "title": "Update signalement_liste.html",
-    "description": ""
-  },
-  {
-    "hash": "985f155",
-    "date": "28/07/2026",
-    "title": "v0.9 — Correction : échec du téléchargement du PDF",
-    "description": "v0.9 — Correction : échec du téléchargement du PDF\r\n\r\nJ'ai supprimé la librairie fragile et je passe désormais par l'impression native du navigateur, disponible partout sans dépendance externe :\r\n\r\n🖨️ Imprimer et ⬇️ Enregistrer en PDF ouvrent tous les deux la fenêtre d'impression classique de ton navigateur — pour télécharger, choisis simplement \"Enregistrer au format PDF\" comme imprimante/destination"
-  },
-  {
-    "hash": "24c1be9",
-    "date": "28/07/2026",
-    "title": "Add files via upload",
-    "description": ""
-  },
-  {
-    "hash": "6d30336",
-    "date": "28/07/2026",
-    "title": "v0.8 — Rapport formaté, imprimable et téléchargeable",
-    "description": "Dans l'aperçu du rapport, tu as maintenant 3 boutons en bas :\r\n\r\n🖨️ Imprimer : imprime uniquement le rapport (le reste de l'écran est masqué à l'impression)\r\n⬇️ Télécharger en PDF : génère et télécharge un vrai fichier PDF\r\n✉️ Envoyer par mail : télécharge le PDF puis ouvre ta messagerie avec un message pré-rempli — il faudra juste joindre le fichier manuellement, un navigateur ne peut pas le faire automatiquement pour des raisons de sécurité"
-  },
-  {
-    "hash": "f277cba",
-    "date": "28/07/2026",
-    "title": "Add files via upload",
-    "description": ""
-  },
-  {
-    "hash": "cf1dead",
-    "date": "28/07/2026",
-    "title": "v0.7 — Suppression du flash de la fenêtre de connexion",
-    "description": ""
-  },
-  {
-    "hash": "292e94f",
-    "date": "28/07/2026",
-    "title": "v0.6 — Accès plus visible à la liste des dossiers",
-    "description": "Le lien était bien là mais trop discret ; c'est maintenant un vrai bouton \"📂 Voir les dossiers\" en haut du formulaire, impossible à manquer."
-  },
-  {
-    "hash": "1aa95be",
-    "date": "28/07/2026",
-    "title": "Add files via upload",
-    "description": ""
-  },
-  {
-    "hash": "bd505fa",
-    "date": "28/07/2026",
-    "title": "changelog",
-    "description": ""
-  },
-  {
-    "hash": "a34000e",
-    "date": "28/07/2026",
-    "title": "Add files via upload",
-    "description": ""
-  },
-  {
-    "hash": "84d23e9",
-    "date": "28/07/2026",
-    "title": "Add files via upload",
-    "description": ""
-  },
-  {
-    "hash": "958cc15",
-    "date": "28/07/2026",
-    "title": "Update index.html",
-    "description": ""
-  },
-  {
-    "hash": "6c2daec",
-    "date": "28/07/2026",
-    "title": "Rename signalement_formulaire.html to index.html",
-    "description": ""
-  },
-  {
-    "hash": "a48d606",
-    "date": "28/07/2026",
-    "title": "Update wrangler.jsonc",
-    "description": ""
-  },
-  {
-    "hash": "f04401e",
-    "date": "28/07/2026",
-    "title": "Create wrangler.jsonc",
-    "description": ""
-  },
-  {
-    "hash": "aa9272c",
-    "date": "28/07/2026",
-    "title": "Add files via upload",
-    "description": ""
-  },
-  {
-    "hash": "bce6c9c",
-    "date": "28/07/2026",
-    "title": "Initial commit",
-    "description": ""
+    "title": "Premier formulaire de signalement",
+    "description": "Mise en place de l'écran de création d'un signalement, avec les rubriques du modèle CSSCT existant."
   }
 ]

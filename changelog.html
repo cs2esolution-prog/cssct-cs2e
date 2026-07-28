@@ -26,20 +26,17 @@
   .subtitle{color:var(--ink-soft); font-size:13.5px; margin:0 0 32px;}
 
   .timeline{position:relative; padding-left:24px; border-left:2px solid var(--line);}
-  .entry{position:relative; margin-bottom:30px;}
+  .entry{position:relative; margin-bottom:26px;}
   .entry::before{
     content:''; position:absolute; left:-31px; top:4px; width:12px; height:12px;
     border-radius:50%; background:var(--teal); border:3px solid var(--paper);
   }
-  .entry .ver{font-family:'IBM Plex Mono',monospace; font-size:11.5px; color:var(--ink-soft); margin-bottom:2px;}
   .entry .date{font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--ink-soft); float:right;}
-  .entry h2{font-family:'Source Serif 4',serif; font-size:16.5px; margin:2px 0 8px; color:var(--ink);}
-  .entry ul{margin:0; padding-left:18px; font-size:13.5px; color:var(--ink);}
-  .entry li{margin-bottom:4px;}
-  .tag{display:inline-block; font-size:10.5px; font-weight:600; padding:2px 9px; border-radius:12px; margin-left:8px; vertical-align:middle;}
-  .tag-feature{background:#E4F3EF; color:var(--teal-dark);}
-  .tag-fix{background:#F5EDE0; color:#8A6A2E;}
-  .tag-security{background:#F0EAF3; color:var(--purple);}
+  .entry h2{font-family:'Source Serif 4',serif; font-size:16px; margin:2px 0 6px; color:var(--ink);}
+  .entry p{margin:0; font-size:13.5px; color:var(--ink); white-space:pre-wrap;}
+  .entry p.empty{color:var(--ink-soft); font-style:italic;}
+
+  .state-msg{font-size:13.5px; color:var(--ink-soft); padding:20px 0;}
 </style>
 </head>
 <body>
@@ -53,127 +50,47 @@
   </header>
 
   <h1>Notes de mise a jour</h1>
-  <p class="subtitle">Historique des evolutions du module Signalements.</p>
+  <p class="subtitle">Genere automatiquement depuis l'historique des mises a jour du site.</p>
 
-  <div class="timeline">
-
-    <div class="entry">
-      <div class="ver">v0.11 <span class="date">28 juillet 2026</span></div>
-      <h2>Vrai fichier Word + impression rapide <span class="tag tag-fix">Correction</span></h2>
-      <ul>
-        <li>Le rapport se telecharge desormais en vrai fichier .docx (texte reel, pas une image), fidele au modele original</li>
-        <li>L'impression ouvre une fenetre dediee minimale au lieu de toute la page, beaucoup plus rapide</li>
-        <li>Le rapport (Word et impression) suit exactement l'ordre et les couleurs du modele CSSCT fourni</li>
-      </ul>
-    </div>
-
-    <div class="entry">
-      <div class="ver">v0.10 <span class="date">28 juillet 2026</span></div>
-      <h2>Previsualisation du rapport sur un dossier existant <span class="tag tag-feature">Nouveaute</span></h2>
-      <ul>
-        <li>Depuis la fiche d'un dossier, bouton "Previsualiser le rapport" qui reprend la meme mise en forme que sur le formulaire de creation (en-tete, sections colorees, historique de suivi inclus)</li>
-        <li>Boutons Imprimer / Enregistrer en PDF / Envoyer par mail disponibles ici aussi</li>
-      </ul>
-    </div>
-
-    <div class="entry">
-      <div class="ver">v0.9 <span class="date">28 juillet 2026</span></div>
-      <h2>Correction : echec du telechargement du PDF <span class="tag tag-fix">Correction</span></h2>
-      <ul>
-        <li>La librairie utilisee pour generer le PDF (html2canvas) est incompatible avec les styles modernes de certains navigateurs recents, ce qui provoquait un echec systematique</li>
-        <li>Remplacee par l'impression native du navigateur : les boutons "Imprimer" et "Enregistrer en PDF" ouvrent tous les deux la fenetre d'impression du navigateur (choisir "Enregistrer au format PDF" comme destination pour telecharger)</li>
-        <li>Solution plus fiable, sans dependance externe fragile</li>
-      </ul>
-    </div>
-
-    <div class="entry">
-      <div class="ver">v0.8 <span class="date">28 juillet 2026</span></div>
-      <h2>Rapport formate, imprimable et telechargeable <span class="tag tag-feature">Nouveaute</span></h2>
-      <ul>
-        <li>L'apercu du rapport reprend maintenant la mise en forme du document Word (en-tete CS2E, badge CSSCT, titres de section en vert)</li>
-        <li>Bouton "Imprimer" : lance l'impression du rapport uniquement (le reste de l'ecran est masque)</li>
-        <li>Bouton "Telecharger en PDF" : genere et telecharge directement un fichier PDF du dossier</li>
-        <li>Bouton "Envoyer par mail" : telecharge le PDF puis ouvre la messagerie avec un message pre-rempli (le fichier doit etre joint manuellement, les navigateurs ne permettent pas l'attachement automatique)</li>
-      </ul>
-    </div>
-
-    <div class="entry">
-      <div class="ver">v0.7 <span class="date">28 juillet 2026</span></div>
-      <h2>Suppression du flash de la fenetre de connexion <span class="tag tag-fix">Amelioration</span></h2>
-      <ul>
-        <li>A chaque changement de page, la fenetre de connexion apparaissait brievement avant de se refermer</li>
-        <li>Remplacee par un simple message "Verification de la connexion..." tant que l'etat n'est pas confirme</li>
-        <li>Le formulaire de connexion ne s'affiche desormais que si tu n'es vraiment pas connecte(e)</li>
-      </ul>
-    </div>
-
-    <div class="entry">
-      <div class="ver">v0.6 <span class="date">28 juillet 2026</span></div>
-      <h2>Acces plus visible a la liste des dossiers <span class="tag tag-fix">Amelioration</span></h2>
-      <ul>
-        <li>Le lien vers l'ecran de consultation des dossiers etait trop discret depuis le formulaire de saisie</li>
-        <li>Transforme en bouton "Voir les dossiers" bien visible en haut de la page</li>
-      </ul>
-    </div>
-
-    <div class="entry">
-      <div class="ver">v0.5 <span class="date">28 juillet 2026</span></div>
-      <h2>Connexion securisee et donnees reelles <span class="tag tag-security">Securite</span></h2>
-      <ul>
-        <li>Connexion par email professionnel (sans mot de passe) obligatoire pour acceder aux dossiers</li>
-        <li>Le formulaire enregistre reellement les signalements dans la base (Firestore), avec attribution automatique du numero</li>
-        <li>L'ecran de liste affiche desormais les vrais dossiers, mis a jour en temps reel</li>
-        <li>Modifier une rubrique, ajouter un suivi, cloturer ou supprimer un dossier agissent reellement sur la base</li>
-      </ul>
-    </div>
-
-    <div class="entry">
-      <div class="ver">v0.4 <span class="date">28 juillet 2026</span></div>
-      <h2>Recherche de dossier lie <span class="tag tag-feature">Nouveaute</span></h2>
-      <ul>
-        <li>Le champ "Incident d'origine lie" ouvre une fenetre de recherche</li>
-        <li>La recherche filtre en direct sur le nom, la date, ou n'importe quel mot-cle, sur tous les dossiers</li>
-      </ul>
-    </div>
-
-    <div class="entry">
-      <div class="ver">v0.3 <span class="date">28 juillet 2026</span></div>
-      <h2>Ecran de consultation des dossiers <span class="tag tag-feature">Nouveaute</span></h2>
-      <ul>
-        <li>Liste des dossiers avec recherche libre et filtres (statut, nature, site)</li>
-        <li>Fiche detaillee par dossier, modifiable rubrique par rubrique</li>
-        <li>Historique de suivi horodate, avec ajout de nouvelles entrees</li>
-        <li>Actions de cloture et de suppression d'un dossier</li>
-      </ul>
-    </div>
-
-    <div class="entry">
-      <div class="ver">v0.2 <span class="date">28 juillet 2026</span></div>
-      <h2>Ajustements d'usage sur le formulaire <span class="tag tag-fix">Amelioration</span></h2>
-      <ul>
-        <li>Nature "Signalement autre" avec precision en texte libre</li>
-        <li>Liste des sites triee par ordre alphabetique</li>
-        <li>Correction de l'alignement du champ Localisation precise</li>
-        <li>Gestion d'une heure de fin tombant le jour suivant</li>
-        <li>BU "Autre" avec precision en texte libre</li>
-        <li>Bouton de copie d'un prompt IA anonymise pour les actions preconisees</li>
-        <li>Rubriques repliables/depliables, adaptees au mobile</li>
-        <li>Navigation entre champs via une barre precedent/suivant sur mobile</li>
-        <li>Previsualisation du dossier sous forme de rapport avant enregistrement</li>
-      </ul>
-    </div>
-
-    <div class="entry">
-      <div class="ver">v0.1 <span class="date">28 juillet 2026</span></div>
-      <h2>Premier formulaire de signalement <span class="tag tag-feature">Nouveaute</span></h2>
-      <ul>
-        <li>Structure complete reprenant les rubriques des modeles existants (PA23, PA24)</li>
-        <li>Code couleur par nature d'incident</li>
-        <li>Apercu en direct du dossier pendant la saisie</li>
-      </ul>
-    </div>
-
+  <div id="timelineContainer">
+    <div class="state-msg">Chargement...</div>
   </div>
 </div>
+
+<script>
+fetch('./changelog-data.json?t=' + Date.now())
+  .then(function(r){ if(!r.ok) throw new Error('not found'); return r.json(); })
+  .then(function(entries){
+    const container = document.getElementById('timelineContainer');
+    if(!entries || !entries.length){
+      container.innerHTML = '<div class="state-msg">Aucune mise a jour enregistree pour le moment.</div>';
+      return;
+    }
+    const timeline = document.createElement('div');
+    timeline.className = 'timeline';
+    entries.forEach(function(e){
+      const div = document.createElement('div');
+      div.className = 'entry';
+      const desc = (e.description || '').trim();
+      div.innerHTML =
+        '<span class="date">' + escapeHtml(e.date || '') + '</span>' +
+        '<h2>' + escapeHtml(e.title || '(sans titre)') + '</h2>' +
+        '<p class="' + (desc ? '' : 'empty') + '">' + (desc ? escapeHtml(desc) : 'Pas de description.') + '</p>';
+      timeline.appendChild(div);
+    });
+    container.innerHTML = '';
+    container.appendChild(timeline);
+  })
+  .catch(function(){
+    document.getElementById('timelineContainer').innerHTML =
+      '<div class="state-msg">Le fichier des mises a jour n\u2019est pas encore disponible. Il apparaitra apres le premier envoi de code sur GitHub.</div>';
+  });
+
+function escapeHtml(s){
+  return s.replace(/[&<>"']/g, function(c){
+    return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
+  });
+}
+</script>
 </body>
 </html>
