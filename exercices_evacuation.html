@@ -378,7 +378,7 @@ window.DEFAULT_CONFIG = {
   aiPromptTemplate:
     "Tu es un expert en sécurité incendie et en exercices d'évacuation, membre d'une commission santé, sécurité et conditions de travail (CSSCT) en France. " +
     "Rédige un compte-rendu d'exercice d'évacuation complet, structuré et professionnel, à partir des éléments bruts ci-dessous. " +
-    "IMPORTANT sur le format : réponds en texte brut structuré (pas de tableau markdown, utilise des listes à tirets), avec des titres précédés de '## ', afin que le texte reste lisible une fois copié dans un champ de texte simple. " +
+    "IMPORTANT sur le format : réponds en texte brut structuré (pas de tableau markdown, utilise des listes à tirets). Chaque section DOIT commencer par un titre sur sa propre ligne, écrit EXACTEMENT ainsi : '## Nom de la section' (deux dièses, un espace, puis le titre). Respecte précisément ce format même si cela répète la consigne. Exemple :\n## Points forts constatés\n(texte ici)\n\n## Écarts et axes d'amélioration\n(texte ici)\n\n" +
     "Structure ta réponse selon : ## Points forts constatés / ## Écarts et axes d'amélioration / ## Recommandations et plan d'actions priorisé / ## Conclusion et bilan global. " +
     "Base-toi en priorité sur la grille d'analyse notée (note sur 5 par critère) pour identifier les vrais points de vigilance, et sur le déroulement factuel de l'exercice.\n\n" +
     "--- ELEMENTS BRUTS ---\n" +
@@ -817,6 +817,23 @@ function guessTarget(title){
   return 'infosComplementaires';
 }
 
+function isHeaderLine(line){
+  const t = line.trim();
+  if(!t) return false;
+  if(/^#{1,6}\s*\S/.test(t)) return true;
+  if(/^\*\*.+\*\*:?$/.test(t)) return true;
+  if(/^__.+__:?$/.test(t)) return true;
+  if(t.length <= 70 && !/[.!?,;]$/.test(t)){
+    const lower = t.toLowerCase();
+    for(const opt of INTEGRATE_TARGETS){
+      if(opt.keywords && opt.keywords.some(function(k){ return lower.indexOf(k) !== -1; })) return true;
+    }
+  }
+  return false;
+}
+function cleanTitle(line){
+  return line.trim().replace(/^#{1,6}\s*/,'').replace(/^\*\*|\*\*$/g,'').replace(/^__|__$/g,'').replace(/:$/,'').trim();
+}
 window.analyzeIntegrateText = function(){
   const raw = document.getElementById('integrateText').value.trim();
   if(!raw){ showToast('Colle un texte avant de l\'analyser.'); return; }
@@ -824,10 +841,9 @@ window.analyzeIntegrateText = function(){
   const sections = [];
   let current = null;
   lines.forEach(function(line){
-    const m = line.match(/^##\s*(.+)/);
-    if(m){
+    if(isHeaderLine(line)){
       if(current) sections.push(current);
-      current = { title: m[1].trim(), text: '' };
+      current = { title: cleanTitle(line), text: '' };
     } else {
       if(!current) current = { title: 'Texte', text: '' };
       current.text += (current.text ? '\n' : '') + line;

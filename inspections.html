@@ -235,32 +235,19 @@
   <div class="modal wide">
     <div class="modal-head"><h3>Intégrer un retour IA</h3><button class="modal-close" onclick="document.getElementById('integrateModal').classList.remove('show')">×</button></div>
     <div class="modal-body">
-      <p style="font-size:12.5px;color:var(--ink-soft);margin:0 0 10px;">Colle la réponse de l'IA, relis/modifie-la, choisis où l'intégrer, puis valide.</p>
-      <textarea id="integrateText" placeholder="Colle ici le texte renvoyé par l'IA..." style="width:100%;min-height:260px;font-size:12.5px;padding:10px;border:1px solid var(--line);border-radius:8px;font-family:'Inter',sans-serif;"></textarea>
-      <div class="grid2" style="margin-top:12px;">
-        <div class="dfield">
-          <label class="dlabel">Intégrer dans</label>
-          <select id="integrateTarget">
-            <option value="notesSuiteInspection">Notes suite inspection</option>
-            <option value="contexte">Contexte / objectif</option>
-            <option value="intervenants">Intervenants</option>
-            <option value="modalite">Modalité d'inspection</option>
-            <option value="infoSalaries">Information aux salariés</option>
-            <option value="pointsComplementaires">Points complémentaires à vérifier</option>
-          </select>
-        </div>
-        <div class="dfield">
-          <label class="dlabel">Mode</label>
-          <select id="integrateMode">
-            <option value="append">Ajouter à la suite</option>
-            <option value="replace">Remplacer le contenu actuel</option>
-          </select>
-        </div>
+      <div id="integrateStep1">
+        <p style="font-size:12.5px;color:var(--ink-soft);margin:0 0 10px;">Colle la réponse complète de l'IA, puis clique sur Analyser pour la découper section par section.</p>
+        <textarea id="integrateText" placeholder="Colle ici le texte renvoyé par l'IA..." style="width:100%;min-height:260px;font-size:12.5px;padding:10px;border:1px solid var(--line);border-radius:8px;font-family:'Inter',sans-serif;"></textarea>
+      </div>
+      <div id="integrateStep2" style="display:none;">
+        <p style="font-size:12.5px;color:var(--ink-soft);margin:0 0 10px;">Pour chaque section : relis/modifie, choisis où l'intégrer, puis valide indépendamment.</p>
+        <div id="integrateSections"></div>
+        <button class="edit-link" onclick="backToPasteStep()">‹ Revenir au collage</button>
       </div>
     </div>
     <div class="modal-actions">
-      <button class="ghost" onclick="document.getElementById('integrateModal').classList.remove('show')">Annuler</button>
-      <button class="primary" onclick="validateIntegration()">Valider et enregistrer</button>
+      <button class="ghost" onclick="document.getElementById('integrateModal').classList.remove('show')">Fermer</button>
+      <button class="primary" id="analyzeBtn" onclick="analyzeIntegrateText()">Analyser la réponse</button>
     </div>
   </div>
 </div>
@@ -451,7 +438,7 @@ window.DEFAULT_CONFIG = {
   aiPromptTemplate:
     "Tu es un membre d'une commission santé, sécurité et conditions de travail (CSSCT) en France. " +
     "Rédige un dossier de préparation et de restitution d'inspection complet, structuré et détaillé, à partir des éléments bruts ci-dessous (les noms de personnes doivent rester anonymisés). " +
-    "IMPORTANT sur le format de ta réponse : réponds uniquement en texte brut structuré (pas de tableau markdown, utilise des listes à tirets), avec des titres clairs précédés de '## ', afin que le texte reste lisible une fois copié dans un simple champ de texte. " +
+    "IMPORTANT sur le format de ta réponse : réponds uniquement en texte brut structuré (pas de tableau markdown, utilise des listes à tirets). Chaque section DOIT commencer par un titre sur sa propre ligne, écrit EXACTEMENT ainsi : '## Nom de la section' (deux dièses, un espace, puis le titre). Respecte precisement ce format meme si cela repete la consigne. Exemple de debut de reponse :\n## Documents nécessaires\n(texte ici)\n\n## Guide d'entretien détaillé\n(texte ici)\n\n" +
     "Structure ta réponse selon ces sections : ## Sujet, lieu et date / ## Intervenants / ## Documents nécessaires / ## Méthode et information aux salariés / ## Guide d'entretien détaillé / ## Synthèse des entretiens réalisés et points de vigilance / ## Recommandations et points complémentaires à vérifier.\n\n" +
     "--- ELEMENTS BRUTS ---\n" +
     "Sujet : {{SUJET}}\nSite : {{SITE}}\nDate : {{DATE}}\nContexte : {{CONTEXTE}}\nIntervenants : {{INTERVENANTS}}\n" +
@@ -886,37 +873,105 @@ window.copyInspectionPrompt = async function(inspId){
 };
 
 // ---- Intégration validée d'un retour IA ----
+const INTEGRATE_TARGETS = [
+  {value:'notesSuiteInspection', label:'Notes suite inspection', keywords:['note','suite']},
+  {value:'contexte', label:'Contexte / objectif', keywords:['contexte','objectif']},
+  {value:'intervenants', label:'Intervenants', keywords:['intervenant']},
+  {value:'modalite', label:"Modalité d'inspection", keywords:['modalité','modalite','méthode','methode']},
+  {value:'infoSalaries', label:'Information aux salariés', keywords:['information','salarié','salarie']},
+  {value:'pointsComplementaires', label:'Points complémentaires à vérifier', keywords:['point','complémentaire','complementaire','vigilance']},
+  {value:'ignore', label:'Ignorer cette section', keywords:[]}
+];
+
 window.openIntegrateModal = function(inspId){
   document.getElementById('integrateModal').dataset.inspId = inspId;
   document.getElementById('integrateText').value = '';
-  document.getElementById('integrateTarget').value = 'notesSuiteInspection';
-  document.getElementById('integrateMode').value = 'append';
+  document.getElementById('integrateStep1').style.display = 'block';
+  document.getElementById('integrateStep2').style.display = 'none';
+  document.getElementById('analyzeBtn').style.display = 'inline-block';
   document.getElementById('integrateModal').classList.add('show');
 };
+window.backToPasteStep = function(){
+  document.getElementById('integrateStep1').style.display = 'block';
+  document.getElementById('integrateStep2').style.display = 'none';
+  document.getElementById('analyzeBtn').style.display = 'inline-block';
+};
+function guessTarget(title){
+  const t = title.toLowerCase();
+  for(const opt of INTEGRATE_TARGETS){
+    if(opt.keywords.some(function(k){ return t.indexOf(k) !== -1; })) return opt.value;
+  }
+  return 'notesSuiteInspection';
+}
+function isHeaderLine(line){
+  const t = line.trim();
+  if(!t) return false;
+  if(/^#{1,6}\s*\S/.test(t)) return true;
+  if(/^\*\*.+\*\*:?$/.test(t)) return true;
+  if(/^__.+__:?$/.test(t)) return true;
+  if(t.length <= 70 && !/[.!?,;]$/.test(t)){
+    const lower = t.toLowerCase();
+    for(const opt of INTEGRATE_TARGETS){
+      if(opt.keywords && opt.keywords.some(function(k){ return lower.indexOf(k) !== -1; })) return true;
+    }
+  }
+  return false;
+}
+function cleanTitle(line){
+  return line.trim().replace(/^#{1,6}\s*/,'').replace(/^\*\*|\*\*$/g,'').replace(/^__|__$/g,'').replace(/:$/,'').trim();
+}
+window.analyzeIntegrateText = function(){
+  const raw = document.getElementById('integrateText').value.trim();
+  if(!raw){ showToast('Colle un texte avant de l\'analyser.'); return; }
+  const lines = raw.split('\n');
+  const sections = [];
+  let current = null;
+  lines.forEach(function(line){
+    if(isHeaderLine(line)){
+      if(current) sections.push(current);
+      current = { title: cleanTitle(line), text: '' };
+    } else {
+      if(!current) current = { title: 'Texte', text: '' };
+      current.text += (current.text ? '\n' : '') + line;
+    }
+  });
+  if(current) sections.push(current);
 
-window.validateIntegration = async function(){
+  const container = document.getElementById('integrateSections');
+  container.innerHTML = sections.map(function(s, i){
+    const guessed = guessTarget(s.title);
+    return '<div class="admin-item" data-int-idx="' + i + '">' +
+      '<div class="ai-top"><strong style="font-size:12.5px;">' + esc(s.title) + '</strong></div>' +
+      '<textarea data-int-text="' + i + '" style="min-height:100px;">' + esc(s.text.trim()) + '</textarea>' +
+      '<div class="grid2" style="margin-top:6px;">' +
+        '<select data-int-target="' + i + '">' + INTEGRATE_TARGETS.map(function(o){ return '<option value="' + o.value + '" ' + (o.value===guessed?'selected':'') + '>' + o.label + '</option>'; }).join('') + '</select>' +
+        '<select data-int-mode="' + i + '"><option value="append">Ajouter à la suite</option><option value="replace">Remplacer</option></select>' +
+      '</div>' +
+      '<button class="add-admin-btn" style="margin-top:8px;" onclick="integrateOneSection(' + i + ')">✓ Intégrer cette section</button>' +
+    '</div>';
+  }).join('');
+
+  document.getElementById('integrateStep1').style.display = 'none';
+  document.getElementById('integrateStep2').style.display = 'block';
+  document.getElementById('analyzeBtn').style.display = 'none';
+};
+window.integrateOneSection = async function(i){
   const inspId = document.getElementById('integrateModal').dataset.inspId;
   const it = findInspection(inspId);
-  const texte = document.getElementById('integrateText').value.trim();
-  const target = document.getElementById('integrateTarget').value;
-  const mode = document.getElementById('integrateMode').value;
-  if(!texte){ showToast('Colle et valide un texte avant d\'enregistrer.'); return; }
-  const dateLabel = new Date().toLocaleDateString('fr-FR');
-  const existing = it[target] || '';
-  let newVal;
-  if(mode === 'replace'){
-    newVal = texte;
-  } else {
-    newVal = (existing ? existing + '\n\n' : '') + '--- Retour IA intégré le ' + dateLabel + ' ---\n' + texte;
-  }
-  const fields = {};
-  fields[target] = newVal;
+  const text = document.querySelector('[data-int-text="' + i + '"]').value.trim();
+  const target = document.querySelector('[data-int-target="' + i + '"]').value;
+  const mode = document.querySelector('[data-int-mode="' + i + '"]').value;
+  if(target === 'ignore'){ showToast('Section ignorée.'); return; }
+  if(!text){ showToast('Rien à intégrer pour cette section.'); return; }
   try{
+    const existing = it[target] || '';
+    const newVal = mode === 'replace' ? text : (existing ? existing + '\n\n' : '') + text;
+    const fields = {}; fields[target] = newVal;
     await window.INSP_FIREBASE.update(inspId, fields);
     it[target] = newVal;
-    document.getElementById('integrateModal').classList.remove('show');
-    showToast('Retour IA intégré ✓');
-    openDrawer(inspId);
+    showToast('Section intégrée ✓');
+    const card = document.querySelector('[data-int-idx="' + i + '"]');
+    if(card) card.style.opacity = '0.4';
   }catch(err){ showToast('Erreur : ' + err.message); }
 };
 

@@ -335,7 +335,7 @@ window.DEFAULT_CONFIG = {
   sectionsComplementaires: [],
   aiPromptTemplate:
     "Tu es en charge de rediger un compte-rendu de reunion CSSCT (commission sante, securite et conditions de travail) professionnel, clair et bien structure, a partir d'une prise de notes brute ou d'un transcript. " +
-    "IMPORTANT sur le format : reponds en texte brut structure (pas de tableau markdown, utilise des listes a tirets), avec des titres precedes de '## ', afin que le texte reste lisible une fois copie dans un champ de texte simple. " +
+    "IMPORTANT sur le format : reponds en texte brut structure (pas de tableau markdown, utilise des listes a tirets). Chaque section DOIT commencer par un titre sur sa propre ligne, ecrit EXACTEMENT ainsi : '## Nom de la section' (deux dieses, un espace, puis le titre). Respecte precisement ce format meme si cela repete la consigne. Exemple :\n## Points abordes\n(texte ici)\n\n## Decisions prises\n(texte ici)\n\n" +
     "Structure ta reponse selon : ## Points abordes / ## Decisions prises / ## Prochaine echeance. " +
     "Reformule et structure clairement chaque partie, sans inventer d'informations qui ne figurent pas dans la prise de notes.\n\n" +
     "--- ELEMENTS BRUTS ---\n" +
@@ -522,6 +522,23 @@ function guessTarget(title){
   }
   return 'pointsAbordes';
 }
+function isHeaderLine(line){
+  const t = line.trim();
+  if(!t) return false;
+  if(/^#{1,6}\s*\S/.test(t)) return true;
+  if(/^\*\*.+\*\*:?$/.test(t)) return true;
+  if(/^__.+__:?$/.test(t)) return true;
+  if(t.length <= 70 && !/[.!?,;]$/.test(t)){
+    const lower = t.toLowerCase();
+    for(const opt of INTEGRATE_TARGETS){
+      if(opt.keywords && opt.keywords.some(function(k){ return lower.indexOf(k) !== -1; })) return true;
+    }
+  }
+  return false;
+}
+function cleanTitle(line){
+  return line.trim().replace(/^#{1,6}\s*/,'').replace(/^\*\*|\*\*$/g,'').replace(/^__|__$/g,'').replace(/:$/,'').trim();
+}
 window.analyzeIntegrateText = function(){
   const raw = document.getElementById('integrateText').value.trim();
   if(!raw){ showToast('Colle un texte avant de l\'analyser.'); return; }
@@ -529,10 +546,9 @@ window.analyzeIntegrateText = function(){
   const sections = [];
   let current = null;
   lines.forEach(function(line){
-    const m = line.match(/^##\s*(.+)/);
-    if(m){
+    if(isHeaderLine(line)){
       if(current) sections.push(current);
-      current = { title: m[1].trim(), text: '' };
+      current = { title: cleanTitle(line), text: '' };
     } else {
       if(!current) current = { title: 'Texte', text: '' };
       current.text += (current.text ? '\n' : '') + line;
