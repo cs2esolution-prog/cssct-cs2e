@@ -574,6 +574,11 @@
             <div class="thumb-row" id="thumbLocalisation"></div>
           </div>
         </div>
+        <div class="field" style="margin-top:14px;">
+          <label>Photos supplémentaires <span class="opt">(autant que nécessaire)</span></label>
+          <label class="filebox" for="photoExtra">📎 Ajouter une photo<input type="file" id="photoExtra" accept="image/*"></label>
+          <div class="thumb-row" id="thumbExtra" style="flex-wrap:wrap;"></div>
+        </div>
       </div></div>
     </div>
 
@@ -856,6 +861,30 @@ function bindFile(inputId, thumbId, setter){
 bindFile('photoIncident','thumbIncident', (v,dims)=>{ photoIncidentDataURL = v; photoIncidentDims = dims; });
 bindFile('photoLocalisation','thumbLocalisation', (v,dims)=>{ photoLocalisationDataURL = v; photoLocalisationDims = dims; });
 
+// ---- Photos supplémentaires (illimitées) ----
+let extraPhotos = []; // [{dataUrl, width, height}]
+function renderExtraPhotosThumb(){
+  const box = document.getElementById('thumbExtra');
+  box.innerHTML = extraPhotos.map(function(p, i){
+    return '<div style="position:relative;display:inline-block;"><img src="' + p.dataUrl + '" style="width:70px;height:70px;object-fit:cover;border-radius:6px;border:1px solid var(--line);"><button type="button" onclick="removeExtraPhoto(' + i + ')" style="position:absolute;top:-6px;right:-6px;background:#2B2A2E;color:#fff;border:none;border-radius:50%;width:20px;height:20px;font-size:11px;cursor:pointer;">✕</button></div>';
+  }).join('');
+}
+window.removeExtraPhoto = function(i){
+  extraPhotos.splice(i,1);
+  renderExtraPhotosThumb();
+};
+document.getElementById('photoExtra').addEventListener('change', async (e)=>{
+  const f = e.target.files[0];
+  if(!f) return;
+  try{
+    let result = await compressImageFile(f, 1000, 0.65);
+    if(result.dataUrl.length > 700000){ result = await compressImageFile(f, 700, 0.5); }
+    extraPhotos.push({ dataUrl: result.dataUrl, width: result.width, height: result.height });
+    renderExtraPhotosThumb();
+  }catch(err){ showToast('Erreur de lecture de l\'image.'); }
+  e.target.value = '';
+});
+
 // accordion
 document.querySelectorAll('.section-head').forEach(head=>{
   head.addEventListener('click', ()=>{
@@ -923,6 +952,7 @@ function gatherPayload(){
     photoLocalisationBase64: photoLocalisationDataURL || '',
     photoIncidentDims: photoIncidentDims,
     photoLocalisationDims: photoLocalisationDims,
+    photosSupplementaires: extraPhotos,
     customFields: gatherCustomFieldValues()
   };
 }
@@ -1000,6 +1030,7 @@ document.getElementById('resetBtn').addEventListener('click', ()=>{
   photoLocalisationDataURL = '';
   photoIncidentDims = null;
   photoLocalisationDims = null;
+  extraPhotos = [];
   document.querySelectorAll('.field.error').forEach(f=>f.classList.remove('error'));
   document.querySelectorAll('.section').forEach((s,i)=>s.classList.toggle('open', i===0));
   updatePreview();
@@ -1222,10 +1253,13 @@ function buildReportHtml(p){
   }
 
   html += `<div class="rp-blank"></div><div class="rp-h">Document joint :</div>`;
-  if(p.photoIncidentBase64 || p.photoLocalisationBase64){
+  if(p.photoIncidentBase64 || p.photoLocalisationBase64 || (p.photosSupplementaires && p.photosSupplementaires.length)){
     html += `<div class="rp-v" style="display:flex;gap:10px;flex-wrap:wrap;">`;
     if(p.photoIncidentBase64) html += `<img src="${p.photoIncidentBase64}" alt="Photo incident" style="max-width:220px;border:1px solid #ddd;border-radius:6px;">`;
     if(p.photoLocalisationBase64) html += `<img src="${p.photoLocalisationBase64}" alt="Photo localisation" style="max-width:220px;border:1px solid #ddd;border-radius:6px;">`;
+    (p.photosSupplementaires||[]).forEach(function(ph){
+      html += `<img src="${ph.dataUrl}" alt="Photo supplémentaire" style="max-width:220px;border:1px solid #ddd;border-radius:6px;">`;
+    });
     html += `</div>`;
   } else {
     html += `<div class="rp-v">Aucune pièce jointe.</div>`;
@@ -1416,7 +1450,7 @@ function generateDocxFile(p){
 
   children.push(blank());
   children.push(GH('Document joint :'));
-  if(p.photoIncidentBase64 || p.photoLocalisationBase64){
+  if(p.photoIncidentBase64 || p.photoLocalisationBase64 || (p.photosSupplementaires && p.photosSupplementaires.length)){
     const photoRuns = [];
     if(p.photoIncidentBase64){
       const dims = scaleToMaxWidth(p.photoIncidentDims, 240);
@@ -1426,6 +1460,10 @@ function generateDocxFile(p){
       const dims = scaleToMaxWidth(p.photoLocalisationDims, 240);
       photoRuns.push(new ImageRun({ data: base64ToUint8Array(p.photoLocalisationBase64.split(',')[1]), transformation: dims, type: "jpg" }));
     }
+    (p.photosSupplementaires||[]).forEach(function(ph){
+      const dims = scaleToMaxWidth({w: ph.width, h: ph.height}, 240);
+      photoRuns.push(new ImageRun({ data: base64ToUint8Array(ph.dataUrl.split(',')[1]), transformation: dims, type: "jpg" }));
+    });
     photoRuns.forEach(function(run){ children.push(new Paragraph({ children: [run] })); });
   } else {
     children.push(...P('Aucune pièce jointe.'));

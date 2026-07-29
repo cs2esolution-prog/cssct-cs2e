@@ -51,10 +51,11 @@
   .status-encours{background:#E1EEF7; color:#2A5F82;}
   .status-clos{background:#E4F3EF; color:var(--teal-dark);}
 
-  .drawer-overlay{position:fixed; inset:0; background:rgba(30,28,32,.5); display:none; z-index:80; justify-content:flex-end;}
+  .drawer-overlay{position:fixed; inset:0; background:rgba(30,28,32,.5); display:none; z-index:80; justify-content:center; align-items:flex-start;}
   .drawer-overlay.show{display:flex;}
-  .drawer{width:min(700px,100%); height:100%; background:var(--paper); overflow-y:auto; box-shadow:-16px 0 40px rgba(0,0,0,.25);}
-  .drawer-head{position:sticky; top:0; background:#fff; z-index:2; border-bottom:1px solid var(--line); padding:16px 24px; display:flex; align-items:flex-start; justify-content:space-between; gap:12px;}
+  .drawer{width:min(1150px, 78vw); max-width:1150px; margin-top:72px; max-height:calc(100vh - 90px); background:var(--paper); overflow-y:auto; border-radius:16px 16px 0 0; box-shadow:0 -10px 50px rgba(0,0,0,.3);}
+  @media (max-width:900px){ .drawer{ width:96vw; margin-top:56px; max-height:calc(100vh - 60px); } }
+  .drawer-head{position:sticky; top:0; background:#fff; z-index:2; border-bottom:1px solid var(--line); padding:16px 24px; display:flex; align-items:flex-start; justify-content:space-between; gap:12px; border-radius:16px 16px 0 0;}
   .drawer-head h2{font-family:'Source Serif 4',serif; font-size:15.5px; margin:0; word-break:break-word; line-height:1.3;}
   .drawer-head .dh-meta{font-size:11px; color:var(--ink-soft); margin-top:3px;}
   .drawer-close{background:none; border:none; font-size:22px; cursor:pointer; color:var(--ink-soft); flex:none;}
@@ -203,6 +204,13 @@
       <button class="ghost" onclick="document.getElementById('entretienModal').classList.remove('show')">Annuler</button>
       <button class="primary" onclick="saveEntretien()">Enregistrer</button>
     </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="infoModal">
+  <div class="modal" style="max-width:420px;">
+    <div class="modal-head"><h3 id="infoModalTitle"></h3><button class="modal-close" onclick="document.getElementById('infoModal').classList.remove('show')">×</button></div>
+    <div class="modal-body" id="infoModalBody" style="font-size:13px;color:var(--ink-soft);"></div>
   </div>
 </div>
 
@@ -511,13 +519,18 @@ function findInspection(id){ return (window._inspections||[]).find(function(x){ 
 function fieldBlock(id, label, value, info){
   const isArr = Array.isArray(value);
   const display = isArr ? (value.length ? value.join(', ') : '') : value;
-  const infoHtml = info ? ' <span class="info-icon" onclick="toggleFieldInfo(\'' + id + '\')">i</span>' : '';
-  const infoBox = info ? '<div class="info-box" id="fieldInfo_' + id + '">' + esc(info) + '</div>' : '';
-  return '<div class="dfield" data-field="' + id + '"><div class="dlabel">' + label + infoHtml + '</div>' + infoBox + '<div class="dval ' + (display?'':'empty') + '">' + (esc(display) || 'Non renseigné') + '</div></div>';
+  const infoHtml = info ? infoIconHtml(label, info) : '';
+  return '<div class="dfield" data-field="' + id + '"><div class="dlabel">' + label + infoHtml + '</div><div class="dval ' + (display?'':'empty') + '">' + (esc(display) || 'Non renseigné') + '</div></div>';
 }
-window.toggleFieldInfo = function(id){
-  const el = document.getElementById('fieldInfo_' + id);
-  if(el) el.classList.toggle('show');
+
+// ---- Modale d'info générique (i) ----
+function infoIconHtml(title, body){
+  return ' <span class="info-icon" onclick="showInfoModal(' + "'" + title.replace(/'/g,"\\'") + "'" + ', ' + "'" + body.replace(/'/g,"\\'") + "'" + ')">i</span>';
+}
+window.showInfoModal = function(title, body){
+  document.getElementById('infoModalTitle').textContent = title;
+  document.getElementById('infoModalBody').innerHTML = body;
+  document.getElementById('infoModal').classList.add('show');
 };
 
 function sectionCard(title, num, inspId, fields){
@@ -727,11 +740,10 @@ window.openEntretienModal = function(inspId){
   body.dataset.extraCount = '0';
   const C = cfg();
   const rowsHtml = C.entretienThemes.map(function(t, i){
-    const questions = (t.questions||[]).map(function(q){ return '<li>' + esc(q) + '</li>'; }).join('');
+    const questionsHtml = '<ul>' + (t.questions||[]).map(function(q){ return '<li>' + esc(q) + '</li>'; }).join('') + '</ul>';
     return '<tr data-row-type="template">' +
       '<td style="font-size:12px;font-weight:600;padding:6px 4px;width:170px;">' + esc(t.theme) +
-        ' <span class="info-icon" onclick="toggleThemeInfo(' + i + ')">i</span>' +
-        '<div id="themeInfo' + i + '" class="info-box" style="margin-top:6px;"><ul>' + questions + '</ul></div>' +
+        infoIconHtml(t.theme, questionsHtml) +
       '</td>' +
       '<td style="padding:4px;"><textarea data-theme-notes="' + i + '" style="width:100%;min-height:40px;font-size:12px;padding:6px;border:1px solid var(--line);border-radius:6px;"></textarea></td>' +
       '<td style="padding:4px;"><textarea data-theme-vigilance="' + i + '" style="width:100%;min-height:40px;font-size:12px;padding:6px;border:1px solid var(--line);border-radius:6px;"></textarea></td>' +
@@ -764,11 +776,6 @@ window.addEntretienRow = function(){
     '<td style="padding:4px;"><textarea data-extra-vigilance="' + count + '" style="width:100%;min-height:40px;font-size:12px;padding:6px;border:1px solid var(--line);border-radius:6px;"></textarea></td>';
   tbody.appendChild(tr);
   body.dataset.extraCount = String(count + 1);
-};
-
-window.toggleThemeInfo = function(i){
-  const el = document.getElementById('themeInfo' + i);
-  if(el) el.classList.toggle('show');
 };
 
 window.saveEntretien = async function(){

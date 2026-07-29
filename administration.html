@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Administration . CSSCT</title>
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-title" content="Mon appli CSSCT">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#2B2A2E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,500;8..60,600;8..60,700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+<style>
+  :root{
+    --teal:#019682; --teal-dark:#017162; --purple:#5A4570; --gold:#C6AB76;
+    --paper:#F7F5F1; --paper-raised:#fff; --ink:#2B2A2E; --ink-soft:#6B6873; --line:#E4E0D8; --danger:#A85D45; --radius:12px;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0; background:var(--paper); color:var(--ink); font-family:'Inter',system-ui,sans-serif; line-height:1.5;}
+  .wrap{max-width:720px; margin:0 auto; padding:32px 24px 90px;}
+  header.top{display:flex; align-items:center; justify-content:space-between; padding-bottom:20px; border-bottom:2px solid var(--ink); margin-bottom:24px;}
+  .brand{display:flex; align-items:center; gap:12px; cursor:pointer;}
+  .brand-mark{width:38px; height:38px; border-radius:50%;
+    background:conic-gradient(var(--teal) 0deg 120deg, var(--gold) 120deg 240deg, var(--purple) 240deg 360deg); flex:none;}
+  .brand-text{font-family:'Source Serif 4', serif; font-weight:700; font-size:19px;}
+  .brand-text span{color:var(--teal);}
+  .back-link{font-size:12.5px; font-weight:600; color:var(--ink-soft); text-decoration:none; border:1px solid var(--line); padding:6px 14px; border-radius:20px;}
+
+  h1{font-family:'Source Serif 4',serif; font-size:20px; margin:0 0 4px;}
+  .subtitle{font-size:12.5px; color:var(--ink-soft); margin:0 0 24px;}
+  .section-lbl{font-size:11px; text-transform:uppercase; letter-spacing:.06em; color:var(--ink-soft); margin:26px 0 10px;}
+  .section-lbl:first-of-type{margin-top:0;}
+
+  .admin-card{display:flex; align-items:center; gap:14px; background:#fff; border:1px solid var(--line); border-radius:var(--radius); padding:16px 18px; margin-bottom:10px; text-decoration:none; color:var(--ink);}
+  .admin-card:hover{box-shadow:0 4px 14px rgba(0,0,0,.06);}
+  .admin-card .a-icon{font-size:22px; flex:none;}
+  .admin-card .a-title{font-weight:600; font-size:13.5px;}
+  .admin-card .a-desc{font-size:11.5px; color:var(--ink-soft); margin-top:2px;}
+  .admin-card .a-arrow{margin-left:auto; color:var(--ink-soft); flex:none;}
+
+  .sitemap-grid{display:grid; grid-template-columns:1fr 1fr; gap:8px;}
+  @media (max-width:560px){ .sitemap-grid{grid-template-columns:1fr;} }
+  .sitemap-link{display:block; background:#fff; border:1px solid var(--line); border-radius:10px; padding:10px 14px; font-size:12.5px; font-weight:600; color:var(--ink); text-decoration:none;}
+  .sitemap-link:hover{border-color:var(--teal);}
+
+  .qr-card{background:#fff; border:1px solid var(--line); border-radius:var(--radius); padding:24px; text-align:center;}
+  #qrCanvas{margin:0 auto 12px;}
+  .qr-url{font-family:'IBM Plex Mono',monospace; font-size:11.5px; color:var(--ink-soft); word-break:break-all;}
+  .copy-btn{margin-top:10px; background:var(--ink); color:#fff; border:none; padding:9px 18px; border-radius:20px; font-weight:600; font-size:12.5px; cursor:pointer;}
+
+  #authGate{position:fixed;inset:0;background:#2B2A2E;display:flex;align-items:center;justify-content:center;z-index:200;padding:20px;}
+  #authForm{display:none;background:#fff;border-radius:14px;padding:32px;max-width:360px;width:100%;text-align:center;}
+</style>
+</head>
+<body>
+
+<div id="authGate">
+  <div id="authChecking" style="color:#ffffffaa;font-size:13.5px;">Vérification de la connexion…</div>
+  <div id="authForm">
+    <div style="font-family:'Source Serif 4',serif;font-weight:700;font-size:18px;margin-bottom:6px;">CS<span style="color:#019682;">2E</span> · CSSCT</div>
+    <p style="font-size:13px;color:#6B6873;margin:0 0 18px;">Connecte-toi avec ton email professionnel.</p>
+    <input type="email" id="authEmail" placeholder="prenom.nom@entreprise.com" style="width:100%;padding:10px 12px;border:1px solid #E4E0D8;border-radius:8px;font-size:13.5px;margin-bottom:10px;">
+    <button id="authSendLink" style="width:100%;background:#2B2A2E;color:#fff;border:none;padding:11px;border-radius:20px;font-weight:600;cursor:pointer;">Recevoir un lien de connexion</button>
+    <div id="authMsg" style="font-size:12px;color:#A85D45;margin-top:10px;min-height:14px;"></div>
+  </div>
+</div>
+
+<div class="wrap">
+  <header class="top">
+    <div class="brand" onclick="window.location.href='index.html'">
+      <div class="brand-mark"></div>
+      <div class="brand-text">CS<span>2E</span> · CSSCT</div>
+    </div>
+    <a class="back-link" href="index.html">Retour à l'accueil</a>
+  </header>
+
+  <h1>Administration</h1>
+  <p class="subtitle">Accès rapide aux réglages techniques et à la gestion de l'application.</p>
+
+  <div class="section-lbl">Statistiques</div>
+  <a class="admin-card" href="dashboard.html">
+    <div class="a-icon">📊</div>
+    <div><div class="a-title">Tableau de bord</div><div class="a-desc">Indicateurs, comparaison annuelle, bilan téléchargeable</div></div>
+    <div class="a-arrow">›</div>
+  </a>
+
+  <div class="section-lbl">Accès et données (Firebase)</div>
+  <a class="admin-card" href="https://console.firebase.google.com/project/cssct-cs2e/firestore/data/~2Fauthorized_emails" target="_blank" rel="noopener">
+    <div class="a-icon">👤</div>
+    <div><div class="a-title">Comptes autorisés</div><div class="a-desc">Ajouter ou retirer un email ayant accès à l'application</div></div>
+    <div class="a-arrow">↗</div>
+  </a>
+  <a class="admin-card" href="https://console.firebase.google.com/project/cssct-cs2e/firestore/data" target="_blank" rel="noopener">
+    <div class="a-icon">🗄️</div>
+    <div><div class="a-title">Base de données (Firestore)</div><div class="a-desc">Voir et modifier directement les données enregistrées</div></div>
+    <div class="a-arrow">↗</div>
+  </a>
+  <a class="admin-card" href="https://console.firebase.google.com/project/cssct-cs2e/authentication/users" target="_blank" rel="noopener">
+    <div class="a-icon">🔑</div>
+    <div><div class="a-title">Connexions (Firebase Authentication)</div><div class="a-desc">Historique des personnes s'étant déjà connectées</div></div>
+    <div class="a-arrow">↗</div>
+  </a>
+  <a class="admin-card" href="https://console.firebase.google.com/project/cssct-cs2e/overview" target="_blank" rel="noopener">
+    <div class="a-icon">🔥</div>
+    <div><div class="a-title">Console Firebase (vue d'ensemble)</div><div class="a-desc">Accès général au projet Firebase</div></div>
+    <div class="a-arrow">↗</div>
+  </a>
+
+  <div class="section-lbl">Code et hébergement</div>
+  <a class="admin-card" href="https://github.com/choudayer34-afk/cssct-cs2e" target="_blank" rel="noopener">
+    <div class="a-icon">💻</div>
+    <div><div class="a-title">Dépôt GitHub</div><div class="a-desc">Code source de l'application, historique des commits</div></div>
+    <div class="a-arrow">↗</div>
+  </a>
+  <a class="admin-card" href="https://dash.cloudflare.com" target="_blank" rel="noopener">
+    <div class="a-icon">☁️</div>
+    <div><div class="a-title">Tableau de bord Cloudflare</div><div class="a-desc">Déploiements, statut du site</div></div>
+    <div class="a-arrow">↗</div>
+  </a>
+
+  <div class="section-lbl">Toutes les pages de l'application</div>
+  <div class="sitemap-grid">
+    <a class="sitemap-link" href="index.html">Accueil</a>
+    <a class="sitemap-link" href="nouveau_signalement.html">Nouveau signalement</a>
+    <a class="sitemap-link" href="signalement_liste.html">Dossiers de signalement</a>
+    <a class="sitemap-link" href="inspections.html">Inspections</a>
+    <a class="sitemap-link" href="exercices_evacuation.html">Exercices d'évacuation</a>
+    <a class="sitemap-link" href="trousses_secours.html">Trousses de secours</a>
+    <a class="sitemap-link" href="dashboard.html">Tableau de bord</a>
+    <a class="sitemap-link" href="import_excel.html">Import historique Excel</a>
+    <a class="sitemap-link" href="changelog.html">Notes de mise à jour</a>
+    <a class="sitemap-link" href="a_propos.html">À propos</a>
+    <a class="sitemap-link" href="administration.html">Administration (ici)</a>
+  </div>
+
+  <div class="section-lbl">Partager l'application</div>
+  <div class="qr-card">
+    <canvas id="qrCanvas"></canvas>
+    <div class="qr-url" id="qrUrl"></div>
+    <button class="copy-btn" id="copyUrlBtn">Copier le lien</button>
+  </div>
+</div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js";
+  import { getAuth, sendSignInLinkToEmail, isSignInWithEmailLink, signInWithEmailLink, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyB6c5xe4bg5JVUCJXsHcJBj3mFniALh39E",
+    authDomain: "cssct-cs2e.firebaseapp.com",
+    projectId: "cssct-cs2e",
+    storageBucket: "cssct-cs2e.firebasestorage.app",
+    messagingSenderId: "921964040050",
+    appId: "1:921964040050:web:578fcc81ca212b741697eb"
+  };
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const actionCodeSettings = { url: window.location.origin + window.location.pathname, handleCodeInApp: true };
+
+  if (isSignInWithEmailLink(auth, window.location.href)) {
+    let email = window.prompt("Confirme ton adresse email pour terminer la connexion :");
+    signInWithEmailLink(auth, email, window.location.href)
+      .then(() => window.history.replaceState({}, document.title, window.location.pathname))
+      .catch(err => alert("Connexion impossible : " + err.message));
+  }
+
+  onAuthStateChanged(auth, (user) => {
+    document.getElementById('authChecking').style.display = 'none';
+    if (user) {
+      document.getElementById('authGate').style.display = 'none';
+      window.renderQR();
+    } else {
+      document.getElementById('authGate').style.display = 'flex';
+      document.getElementById('authForm').style.display = 'block';
+    }
+  });
+
+  document.getElementById('authSendLink').addEventListener('click', () => {
+    const email = document.getElementById('authEmail').value.trim();
+    const msg = document.getElementById('authMsg');
+    if (!email) { msg.textContent = "Merci de saisir ton email."; return; }
+    sendSignInLinkToEmail(auth, email, actionCodeSettings)
+      .then(() => { msg.style.color = '#019682'; msg.textContent = "Lien envoyé, vérifie ta boîte mail."; })
+      .catch(err => { msg.textContent = "Erreur : " + err.message; });
+  });
+</script>
+
+<script>
+window.renderQR = function(){
+  const url = window.location.origin + window.location.pathname.replace(/administration\.html$/, 'index.html');
+  document.getElementById('qrUrl').textContent = url;
+  if(window.QRCode){
+    QRCode.toCanvas(document.getElementById('qrCanvas'), url, { width: 200, margin: 1, color: { dark: '#2B2A2E', light: '#F7F5F1' } });
+  }
+  document.getElementById('copyUrlBtn').addEventListener('click', function(){
+    navigator.clipboard.writeText(url).then(function(){
+      const btn = document.getElementById('copyUrlBtn');
+      const old = btn.textContent;
+      btn.textContent = 'Copié ✓';
+      setTimeout(function(){ btn.textContent = old; }, 1500);
+    });
+  });
+};
+</script>
+</body>
+</html>

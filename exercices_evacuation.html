@@ -42,10 +42,11 @@
   .row .r-title{font-weight:600; font-size:14px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:420px;}
   .row .r-meta{font-size:11.5px; color:var(--ink-soft); margin-top:2px;}
 
-  .drawer-overlay{position:fixed; inset:0; background:rgba(30,28,32,.5); display:none; z-index:80; justify-content:flex-end;}
+  .drawer-overlay{position:fixed; inset:0; background:rgba(30,28,32,.5); display:none; z-index:80; justify-content:center; align-items:flex-start;}
   .drawer-overlay.show{display:flex;}
-  .drawer{width:min(720px,100%); height:100%; background:var(--paper); overflow-y:auto; box-shadow:-16px 0 40px rgba(0,0,0,.25);}
-  .drawer-head{position:sticky; top:0; background:#fff; z-index:2; border-bottom:1px solid var(--line); padding:16px 24px; display:flex; align-items:flex-start; justify-content:space-between; gap:12px;}
+  .drawer{width:min(1150px, 78vw); max-width:1150px; margin-top:72px; max-height:calc(100vh - 90px); background:var(--paper); overflow-y:auto; border-radius:16px 16px 0 0; box-shadow:0 -10px 50px rgba(0,0,0,.3);}
+  @media (max-width:900px){ .drawer{ width:96vw; margin-top:56px; max-height:calc(100vh - 60px); } }
+  .drawer-head{position:sticky; top:0; background:#fff; z-index:2; border-bottom:1px solid var(--line); padding:16px 24px; display:flex; align-items:flex-start; justify-content:space-between; gap:12px; border-radius:16px 16px 0 0;}
   .drawer-head h2{font-family:'Source Serif 4',serif; font-size:15.5px; margin:0; word-break:break-word; line-height:1.3;}
   .drawer-head .dh-meta{font-size:11px; color:var(--ink-soft); margin-top:3px;}
   .drawer-close{background:none; border:none; font-size:22px; cursor:pointer; color:var(--ink-soft); flex:none;}
@@ -203,30 +204,19 @@
   <div class="modal wide">
     <div class="modal-head"><h3>Intégrer un retour IA</h3><button class="modal-close" onclick="document.getElementById('integrateModal').classList.remove('show')">×</button></div>
     <div class="modal-body">
-      <p style="font-size:12.5px;color:var(--ink-soft);margin:0 0 10px;">Colle la réponse de l'IA, relis/modifie-la, choisis où l'intégrer, puis valide.</p>
-      <textarea id="integrateText" placeholder="Colle ici le texte renvoyé par l'IA..." style="width:100%;min-height:260px;font-size:12.5px;padding:10px;border:1px solid var(--line);border-radius:8px;"></textarea>
-      <div class="grid2" style="margin-top:12px;">
-        <div class="dfield">
-          <label class="dlabel">Intégrer dans</label>
-          <select id="integrateTarget">
-            <option value="pointsForts">Points forts constatés</option>
-            <option value="ecarts">Écarts et axes d'amélioration</option>
-            <option value="infosComplementaires">Informations complémentaires</option>
-            <option value="conclusion">Conclusion</option>
-          </select>
-        </div>
-        <div class="dfield">
-          <label class="dlabel">Mode</label>
-          <select id="integrateMode">
-            <option value="append">Ajouter à la suite</option>
-            <option value="replace">Remplacer le contenu actuel</option>
-          </select>
-        </div>
+      <div id="integrateStep1">
+        <p style="font-size:12.5px;color:var(--ink-soft);margin:0 0 10px;">Colle la réponse complète de l'IA (avec ses titres "## "), puis clique sur Analyser pour la découper section par section.</p>
+        <textarea id="integrateText" placeholder="Colle ici le texte renvoyé par l'IA..." style="width:100%;min-height:260px;font-size:12.5px;padding:10px;border:1px solid var(--line);border-radius:8px;"></textarea>
+      </div>
+      <div id="integrateStep2" style="display:none;">
+        <p style="font-size:12.5px;color:var(--ink-soft);margin:0 0 10px;">Pour chaque section : relis/modifie le texte, choisis où l'intégrer, puis valide indépendamment.</p>
+        <div id="integrateSections"></div>
+        <button class="edit-link" onclick="backToPasteStep()">‹ Revenir au collage</button>
       </div>
     </div>
     <div class="modal-actions">
-      <button class="ghost" onclick="document.getElementById('integrateModal').classList.remove('show')">Annuler</button>
-      <button class="primary" onclick="validateIntegration()">Valider et enregistrer</button>
+      <button class="ghost" onclick="document.getElementById('integrateModal').classList.remove('show')">Fermer</button>
+      <button class="primary" id="analyzeBtn" onclick="analyzeIntegrateText()">Analyser la réponse</button>
     </div>
   </div>
 </div>
@@ -262,6 +252,13 @@
       <button class="ghost" onclick="document.getElementById('adminModal').classList.remove('show')">Fermer sans enregistrer</button>
       <button class="primary" onclick="saveAdminConfig()">Enregistrer la trame</button>
     </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="infoModal">
+  <div class="modal" style="max-width:420px;">
+    <div class="modal-head"><h3 id="infoModalTitle"></h3><button class="modal-close" onclick="document.getElementById('infoModal').classList.remove('show')">×</button></div>
+    <div class="modal-body" id="infoModalBody" style="font-size:13px;color:var(--ink-soft);"></div>
   </div>
 </div>
 
@@ -445,11 +442,125 @@ window.createExercice = async function(){
 
 function findExercice(id){ return (window._exercices||[]).find(function(x){ return x.id === id; }); }
 
-function fieldBlock(id, label, value){
-  return '<div class="dfield" data-field="' + id + '"><div class="dlabel">' + label + '</div><div class="dval ' + (value?'':'empty') + '">' + (esc(value) || 'Non renseigné') + '</div></div>';
+function fieldBlock(id, label, value, info){
+  const infoHtml = info ? infoIcon(label, info) : '';
+  return '<div class="dfield" data-field="' + id + '"><div class="dlabel">' + label + infoHtml + '</div><div class="dval ' + (value?'':'empty') + '">' + (esc(value) || 'Non renseigné') + '</div></div>';
 }
+
+// ---- Modale d'info générique (i) ----
+window.showInfoModal = function(title, body){
+  document.getElementById('infoModalTitle').textContent = title;
+  document.getElementById('infoModalBody').innerHTML = body;
+  document.getElementById('infoModal').classList.add('show');
+};
+function infoIcon(title, body){
+  return ' <span class="info-icon" onclick="showInfoModal(' + "'" + title.replace(/'/g,"\\'") + "'" + ', ' + "'" + body.replace(/'/g,"\\'") + "'" + ')">i</span>';
+}
+const FIELD_INFO = {
+  heureAlarme: "Date et heure précises auxquelles l'alarme incendie a été déclenchée lors de l'exercice.",
+  tempsEvacuation: "Durée totale entre le déclenchement de l'alarme et la fin effective de l'évacuation (format hh:mm:ss). Utilise les boutons Marquer début/fin pour un calcul automatique.",
+  pointRassemblement: "Lieu extérieur défini dans le plan d'évacuation où les occupants doivent se regrouper (ex : parking, tables de pique-nique...).",
+  nombrePersonnes: "Nombre total de personnes comptabilisées au point de rassemblement lors de l'exercice.",
+  nombreDetail: "Précision complémentaire sur ce total : par exemple la répartition par société ou entité présente sur site (ex : dont 4 collaborateurs Fertiline)."
+};
+
+// ---- Déroulement de l'exercice (section dédiée) ----
+function renderDeroulementSection(exId, it){
+  const photoHtml = it.presencePhoto
+    ? '<div class="photo-thumb"><img src="' + it.presencePhoto.dataUrl + '"><button onclick="deletePresencePhoto(\'' + exId + '\')">✕</button></div>'
+    : '<div class="dval empty">Aucun document/photo.</div>';
+  return '<div class="dsection" data-section="2"><h3>Déroulement de l\'exercice <button class="edit-link" onclick="toggleDeroulement(\'' + exId + '\')">Modifier</button></h3>' +
+    '<div class="section-view">' +
+      '<div class="dfield"><div class="dlabel">Heure de déclenchement de l\'alarme' + infoIcon("Heure de déclenchement", FIELD_INFO.heureAlarme) + '</div><div class="dval ' + (it.heureAlarme?'':'empty') + '">' + (esc(it.heureAlarme) || 'Non renseigné') + '</div></div>' +
+      '<div class="dfield"><div class="dlabel">Temps d\'évacuation complet' + infoIcon("Temps d'évacuation", FIELD_INFO.tempsEvacuation) + '</div><div class="dval ' + (it.tempsEvacuation?'':'empty') + '">' + (esc(it.tempsEvacuation) || 'Non renseigné') + '</div></div>' +
+      '<div class="dfield"><div class="dlabel">Point de rassemblement' + infoIcon("Point de rassemblement", FIELD_INFO.pointRassemblement) + '</div><div class="dval ' + (it.pointRassemblement?'':'empty') + '">' + (esc(it.pointRassemblement) || 'Non renseigné') + '</div></div>' +
+      '<div class="dfield"><div class="dlabel">Nombre de personnes comptabilisées' + infoIcon("Nombre de personnes", FIELD_INFO.nombrePersonnes) + '</div><div class="dval ' + (it.nombrePersonnes?'':'empty') + '">' + (esc(it.nombrePersonnes) || 'Non renseigné') + '</div></div>' +
+      '<div class="dfield"><div class="dlabel">Détail' + infoIcon("Détail", FIELD_INFO.nombreDetail) + '</div><div class="dval ' + (it.nombreDetail?'':'empty') + '">' + (esc(it.nombreDetail) || 'Non renseigné') + '</div></div>' +
+      '<div class="dfield"><div class="dlabel">Photo/document de la liste des personnes présentes</div>' + photoHtml +
+        '<label class="edit-link" style="cursor:pointer;display:inline-block;margin-top:6px;">📎 Ajouter<input type="file" accept="image/*" style="display:none;" onchange="addPresencePhoto(\'' + exId + '\', this)"></label>' +
+      '</div>' +
+    '</div>' +
+  '</div>';
+}
+
+window.toggleDeroulement = function(exId){
+  const it = findExercice(exId);
+  const sec = document.querySelector('.dsection[data-section="2"]');
+  const view = sec.querySelector('.section-view');
+  const defaultDT = it.heureAlarme || new Date().toISOString().slice(0,16);
+  view.innerHTML =
+    '<div class="dfield"><label class="dlabel">Heure de déclenchement de l\'alarme' + infoIcon("Heure de déclenchement", FIELD_INFO.heureAlarme) + '</label><input type="datetime-local" id="edHeureAlarme" value="' + esc(defaultDT) + '"></div>' +
+    '<div class="dfield"><label class="dlabel">Temps d\'évacuation complet (hh:mm:ss)' + infoIcon("Temps d'évacuation", FIELD_INFO.tempsEvacuation) + '</label>' +
+      '<input type="text" id="edTempsEvac" placeholder="hh:mm:ss" value="' + esc(it.tempsEvacuation) + '" pattern="[0-9]{2}:[0-9]{2}:[0-9]{2}">' +
+      '<div style="display:flex;gap:8px;margin-top:6px;">' +
+        '<button type="button" class="edit-link" onclick="marquerDebut(\'' + exId + '\')">⏱ Marquer début (maintenant)</button>' +
+        '<button type="button" class="edit-link" onclick="marquerFin(\'' + exId + '\')">⏱ Marquer fin (calcule la durée)</button>' +
+      '</div>' +
+    '</div>' +
+    '<div class="dfield"><label class="dlabel">Point de rassemblement' + infoIcon("Point de rassemblement", FIELD_INFO.pointRassemblement) + '</label><input type="text" id="edPointRas" value="' + esc(it.pointRassemblement).replace(/"/g,'&quot;') + '"></div>' +
+    '<div class="dfield"><label class="dlabel">Nombre de personnes comptabilisées' + infoIcon("Nombre de personnes", FIELD_INFO.nombrePersonnes) + '</label><input type="number" id="edNbPersonnes" value="' + esc(it.nombrePersonnes) + '"></div>' +
+    '<div class="dfield"><label class="dlabel">Détail' + infoIcon("Détail", FIELD_INFO.nombreDetail) + '</label><textarea id="edNbDetail">' + esc(it.nombreDetail) + '</textarea></div>';
+  sec.querySelectorAll('.edit-actions').forEach(function(el){ el.remove(); });
+  view.insertAdjacentHTML('afterend', '<div class="edit-actions"><button class="save-btn" onclick="saveDeroulement(\'' + exId + '\')">Enregistrer</button><button class="cancel-btn" onclick="openDrawer(\'' + exId + '\')">Annuler</button></div>');
+};
+
+window.marquerDebut = function(exId){
+  const now = new Date();
+  const iso = new Date(now.getTime() - now.getTimezoneOffset()*60000).toISOString().slice(0,16);
+  document.getElementById('edHeureAlarme').value = iso;
+  showToast('Heure de début enregistrée');
+};
+window.marquerFin = function(exId){
+  const startVal = document.getElementById('edHeureAlarme').value;
+  if(!startVal){ showToast("Renseigne d'abord l'heure de début."); return; }
+  const start = new Date(startVal);
+  const end = new Date();
+  let diffSec = Math.round((end - start)/1000);
+  if(diffSec < 0) diffSec = 0;
+  const hh = String(Math.floor(diffSec/3600)).padStart(2,'0');
+  const mm = String(Math.floor((diffSec%3600)/60)).padStart(2,'0');
+  const ss = String(diffSec%60).padStart(2,'0');
+  document.getElementById('edTempsEvac').value = hh + ':' + mm + ':' + ss;
+  showToast('Temps d\'évacuation calculé : ' + hh + ':' + mm + ':' + ss);
+};
+window.saveDeroulement = async function(exId){
+  const it = findExercice(exId);
+  const fields = {
+    heureAlarme: document.getElementById('edHeureAlarme').value,
+    tempsEvacuation: document.getElementById('edTempsEvac').value,
+    pointRassemblement: document.getElementById('edPointRas').value,
+    nombrePersonnes: document.getElementById('edNbPersonnes').value,
+    nombreDetail: document.getElementById('edNbDetail').value
+  };
+  Object.assign(it, fields);
+  try{ await window.EVAC_FIREBASE.update(exId, fields); showToast('Mis à jour'); }
+  catch(err){ showToast('Erreur : ' + err.message); }
+  openDrawer(exId);
+};
+
+window.addPresencePhoto = async function(exId, inputEl){
+  const f = inputEl.files[0];
+  if(!f) return;
+  const it = findExercice(exId);
+  showToast('Compression en cours…');
+  try{
+    let result = await compressImageFile(f, 1000, 0.65);
+    if(result.dataUrl.length > 700000){ result = await compressImageFile(f, 700, 0.5); }
+    const presencePhoto = { dataUrl: result.dataUrl, width: result.width, height: result.height };
+    await window.EVAC_FIREBASE.update(exId, { presencePhoto: presencePhoto });
+    it.presencePhoto = presencePhoto;
+    showToast('Document ajouté');
+    openDrawer(exId);
+  }catch(err){ showToast('Erreur : ' + err.message); }
+  inputEl.value = '';
+};
+window.deletePresencePhoto = async function(exId){
+  const it = findExercice(exId);
+  try{ await window.EVAC_FIREBASE.update(exId, { presencePhoto: null }); it.presencePhoto = null; showToast('Document supprimé'); openDrawer(exId); }
+  catch(err){ showToast('Erreur : ' + err.message); }
+};
 function sectionCard(title, num, exId, fields){
-  const rows = fields.map(function(f){ return fieldBlock(f.id, f.label, f.value); }).join('');
+  const rows = fields.map(function(f){ return fieldBlock(f.id, f.label, f.value, f.info); }).join('');
   return '<div class="dsection" data-section="' + num + '"><h3>' + title + ' <button class="edit-link" onclick="toggleEdit(\'' + exId + '\', ' + num + ')">Modifier</button></h3><div class="section-view">' + rows + '</div></div>';
 }
 
@@ -483,24 +594,18 @@ window.openDrawer = function(id){
   drawer.innerHTML =
     '<div class="drawer-head"><div><h2>Exercice du ' + esc(it.date) + '</h2><div class="dh-meta">' + esc(it.site) + ' · Rédacteur : ' + esc(it.redacteur) + '</div></div><button class="drawer-close" onclick="closeDrawer()">×</button></div>' +
     '<div class="drawer-body">' +
-      sectionCard('Objet', 1, id, [ {id:'objetIntro', label:'Objet du compte-rendu', value:it.objetIntro} ]) +
-      sectionCard('Déroulement de l\'exercice', 2, id, [
-        {id:'heureAlarme', label:"Heure de déclenchement de l'alarme", value:it.heureAlarme},
-        {id:'tempsEvacuation', label:"Temps d'évacuation complet", value:it.tempsEvacuation},
-        {id:'pointRassemblement', label:'Point de rassemblement', value:it.pointRassemblement},
-        {id:'nombrePersonnes', label:'Nombre de personnes comptabilisées', value:it.nombrePersonnes},
-        {id:'nombreDetail', label:'Détail (ex : dont X collaborateurs...)', value:it.nombreDetail}
-      ]) +
-      sectionCard('Points forts constatés', 3, id, [ {id:'pointsForts', label:'Points forts', value:it.pointsForts} ]) +
-      sectionCard('Écarts et axes d\'amélioration', 4, id, [ {id:'ecarts', label:'Écarts', value:it.ecarts} ]) +
-      sectionCard('Informations complémentaires', 5, id, [ {id:'infosComplementaires', label:'Informations', value:it.infosComplementaires} ]) +
-      '<div class="dsection"><h3>Grille d\'analyse</h3>' +
+      sectionCard('Objet', 1, id, [ {id:'objetIntro', label:'Objet du compte-rendu', value:it.objetIntro, info:"Introduction du rapport, rappelant le but de l'exercice. Un texte type est déjà pré-rempli, tu peux l'ajuster."} ]) +
+      renderDeroulementSection(id, it) +
+      sectionCard('Points forts constatés', 3, id, [ {id:'pointsForts', label:'Points forts', value:it.pointsForts, info:"Ce qui s'est bien passé lors de l'exercice : réactivité, respect des consignes, itinéraires suivis correctement, etc."} ]) +
+      sectionCard('Écarts et axes d\'amélioration', 4, id, [ {id:'ecarts', label:'Écarts', value:it.ecarts, info:"Ce qui n'a pas fonctionné comme attendu : absence de guide-file, portes restées ouvertes, comptage imprécis, etc."} ]) +
+      sectionCard('Informations complémentaires', 5, id, [ {id:'infosComplementaires', label:'Informations', value:it.infosComplementaires, info:"Tout élément de contexte utile qui ne rentre pas dans les autres rubriques (ex : fonctionnement des portes coupe-feu, conditions météo...)."} ]) +
+      '<div class="dsection" data-section="grille"><h3>Grille d\'analyse</h3>' +
         '<div style="overflow-x:auto;"><table class="grille-table"><thead><tr><th>Critère</th><th>Note</th><th>Observations</th><th>Actions correctives</th><th>Responsable</th><th>Échéance</th></tr></thead><tbody>' + grilleRows + '</tbody></table></div>' +
-        '<button class="edit-link" style="margin-top:8px;" onclick="editGrille(\'' + id + '\')">Modifier la grille</button>' +
+        '<div class="grille-actions" style="margin-top:8px;"><button class="edit-link" onclick="editGrille(\'' + id + '\')">Modifier la grille</button></div>' +
       '</div>' +
       '<div class="dsection"><h3>Plan d\'actions recommandé <button class="edit-link" onclick="addPlanRow(\'' + id + '\')">+ Ajouter une action</button></h3>' + planRows + '</div>' +
       (sectionsCompHtml ? '<div class="dsection"><h3>Rubriques complémentaires</h3>' + sectionsCompHtml + '</div>' : '') +
-      sectionCard('Conclusion', 8, id, [ {id:'conclusion', label:'Conclusion', value:it.conclusion} ]) +
+      sectionCard('Conclusion', 8, id, [ {id:'conclusion', label:'Conclusion', value:it.conclusion, info:"Bilan global de l'exercice et synthèse des principaux axes de progrès à retenir."} ]) +
       '<div class="dsection"><h3>Photos <button class="edit-link" onclick="document.getElementById(\'evacPhotoInput\').click()">+ Ajouter une photo</button></h3>' +
         '<input type="file" id="evacPhotoInput" accept="image/*" style="display:none;" onchange="addPhoto(\'' + id + '\', this)">' +
         '<div class="photo-grid">' + photosHtml + '</div>' + (!(it.photos||[]).length ? '<div class="dval empty">Aucune photo.</div>' : '') +
@@ -524,9 +629,10 @@ window.toggleEdit = function(exId, sectionNum){
   view.querySelectorAll('.dfield').forEach(function(f){
     const id = f.dataset.field;
     const val = it[id] || '';
-    const label = f.querySelector('.dlabel').textContent;
+    const label = f.querySelector('.dlabel').childNodes[0].textContent;
     f.innerHTML = '<div class="dlabel">' + label + '</div><textarea data-edit="' + id + '">' + esc(val) + '</textarea>';
   });
+  sec.querySelectorAll('.edit-actions').forEach(function(el){ el.remove(); });
   view.insertAdjacentHTML('afterend', '<div class="edit-actions"><button class="save-btn" onclick="saveSection(\'' + exId + '\', ' + sectionNum + ')">Enregistrer</button><button class="cancel-btn" onclick="openDrawer(\'' + exId + '\')">Annuler</button></div>');
   sec.classList.add('editing');
 };
@@ -548,33 +654,54 @@ window.deleteExercice = async function(exId){
 // ---- Grille ----
 window.editGrille = function(exId){
   const it = findExercice(exId);
-  const table = document.querySelector('.grille-table tbody');
+  const wrap = document.querySelector('.dsection[data-section="grille"]');
+  const table = wrap.querySelector('.grille-table tbody');
   table.innerHTML = (it.grille||[]).map(function(g, i){
-    return '<tr>' +
-      '<td>' + esc(g.critere) + '</td>' +
-      '<td><select data-g-note="' + i + '"><option value="">-</option>' + [1,2,3,4,5].map(function(n){ return '<option value="' + n + '" ' + (String(g.note)===String(n)?'selected':'') + '>' + n + '</option>'; }).join('') + '</select></td>' +
-      '<td><textarea data-g-obs="' + i + '">' + esc(g.observations) + '</textarea></td>' +
-      '<td><textarea data-g-act="' + i + '">' + esc(g.actionsCorrectives) + '</textarea></td>' +
-      '<td><input type="text" data-g-resp="' + i + '" value="' + esc(g.responsable).replace(/"/g,'&quot;') + '"></td>' +
-      '<td><input type="date" data-g-ech="' + i + '" value="' + esc(g.echeance) + '"></td>' +
-    '</tr>';
+    return grilleEditRowHtml(g, i);
   }).join('');
-  const btn = event.target;
-  btn.textContent = 'Enregistrer la grille';
-  btn.setAttribute('onclick', "saveGrille('" + exId + "')");
+  wrap.dataset.rowCount = String((it.grille||[]).length);
+  const actionsDiv = wrap.querySelector('.grille-actions');
+  actionsDiv.innerHTML =
+    '<button type="button" class="edit-link" onclick="addGrilleRow(\'' + exId + '\')">+ Ajouter une ligne</button> ' +
+    '<button type="button" class="save-btn" style="margin-left:10px;padding:6px 14px;border-radius:16px;font-size:12px;font-weight:600;border:none;cursor:pointer;background:var(--ink);color:#fff;" onclick="saveGrille(\'' + exId + '\')">Enregistrer la grille</button> ' +
+    '<button type="button" class="cancel-btn" style="padding:6px 14px;border-radius:16px;font-size:12px;font-weight:600;border:1px solid var(--line);background:none;cursor:pointer;color:var(--ink-soft);" onclick="openDrawer(\'' + exId + '\')">Annuler</button>';
+};
+function grilleEditRowHtml(g, i){
+  return '<tr>' +
+    '<td><input type="text" data-g-critere="' + i + '" value="' + esc(g.critere).replace(/"/g,'&quot;') + '"></td>' +
+    '<td><select data-g-note="' + i + '"><option value="">-</option>' + [1,2,3,4,5].map(function(n){ return '<option value="' + n + '" ' + (String(g.note)===String(n)?'selected':'') + '>' + n + '</option>'; }).join('') + '</select></td>' +
+    '<td><textarea data-g-obs="' + i + '">' + esc(g.observations) + '</textarea></td>' +
+    '<td><textarea data-g-act="' + i + '">' + esc(g.actionsCorrectives) + '</textarea></td>' +
+    '<td><input type="text" data-g-resp="' + i + '" value="' + esc(g.responsable).replace(/"/g,'&quot;') + '"></td>' +
+    '<td><input type="date" data-g-ech="' + i + '" value="' + esc(g.echeance) + '"></td>' +
+  '</tr>';
+}
+window.addGrilleRow = function(exId){
+  const wrap = document.querySelector('.dsection[data-section="grille"]');
+  const table = wrap.querySelector('.grille-table tbody');
+  const i = parseInt(wrap.dataset.rowCount || '0', 10);
+  table.insertAdjacentHTML('beforeend', grilleEditRowHtml({critere:'', note:'', observations:'', actionsCorrectives:'', responsable:'', echeance:''}, i));
+  wrap.dataset.rowCount = String(i + 1);
 };
 window.saveGrille = async function(exId){
   const it = findExercice(exId);
-  const newGrille = (it.grille||[]).map(function(g, i){
-    return {
-      critere: g.critere,
+  const wrap = document.querySelector('.dsection[data-section="grille"]');
+  const rowCount = parseInt(wrap.dataset.rowCount || '0', 10);
+  const newGrille = [];
+  for(let i=0; i<rowCount; i++){
+    const critereInput = document.querySelector('[data-g-critere="' + i + '"]');
+    if(!critereInput) continue;
+    const critere = critereInput.value.trim();
+    if(!critere) continue;
+    newGrille.push({
+      critere: critere,
       note: (document.querySelector('[data-g-note="' + i + '"]')||{}).value || '',
       observations: (document.querySelector('[data-g-obs="' + i + '"]')||{}).value || '',
       actionsCorrectives: (document.querySelector('[data-g-act="' + i + '"]')||{}).value || '',
       responsable: (document.querySelector('[data-g-resp="' + i + '"]')||{}).value || '',
       echeance: (document.querySelector('[data-g-ech="' + i + '"]')||{}).value || ''
-    };
-  });
+    });
+  }
   try{ await window.EVAC_FIREBASE.update(exId, { grille: newGrille }); it.grille = newGrille; showToast('Grille enregistrée'); openDrawer(exId); }
   catch(err){ showToast('Erreur : ' + err.message); }
 };
@@ -640,28 +767,102 @@ window.copyEvacPrompt = async function(exId){
   document.getElementById('promptModal').classList.add('show');
 };
 
+const INTEGRATE_TARGETS = [
+  {value:'pointsForts', label:'Points forts constatés', keywords:['fort']},
+  {value:'ecarts', label:"Écarts et axes d'amélioration", keywords:['écart','amélioration','ameliora']},
+  {value:'planActions', label:"Plan d'actions recommandé", keywords:['recommand','plan d\'action','action']},
+  {value:'infosComplementaires', label:'Informations complémentaires', keywords:['information','complémentaire']},
+  {value:'conclusion', label:'Conclusion', keywords:['conclusion','bilan']},
+  {value:'ignore', label:'Ignorer cette section', keywords:[]}
+];
+
 window.openIntegrateModal = function(exId){
   document.getElementById('integrateModal').dataset.exId = exId;
   document.getElementById('integrateText').value = '';
+  document.getElementById('integrateStep1').style.display = 'block';
+  document.getElementById('integrateStep2').style.display = 'none';
+  document.getElementById('analyzeBtn').style.display = 'inline-block';
   document.getElementById('integrateModal').classList.add('show');
 };
-window.validateIntegration = async function(){
+
+window.backToPasteStep = function(){
+  document.getElementById('integrateStep1').style.display = 'block';
+  document.getElementById('integrateStep2').style.display = 'none';
+  document.getElementById('analyzeBtn').style.display = 'inline-block';
+};
+
+function guessTarget(title){
+  const t = title.toLowerCase();
+  for(const opt of INTEGRATE_TARGETS){
+    if(opt.keywords.some(function(k){ return t.indexOf(k) !== -1; })) return opt.value;
+  }
+  return 'infosComplementaires';
+}
+
+window.analyzeIntegrateText = function(){
+  const raw = document.getElementById('integrateText').value.trim();
+  if(!raw){ showToast('Colle un texte avant de l\'analyser.'); return; }
+  const lines = raw.split('\n');
+  const sections = [];
+  let current = null;
+  lines.forEach(function(line){
+    const m = line.match(/^##\s*(.+)/);
+    if(m){
+      if(current) sections.push(current);
+      current = { title: m[1].trim(), text: '' };
+    } else {
+      if(!current) current = { title: 'Texte', text: '' };
+      current.text += (current.text ? '\n' : '') + line;
+    }
+  });
+  if(current) sections.push(current);
+
+  const container = document.getElementById('integrateSections');
+  container.innerHTML = sections.map(function(s, i){
+    const guessed = guessTarget(s.title);
+    return '<div class="admin-item" data-int-idx="' + i + '">' +
+      '<div class="ai-top"><strong style="font-size:12.5px;">' + esc(s.title) + '</strong></div>' +
+      '<textarea data-int-text="' + i + '" style="min-height:100px;">' + esc(s.text.trim()) + '</textarea>' +
+      '<div class="grid2" style="margin-top:6px;">' +
+        '<select data-int-target="' + i + '">' + INTEGRATE_TARGETS.map(function(o){ return '<option value="' + o.value + '" ' + (o.value===guessed?'selected':'') + '>' + o.label + '</option>'; }).join('') + '</select>' +
+        '<select data-int-mode="' + i + '"><option value="append">Ajouter à la suite</option><option value="replace">Remplacer</option></select>' +
+      '</div>' +
+      '<button class="add-admin-btn" style="margin-top:8px;" onclick="integrateOneSection(' + i + ')">✓ Intégrer cette section</button>' +
+    '</div>';
+  }).join('');
+  window._integrateSectionsData = sections;
+
+  document.getElementById('integrateStep1').style.display = 'none';
+  document.getElementById('integrateStep2').style.display = 'block';
+  document.getElementById('analyzeBtn').style.display = 'none';
+};
+
+window.integrateOneSection = async function(i){
   const exId = document.getElementById('integrateModal').dataset.exId;
   const it = findExercice(exId);
-  const texte = document.getElementById('integrateText').value.trim();
-  const target = document.getElementById('integrateTarget').value;
-  const mode = document.getElementById('integrateMode').value;
-  if(!texte){ showToast('Colle et valide un texte avant d\'enregistrer.'); return; }
-  const dateLabel = new Date().toLocaleDateString('fr-FR');
-  const existing = it[target] || '';
-  const newVal = mode === 'replace' ? texte : (existing ? existing + '\n\n' : '') + '--- Retour IA intégré le ' + dateLabel + ' ---\n' + texte;
-  const fields = {}; fields[target] = newVal;
+  const text = document.querySelector('[data-int-text="' + i + '"]').value.trim();
+  const target = document.querySelector('[data-int-target="' + i + '"]').value;
+  const mode = document.querySelector('[data-int-mode="' + i + '"]').value;
+  if(target === 'ignore'){ showToast('Section ignorée.'); return; }
+  if(!text){ showToast('Rien à intégrer pour cette section.'); return; }
+
   try{
-    await window.EVAC_FIREBASE.update(exId, fields);
-    it[target] = newVal;
-    document.getElementById('integrateModal').classList.remove('show');
-    showToast('Retour IA intégré ✓');
-    openDrawer(exId);
+    if(target === 'planActions'){
+      const lines = text.split('\n').map(function(l){ return l.replace(/^[-*•]\s*/, '').trim(); }).filter(Boolean);
+      const newActions = lines.map(function(l){ return { action: l, responsable: '', priorite: 'Moyenne' }; });
+      const merged = mode === 'replace' ? newActions : (it.planActions||[]).concat(newActions);
+      await window.EVAC_FIREBASE.update(exId, { planActions: merged });
+      it.planActions = merged;
+    } else {
+      const existing = it[target] || '';
+      const newVal = mode === 'replace' ? text : (existing ? existing + '\n\n' : '') + text;
+      const fields = {}; fields[target] = newVal;
+      await window.EVAC_FIREBASE.update(exId, fields);
+      it[target] = newVal;
+    }
+    showToast('Section intégrée ✓');
+    const card = document.querySelector('[data-int-idx="' + i + '"]');
+    if(card) card.style.opacity = '0.4';
   }catch(err){ showToast('Erreur : ' + err.message); }
 };
 

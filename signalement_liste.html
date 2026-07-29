@@ -82,16 +82,21 @@
 
   .drawer-overlay{
     position:fixed; inset:0; background:rgba(30,28,32,.5); display:none; z-index:80;
-    justify-content:flex-end;
+    justify-content:center; align-items:flex-start;
   }
   .drawer-overlay.show{display:flex;}
   .drawer{
-    width:min(620px,100%); height:100%; background:var(--paper); overflow-y:auto;
-    box-shadow:-16px 0 40px rgba(0,0,0,.25);
+    width:min(1150px, 78vw); max-width:1150px; margin-top:72px;
+    max-height:calc(100vh - 90px); background:var(--paper); overflow-y:auto;
+    border-radius:16px 16px 0 0; box-shadow:0 -10px 50px rgba(0,0,0,.3);
+  }
+  @media (max-width:900px){
+    .drawer{ width:96vw; margin-top:56px; max-height:calc(100vh - 60px); }
   }
   .drawer-head{
     position:sticky; top:0; background:#fff; z-index:2; border-bottom:1px solid var(--line);
     padding:18px 24px; display:flex; align-items:center; justify-content:space-between;
+    border-radius:16px 16px 0 0;
   }
   .drawer-head .dh-left{display:flex; align-items:center; gap:12px;}
   .drawer-head .dh-num{font-family:'IBM Plex Mono',monospace; font-weight:700; font-size:18px;}
@@ -219,7 +224,7 @@
       <a href="inspections.html" style="text-decoration:none;display:inline-flex;align-items:center;font-size:12.5px;font-weight:600;color:#6B6873;border:1px solid #E4E0D8;padding:9px 16px;border-radius:20px;">🔍 Inspections</a>
       <a href="exercices_evacuation.html" style="text-decoration:none;display:inline-flex;align-items:center;font-size:12.5px;font-weight:600;color:#6B6873;border:1px solid #E4E0D8;padding:9px 16px;border-radius:20px;">🚪 Évacuations</a>
       <a href="trousses_secours.html" style="text-decoration:none;display:inline-flex;align-items:center;font-size:12.5px;font-weight:600;color:#6B6873;border:1px solid #E4E0D8;padding:9px 16px;border-radius:20px;">🩹 Trousses de secours</a>
-      <a href="dashboard.html" style="text-decoration:none;display:inline-flex;align-items:center;font-size:12.5px;font-weight:600;color:#6B6873;border:1px solid #E4E0D8;padding:9px 16px;border-radius:20px;">📊 Tableau de bord</a>
+      <a href="administration.html" style="text-decoration:none;display:inline-flex;align-items:center;font-size:12.5px;font-weight:600;color:#6B6873;border:1px solid #E4E0D8;padding:9px 16px;border-radius:20px;">⚙️ Administration</a>
       <button class="admin-btn" onclick="openFieldsAdminModal()" style="background:#fff;border:1px solid #E4E0D8;color:#6B6873;padding:9px 16px;border-radius:20px;font-weight:600;font-size:12.5px;cursor:pointer;">⚙️ Champs personnalisés</button>
       <a class="new-btn" href="nouveau_signalement.html" style="text-decoration:none;display:inline-block;">+ Nouveau signalement</a>
       <button id="logoutBtn" title="Se déconnecter" style="background:#fff;border:1px solid #E4E0D8;color:#A85D45;width:34px;height:34px;border-radius:50%;font-weight:700;cursor:pointer;font-size:14px;">✕</button>
@@ -578,6 +583,34 @@ function bindEditPhotoInput(inputId, previewId, dossierId, base64Field, dimsFiel
   });
 }
 
+async function addExtraPhotoToDossier(dossierId, inputEl){
+  const f = inputEl.files[0];
+  if(!f) return;
+  const d = findDossier(dossierId);
+  showToast('Compression en cours...');
+  try{
+    let result = await compressImageFile(f, 1000, 0.65);
+    if(result.dataUrl.length > 700000){ result = await compressImageFile(f, 700, 0.5); }
+    const newPhotos = (d.photosSupplementaires||[]).concat([{ dataUrl: result.dataUrl, width: result.width, height: result.height }]);
+    await window.CSSCT_FIREBASE.updateFields(dossierId, { photosSupplementaires: newPhotos });
+    d.photosSupplementaires = newPhotos;
+    showToast('Photo ajoutee');
+    openDrawer(dossierId);
+  }catch(err){ showToast('Erreur : ' + err.message); }
+  inputEl.value = '';
+}
+async function removeExtraPhotoFromDossier(dossierId, idx){
+  const d = findDossier(dossierId);
+  const newPhotos = (d.photosSupplementaires||[]).slice();
+  newPhotos.splice(idx,1);
+  try{
+    await window.CSSCT_FIREBASE.updateFields(dossierId, { photosSupplementaires: newPhotos });
+    d.photosSupplementaires = newPhotos;
+    showToast('Photo supprimee');
+    openDrawer(dossierId);
+  }catch(err){ showToast('Erreur : ' + err.message); }
+}
+
 function fieldBlock(id, label, value){
   return '<div class="dfield" data-field="' + id + '"><div class="dlabel">' + label + '</div><div class="dval ' + (value?'':'empty') + '">' + (value || 'Non renseigne') + '</div></div>';
 }
@@ -660,6 +693,15 @@ function openDrawer(numero){
           '<div id="photoLocalisationPreview" style="margin:6px 0;">' + (d.photoLocalisationBase64 ? '<img src="'+d.photoLocalisationBase64+'" style="max-width:140px;border-radius:6px;border:1px solid var(--line);">' : '<span class="dval empty">Aucune photo</span>') + '</div>' +
           '<label class="filebox" for="editPhotoLocalisation" style="display:inline-block;padding:8px 12px;font-size:12px;">📎 Ajouter / remplacer<input type="file" id="editPhotoLocalisation" accept="image/*"></label>' +
         '</div>' +
+      '</div>' +
+      '<div style="margin-top:14px;">' +
+        '<div class="dlabel">Photos supplémentaires</div>' +
+        '<div id="extraPhotosPreview" style="display:flex;gap:8px;flex-wrap:wrap;margin:6px 0;">' +
+          (d.photosSupplementaires||[]).map(function(ph, idx){
+            return '<div style="position:relative;"><img src="' + ph.dataUrl + '" style="width:70px;height:70px;object-fit:cover;border-radius:6px;border:1px solid var(--line);"><button type="button" onclick="removeExtraPhotoFromDossier(\'' + d.id + '\', ' + idx + ')" style="position:absolute;top:-6px;right:-6px;background:#2B2A2E;color:#fff;border:none;border-radius:50%;width:20px;height:20px;font-size:11px;cursor:pointer;">✕</button></div>';
+          }).join('') +
+        '</div>' +
+        '<label class="filebox" for="editPhotoExtra" style="display:inline-block;padding:8px 12px;font-size:12px;">📎 Ajouter une photo<input type="file" id="editPhotoExtra" accept="image/*"></label>' +
       '</div></div>' +
       '<div class="dsection"><h3>Suivi</h3><div id="suiviList">' + suiviHtml + '</div>' +
       '<div class="add-suivi"><input type="date" id="newSuiviDate">' +
@@ -675,6 +717,7 @@ function openDrawer(numero){
 
   bindEditPhotoInput('editPhotoIncident', 'photoIncidentPreview', d.id, 'photoIncidentBase64', 'photoIncidentDims');
   bindEditPhotoInput('editPhotoLocalisation', 'photoLocalisationPreview', d.id, 'photoLocalisationBase64', 'photoLocalisationDims');
+  document.getElementById('editPhotoExtra').addEventListener('change', function(e){ addExtraPhotoToDossier(d.id, e.target); });
 
   document.getElementById('newSuiviDate').valueAsDate = new Date();
   overlay.classList.add('show');
@@ -944,10 +987,13 @@ function buildReportHtml(d){
   }
 
   html += '<div class="rp-blank"></div><div class="rp-h">Document joint :</div>';
-  if(d.photoIncidentBase64 || d.photoLocalisationBase64){
+  if(d.photoIncidentBase64 || d.photoLocalisationBase64 || (d.photosSupplementaires && d.photosSupplementaires.length)){
     html += '<div class="rp-v" style="display:flex;gap:10px;flex-wrap:wrap;">';
     if(d.photoIncidentBase64) html += '<img src="' + d.photoIncidentBase64 + '" alt="Photo incident" style="max-width:220px;border:1px solid #ddd;border-radius:6px;">';
     if(d.photoLocalisationBase64) html += '<img src="' + d.photoLocalisationBase64 + '" alt="Photo localisation" style="max-width:220px;border:1px solid #ddd;border-radius:6px;">';
+    (d.photosSupplementaires||[]).forEach(function(ph){
+      html += '<img src="' + ph.dataUrl + '" alt="Photo supplementaire" style="max-width:220px;border:1px solid #ddd;border-radius:6px;">';
+    });
     html += '</div>';
   } else {
     html += '<div class="rp-v">Aucune piece jointe.</div>';
@@ -1119,7 +1165,7 @@ function generateDocxFile(d){
 
   children.push(blank());
   children.push(GH('Document joint :'));
-  if(d.photoIncidentBase64 || d.photoLocalisationBase64){
+  if(d.photoIncidentBase64 || d.photoLocalisationBase64 || (d.photosSupplementaires && d.photosSupplementaires.length)){
     if(d.photoIncidentBase64){
       const dims1 = scaleToMaxWidth(d.photoIncidentDims, 240);
       children.push(new Paragraph({ children: [ new ImageRun({ data: base64ToUint8Array(d.photoIncidentBase64.split(',')[1]), transformation: dims1, type: "jpg" }) ] }));
@@ -1128,6 +1174,10 @@ function generateDocxFile(d){
       const dims2 = scaleToMaxWidth(d.photoLocalisationDims, 240);
       children.push(new Paragraph({ children: [ new ImageRun({ data: base64ToUint8Array(d.photoLocalisationBase64.split(',')[1]), transformation: dims2, type: "jpg" }) ] }));
     }
+    (d.photosSupplementaires||[]).forEach(function(ph){
+      const dims = scaleToMaxWidth({w: ph.width, h: ph.height}, 240);
+      children.push(new Paragraph({ children: [ new ImageRun({ data: base64ToUint8Array(ph.dataUrl.split(',')[1]), transformation: dims, type: "jpg" }) ] }));
+    });
   } else {
     children.push(...P('Aucune piece jointe.'));
   }
