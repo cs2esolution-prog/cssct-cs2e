@@ -1,5 +1,17 @@
 [
   {
+    "hash": "315e257",
+    "date": "29/07/2026",
+    "title": "Rename src_worker.js to worker.js",
+    "description": ""
+  },
+  {
+    "hash": "95c5e71",
+    "date": "29/07/2026",
+    "title": "chore: mise a jour automatique du changelog [skip ci]",
+    "description": ""
+  },
+  {
     "hash": "894ba24",
     "date": "29/07/2026",
     "title": "Rename src_worker.js to src/src_worker.js",
