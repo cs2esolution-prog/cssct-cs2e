@@ -133,15 +133,24 @@
     <a class="sitemap-link" href="dashboard.html">Tableau de bord</a>
     <a class="sitemap-link" href="import_excel.html">Import historique Excel</a>
     <a class="sitemap-link" href="changelog.html">Notes de mise à jour</a>
+    <a class="sitemap-link" href="signalement_collaborateur.html">Signalement collaborateur (public)</a>
     <a class="sitemap-link" href="a_propos.html">À propos</a>
     <a class="sitemap-link" href="administration.html">Administration (ici)</a>
   </div>
 
-  <div class="section-lbl">Partager l'application</div>
+  <div class="section-lbl">Partager l'application (équipe CSSCT)</div>
   <div class="qr-card">
     <canvas id="qrCanvas"></canvas>
     <div class="qr-url" id="qrUrl"></div>
     <button class="copy-btn" id="copyUrlBtn">Copier le lien</button>
+  </div>
+
+  <div class="section-lbl">Formulaire de signalement collaborateur</div>
+  <p style="font-size:12px;color:var(--ink-soft);margin:-4px 0 12px;">Ce lien est public, sans connexion — partage-le librement à tous les collaborateurs (affichage, email, intranet...).</p>
+  <div class="qr-card">
+    <canvas id="qrCanvasCollab"></canvas>
+    <div class="qr-url" id="qrUrlCollab"></div>
+    <button class="copy-btn" id="copyUrlBtnCollab">Copier le lien</button>
   </div>
 </div>
 
@@ -199,6 +208,20 @@ window.renderQR = function(){
   document.getElementById('copyUrlBtn').addEventListener('click', function(){
     navigator.clipboard.writeText(url).then(function(){
       const btn = document.getElementById('copyUrlBtn');
+      const old = btn.textContent;
+      btn.textContent = 'Copié ✓';
+      setTimeout(function(){ btn.textContent = old; }, 1500);
+    });
+  });
+
+  const collabUrl = window.location.origin + window.location.pathname.replace(/administration\.html$/, 'signalement_collaborateur.html');
+  document.getElementById('qrUrlCollab').textContent = collabUrl;
+  if(window.QRCode){
+    QRCode.toCanvas(document.getElementById('qrCanvasCollab'), collabUrl, { width: 200, margin: 1, color: { dark: '#5A4570', light: '#F7F5F1' } });
+  }
+  document.getElementById('copyUrlBtnCollab').addEventListener('click', function(){
+    navigator.clipboard.writeText(collabUrl).then(function(){
+      const btn = document.getElementById('copyUrlBtnCollab');
       const old = btn.textContent;
       btn.textContent = 'Copié ✓';
       setTimeout(function(){ btn.textContent = old; }, 1500);
