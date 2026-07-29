@@ -722,7 +722,7 @@
       .catch(err => { msg.textContent = "Erreur : " + err.message; });
   });
 
-  document.getElementById('authSendLink').addEventListener('click, () => {
+  document.getElementById('authSendLink').addEventListener('click', () => {
     const email = document.getElementById('authEmail').value.trim();
     const msg = document.getElementById('authMsg');
     if (!email) { msg.textContent = "Merci de saisir ton email."; return; }
