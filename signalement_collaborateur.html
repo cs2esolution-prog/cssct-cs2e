@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Signaler une situation . CSSCT</title>
+<link rel="icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,500;8..60,600;8..60,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --teal:#019682; --teal-dark:#017162; --purple:#5A4570; --gold:#C6AB76;
+    --paper:#F7F5F1; --ink:#2B2A2E; --ink-soft:#6B6873; --line:#E4E0D8; --danger:#A85D45; --radius:12px;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0; background:var(--paper); color:var(--ink); font-family:'Inter',system-ui,sans-serif; line-height:1.5;}
+  .wrap{max-width:600px; margin:0 auto; padding:32px 20px 80px;}
+  .brand{display:flex; align-items:center; gap:12px; padding-bottom:20px; border-bottom:2px solid var(--ink); margin-bottom:24px;}
+  .brand-mark{width:38px; height:38px; border-radius:50%;
+    background:conic-gradient(var(--teal) 0deg 120deg, var(--gold) 120deg 240deg, var(--purple) 240deg 360deg); flex:none;}
+  .brand-text{font-family:'Source Serif 4', serif; font-weight:700; font-size:19px;}
+  .brand-text span{color:var(--teal);}
+
+  h1{font-family:'Source Serif 4',serif; font-size:19px; margin:0 0 6px;}
+  .subtitle{font-size:13px; color:var(--ink-soft); margin:0 0 24px;}
+
+  .field{margin-bottom:14px;}
+  .field label{display:block; font-size:12.5px; font-weight:600; margin-bottom:5px;}
+  .field .req{color:var(--danger);}
+  input, select, textarea{width:100%; font-family:'Inter',sans-serif; font-size:14px; padding:10px 12px; border:1px solid var(--line); border-radius:8px; background:#fff;}
+  textarea{min-height:80px; resize:vertical;}
+  .grid2{display:grid; grid-template-columns:1fr 1fr; gap:12px;}
+  @media (max-width:520px){ .grid2{grid-template-columns:1fr;} }
+
+  button[type="submit"]{width:100%; background:var(--ink); color:#fff; border:none; padding:14px; border-radius:24px; font-weight:600; font-size:14.5px; cursor:pointer; margin-top:10px;}
+  button[type="submit"]:disabled{opacity:.5;}
+
+  .confirm-box{background:#fff; border:1px solid var(--line); border-left:4px solid var(--teal); border-radius:var(--radius); padding:28px; text-align:center; display:none;}
+  .confirm-box .c-num{font-family:'IBM Plex Mono',monospace; font-size:22px; font-weight:700; color:var(--teal-dark); margin:10px 0;}
+  .error-msg{color:var(--danger); font-size:12.5px; margin-top:10px; text-align:center;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="brand">
+    <div class="brand-mark"></div>
+    <div class="brand-text">CS<span>2E</span> · CSSCT</div>
+  </div>
+
+  <div id="formZone">
+    <h1>Signaler une situation au CSSCT</h1>
+    <p class="subtitle">Ce formulaire est ouvert à tous les collaborateurs, sans connexion. Ta demande sera étudiée par la commission santé, sécurité et conditions de travail.</p>
+
+    <form id="collabForm">
+      <div class="grid2">
+        <div class="field"><label>Entreprise</label><input type="text" id="entreprise" placeholder="Ex : SMAG"></div>
+        <div class="field"><label>Site <span class="req">*</span></label><select id="site" required></select></div>
+      </div>
+      <div class="grid2">
+        <div class="field"><label>Nom et prénom <span class="req">*</span></label><input type="text" id="rapporteur" required></div>
+        <div class="field"><label>Adresse email <span class="req">*</span></label><input type="email" id="rapporteurEmail" required placeholder="toi@entreprise.com"></div>
+      </div>
+      <div class="grid2">
+        <div class="field"><label>Service</label><input type="text" id="service"></div>
+        <div class="field"><label>Date de l'événement</label><input type="date" id="date"></div>
+      </div>
+      <div class="grid2">
+        <div class="field"><label>Lieu de l'événement</label><input type="text" id="lieu"></div>
+        <div class="field"><label>Témoins</label><input type="text" id="temoins"></div>
+      </div>
+      <div class="field">
+        <label>Nature de l'incident <span class="req">*</span></label>
+        <select id="nature" required></select>
+      </div>
+      <div class="field"><label>Titre <span class="req">*</span></label><input type="text" id="objet" required placeholder="Résumé en une phrase"></div>
+      <div class="field"><label>Description <span class="req">*</span></label><textarea id="description" required></textarea></div>
+      <div class="field"><label>Actions déjà entreprises</label><textarea id="actionRealisee"></textarea></div>
+      <div class="field"><label>Risques identifiés</label><textarea id="risque"></textarea></div>
+
+      <button type="submit" id="submitBtn">Envoyer mon signalement</button>
+      <div class="error-msg" id="errorMsg"></div>
+    </form>
+  </div>
+
+  <div class="confirm-box" id="confirmBox">
+    <div style="font-size:30px;">✓</div>
+    <h2 style="font-family:'Source Serif 4',serif; font-size:17px; margin:8px 0;">Signalement envoyé</h2>
+    <p style="font-size:13.5px; color:var(--ink-soft);">Il porte le numéro</p>
+    <div class="c-num" id="confirmNumero"></div>
+    <p style="font-size:13px; color:var(--ink-soft);">Un email de confirmation vient de t'être envoyé. Le CSSCT va étudier ta demande.</p>
+  </div>
+</div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js";
+  import { getFirestore, collection, doc, addDoc, runTransaction } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyB6c5xe4bg5JVUCJXsHcJBj3mFniALh39E",
+    authDomain: "cssct-cs2e.firebaseapp.com",
+    projectId: "cssct-cs2e",
+    storageBucket: "cssct-cs2e.firebasestorage.app",
+    messagingSenderId: "921964040050",
+    appId: "1:921964040050:web:578fcc81ca212b741697eb"
+  };
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+  const signalementsCol = collection(db, "signalements");
+  const counterRef = doc(db, "config", "compteur_signalements");
+
+  const SITES = ["Bezannes","Chalons-en-Champagne","Evreux","Milly-la-Forêt","Montpellier","Nancy","Paris","Poitiers","Reims","Télétravail","Wavre"].sort((a,b)=>a.localeCompare(b,'fr'));
+  const NATURES = ["Situation dangereuse","Risque Psycho sociaux","Accident de travail","Accident de trajet","Prévention","Trouble musculo squelettique","Intervention du CSSCT","Signalement autre"];
+
+  document.getElementById('site').innerHTML = '<option value="">Choisir…</option>' + SITES.map(s => `<option>${s}</option>`).join('');
+  document.getElementById('nature').innerHTML = '<option value="">Choisir…</option>' + NATURES.map(n => `<option>${n}</option>`).join('');
+
+  async function getNextNumero(){
+    return await runTransaction(db, async (tx) => {
+      const snap = await tx.get(counterRef);
+      const current = snap.exists() ? (snap.data().value || 0) : 0;
+      const next = current + 1;
+      tx.set(counterRef, { value: next });
+      return next;
+    });
+  }
+
+  document.getElementById('collabForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = document.getElementById('submitBtn');
+    const errorMsg = document.getElementById('errorMsg');
+    errorMsg.textContent = '';
+    btn.disabled = true;
+    btn.textContent = 'Envoi en cours…';
+
+    const payload = {
+      entreprise: document.getElementById('entreprise').value.trim(),
+      site: document.getElementById('site').value,
+      rapporteur: document.getElementById('rapporteur').value.trim(),
+      rapporteurEmail: document.getElementById('rapporteurEmail').value.trim(),
+      service: document.getElementById('service').value.trim(),
+      date: document.getElementById('date').value,
+      lieu: document.getElementById('lieu').value.trim(),
+      temoins: document.getElementById('temoins').value.trim(),
+      natureIncident: document.getElementById('nature').value,
+      objet: document.getElementById('objet').value.trim(),
+      description: document.getElementById('description').value.trim(),
+      actionRealisee: document.getElementById('actionRealisee').value.trim(),
+      risque: document.getElementById('risque').value.trim(),
+      statut: "1-En Cours",
+      origineCollaborateur: true,
+      suivi: [],
+      createdAt: new Date().toISOString()
+    };
+
+    try{
+      const numero = await getNextNumero();
+      payload.numero = numero;
+      await addDoc(signalementsCol, payload);
+
+      await fetch('/api/signalement-collaborateur', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          numero: numero,
+          rapporteur: payload.rapporteur,
+          rapporteurEmail: payload.rapporteurEmail,
+          site: payload.site,
+          nature: payload.natureIncident,
+          objet: payload.objet
+        })
+      });
+
+      document.getElementById('formZone').style.display = 'none';
+      document.getElementById('confirmBox').style.display = 'block';
+      document.getElementById('confirmNumero').textContent = 'N° ' + numero;
+    }catch(err){
+      errorMsg.textContent = "Une erreur est survenue, réessaie dans un instant. (" + err.message + ")";
+      btn.disabled = false;
+      btn.textContent = 'Envoyer mon signalement';
+    }
+  });
+</script>
+</body>
+</html>

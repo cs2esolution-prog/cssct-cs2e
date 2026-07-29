@@ -659,7 +659,7 @@
     getAuth, sendSignInLinkToEmail, isSignInWithEmailLink, signInWithEmailLink, onAuthStateChanged, signOut
   } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js";
   import {
-    getFirestore, collection, addDoc, getDocs, query, orderBy, limit, doc, getDoc
+    getFirestore, collection, addDoc, getDocs, query, orderBy, limit, doc, getDoc, runTransaction
   } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
 
   const firebaseConfig = {
@@ -717,20 +717,15 @@
   });
 
   // --- Firestore helpers exposed to the main script below ---
+  const counterRef = doc(db, "config", "compteur_signalements");
   async function getNextNumero(){
-    // On lit tous les dossiers pour trouver le plus grand numéro numérique
-    // (certains anciens dossiers importés ont des identifiants texte type "PA23", on les ignore ici)
-    const snap = await getDocs(signalementsCol);
-    let max = 0;
-    snap.forEach(d => {
-      const n = d.data().numero;
-      const str = String(n);
-      if(/^\d+$/.test(str)){
-        const val = parseInt(str, 10);
-        if(val > max) max = val;
-      }
+    return await runTransaction(db, async (tx) => {
+      const snap = await tx.get(counterRef);
+      const current = snap.exists() ? (snap.data().value || 0) : 0;
+      const next = current + 1;
+      tx.set(counterRef, { value: next });
+      return next;
     });
-    return max + 1;
   }
 
   window.CSSCT_FIREBASE = {

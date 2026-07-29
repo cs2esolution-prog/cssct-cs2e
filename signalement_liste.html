@@ -479,7 +479,7 @@ function render(){
     row.style.setProperty('--nature-color', NATURE_COLORS[d.natureIncident] || '#019682');
     row.innerHTML =
       '<div class="col-num">N' + String.fromCharCode(176) + (isBadNumero(d.numero) ? '?' : d.numero) + '</div>' +
-      '<div class="col-main"><div class="objet">' + d.objet + '</div><div class="meta">' + (d.rapporteur || '-') + '</div></div>' +
+      '<div class="col-main"><div class="objet">' + (d.origineCollaborateur ? '<span style="background:#5A4570;color:#fff;font-size:9.5px;font-weight:700;padding:2px 7px;border-radius:10px;margin-right:6px;vertical-align:middle;">📥 COLLABORATEUR</span>' : '') + d.objet + '</div><div class="meta">' + (d.rapporteur || '-') + '</div></div>' +
       '<div class="col-nature" style="color:' + (NATURE_COLORS[d.natureIncident]||'#019682') + '">' + d.natureIncident + '</div>' +
       '<div class="col-site">' + d.site + (d.lieu ? ' - '+d.lieu : '') + '<br><span style="font-size:11px;">' + d.date + '</span></div>' +
       '<div><span class="status-chip ' + statusClass(d.statut) + '">' + d.statut + '</span></div>';
@@ -645,7 +645,8 @@ function openDrawer(numero){
   drawerEl.innerHTML =
     '<div class="drawer-head" style="border-left:6px solid ' + color + '">' +
       '<div class="dh-left"><div class="dh-num" style="color:' + color + '">N ' + (isBadNumero(d.numero) ? '?? (à corriger)' : d.numero) + '</div>' +
-      '<span class="status-chip ' + statusClass(d.statut) + '">' + d.statut + '</span></div>' +
+      '<span class="status-chip ' + statusClass(d.statut) + '">' + d.statut + '</span>' +
+      (d.origineCollaborateur ? '<span style="background:#5A4570;color:#fff;font-size:10px;font-weight:700;padding:3px 9px;border-radius:12px;">📥 Soumis par un collaborateur</span>' : '') + '</div>' +
       '<button class="drawer-close" onclick="closeDrawer()">' + String.fromCharCode(215) + '</button>' +
     '</div>' +
     '<div class="drawer-body">' +
