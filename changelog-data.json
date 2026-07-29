@@ -1,5 +1,17 @@
 [
   {
+    "hash": "4d166bf",
+    "date": "29/07/2026",
+    "title": "Add files via upload",
+    "description": "Ajout du module Exercices d'évacuation\r\n\r\nNouveau module complet : compte-rendu fidèle au modèle existant, grille d'analyse à 12 critères notés, plan d'actions, photos, mode administrateur (critères, rubriques complémentaires, prompt IA), génération de prompt IA spécialisé et intégration validée des retours, export Word avec logos et pagination."
+  },
+  {
+    "hash": "cae200c",
+    "date": "29/07/2026",
+    "title": "chore: mise a jour automatique du changelog [skip ci]",
+    "description": ""
+  },
+  {
     "hash": "5969f9d",
     "date": "29/07/2026",
     "title": "Add files via upload",
