@@ -1,5 +1,17 @@
 [
   {
+    "hash": "5969f9d",
+    "date": "29/07/2026",
+    "title": "Add files via upload",
+    "description": "Champs personnalisés pour les signalements (mode administrateur)\r\n\r\nAjout d'un mode administrateur permettant de créer des champs personnalisés (texte, texte long, numérique, date, liste déroulante), de les réordonner et de les supprimer, sans toucher aux rubriques existantes. Ces champs apparaissent automatiquement dans le formulaire de création, la fiche d'un dossier et le rapport (aperçu et Word)."
+  },
+  {
+    "hash": "7b13f02",
+    "date": "29/07/2026",
+    "title": "chore: mise a jour automatique du changelog [skip ci]",
+    "description": ""
+  },
+  {
     "hash": "2d1c873",
     "date": "29/07/2026",
     "title": "Add files via upload",
