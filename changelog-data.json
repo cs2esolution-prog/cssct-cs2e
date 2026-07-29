@@ -1,5 +1,17 @@
 [
   {
+    "hash": "05cc7e5",
+    "date": "29/07/2026",
+    "title": "Add files via upload",
+    "description": "Partage du formulaire collaborateur\r\n\r\nAjout d'un acces rapide depuis l'accueil et d'un bloc de partage dedie (QR code + lien copiable) dans la page Administration, pour diffuser facilement le formulaire de signalement public aux collaborateurs."
+  },
+  {
+    "hash": "b39b676",
+    "date": "29/07/2026",
+    "title": "chore: mise a jour automatique du changelog [skip ci]",
+    "description": ""
+  },
+  {
     "hash": "315e257",
     "date": "29/07/2026",
     "title": "Rename src_worker.js to worker.js",
