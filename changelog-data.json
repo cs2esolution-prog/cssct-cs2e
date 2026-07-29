@@ -1,5 +1,17 @@
 [
   {
+    "hash": "05b4a51",
+    "date": "29/07/2026",
+    "title": "Enrichissement du module Inspections (guide détaillé, documents à cocher, intégration IA validée)",
+    "description": "Ajout d'icônes d'aide par thème dans la grille d'entretien, transformation des documents nécessaires en liste à cocher avec option \"Autres\", et ajout d'un espace de relecture/validation pour intégrer un retour d'IA dans les notes du dossier."
+  },
+  {
+    "hash": "a6b6a99",
+    "date": "29/07/2026",
+    "title": "chore: mise a jour automatique du changelog [skip ci]",
+    "description": ""
+  },
+  {
     "hash": "fd328e9",
     "date": "29/07/2026",
     "title": "Add files via upload",
