@@ -1,5 +1,17 @@
 [
   {
+    "hash": "79be3a1",
+    "date": "29/07/2026",
+    "title": "Add files via upload",
+    "description": "A propos, bandeau elargi et centre, photos multiples\r\n\r\nAjout d'une page \"A propos\" (pitch complet du ressenti aux fonctionnalites). Le panneau de consultation/edition (signalements, inspections, evacuations) est maintenant large et centre, avec la barre de navigation visible derriere. Ajout d'une galerie de photos illimitee sur les signalements, en creation et sur les dossiers existants."
+  },
+  {
+    "hash": "5988538",
+    "date": "29/07/2026",
+    "title": "chore: mise a jour automatique du changelog [skip ci]",
+    "description": ""
+  },
+  {
     "hash": "4d166bf",
     "date": "29/07/2026",
     "title": "Add files via upload",
