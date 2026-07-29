@@ -1,5 +1,17 @@
 [
   {
+    "hash": "a626c33",
+    "date": "29/07/2026",
+    "title": "Add files via upload",
+    "description": "Ajout du module Comptes-rendus de reunion CSSCT\r\n\r\nNouveau module : structure complete (participants, ordre du jour, points abordes, decisions, prochaine echeance), generation d'un prompt IA a partir d'une prise de notes brute, integration section par section du retour IA, mode administrateur, export Word et impression."
+  },
+  {
+    "hash": "ca34426",
+    "date": "29/07/2026",
+    "title": "chore: mise a jour automatique du changelog [skip ci]",
+    "description": ""
+  },
+  {
     "hash": "e62a004",
     "date": "29/07/2026",
     "title": "Update administration.html",
