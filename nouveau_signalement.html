@@ -577,6 +577,14 @@
       </div></div>
     </div>
 
+    <div class="section" data-section="customfields" id="customFieldsSectionWrap" style="display:none;">
+      <button type="button" class="section-head">
+        <h2><span class="idx">07</span> Champs personnalisés</h2>
+        <svg class="chevron" viewBox="0 0 20 20" fill="none"><path d="M5 7l5 6 5-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <div class="section-body"><div class="section-body-inner" id="customFieldsSection"></div></div>
+    </div>
+
     <div class="submitbar">
       <div class="submit-note">Statut initial : <strong>1-En Cours</strong> — N° attribué à l'enregistrement.</div>
       <button type="button" class="btn-ghost" id="previewReportBtn">Prévisualiser le rapport</button>
@@ -646,7 +654,7 @@
     getAuth, sendSignInLinkToEmail, isSignInWithEmailLink, signInWithEmailLink, onAuthStateChanged, signOut
   } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js";
   import {
-    getFirestore, collection, addDoc, getDocs, query, orderBy, limit
+    getFirestore, collection, addDoc, getDocs, query, orderBy, limit, doc, getDoc
   } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
 
   const firebaseConfig = {
@@ -662,6 +670,7 @@
   const auth = getAuth(app);
   const db = getFirestore(app);
   const signalementsCol = collection(db, "signalements");
+  const customFieldsConfigRef = doc(db, "config", "signalement_custom_fields");
 
   const actionCodeSettings = {
     url: window.location.origin + window.location.pathname,
@@ -680,6 +689,10 @@
     document.getElementById('authChecking').style.display = 'none';
     if (user) {
       document.getElementById('authGate').style.display = 'none';
+      getDoc(customFieldsConfigRef).then((snap) => {
+        window._customFields = snap.exists() ? (snap.data().fields || []) : [];
+        if (typeof window.renderCustomFieldsSection === 'function') window.renderCustomFieldsSection();
+      }).catch(() => { window._customFields = []; });
     } else {
       document.getElementById('authGate').style.display = 'flex';
       document.getElementById('authForm').style.display = 'block';
@@ -909,8 +922,17 @@ function gatherPayload(){
     photoIncidentBase64: photoIncidentDataURL || '',
     photoLocalisationBase64: photoLocalisationDataURL || '',
     photoIncidentDims: photoIncidentDims,
-    photoLocalisationDims: photoLocalisationDims
+    photoLocalisationDims: photoLocalisationDims,
+    customFields: gatherCustomFieldValues()
   };
+}
+
+function gatherCustomFieldValues(){
+  const values = {};
+  document.querySelectorAll('#customFieldsSection [data-custom-field]').forEach(function(el){
+    values[el.dataset.customField] = el.value;
+  });
+  return values;
 }
 
 // validation + submit
@@ -1117,6 +1139,26 @@ document.getElementById('incidentSearchModal').addEventListener('click', e=>{
 // ---- Report preview modal (document formaté) ----
 function esc(s){ return (s||'').toString(); }
 
+// ---- Champs personnalisés ----
+function customFields(){ return window._customFields || []; }
+function customFieldInputHtml(f){
+  if(f.type === 'texte_long') return '<textarea data-custom-field="' + f.id + '"></textarea>';
+  if(f.type === 'numerique') return '<input type="number" data-custom-field="' + f.id + '">';
+  if(f.type === 'date') return '<input type="date" data-custom-field="' + f.id + '">';
+  if(f.type === 'liste') return '<select data-custom-field="' + f.id + '"><option value="">—</option>' + (f.options||[]).map(function(o){ return '<option value="' + esc(o).replace(/"/g,'&quot;') + '">' + esc(o) + '</option>'; }).join('') + '</select>';
+  return '<input type="text" data-custom-field="' + f.id + '">';
+}
+window.renderCustomFieldsSection = function(){
+  const fields = customFields();
+  const wrap = document.getElementById('customFieldsSectionWrap');
+  const container = document.getElementById('customFieldsSection');
+  if(!fields.length){ wrap.style.display = 'none'; return; }
+  wrap.style.display = 'block';
+  container.innerHTML = fields.map(function(f){
+    return '<div class="field"><label>' + esc(f.label) + '</label>' + customFieldInputHtml(f) + '</div>';
+  }).join('');
+};
+
 function toFR(iso){
   if(!iso) return '';
   const m = String(iso).match(/^(\d{4})-(\d{2})-(\d{2})$/);
@@ -1189,6 +1231,13 @@ function buildReportHtml(p){
     html += `<div class="rp-v">Aucune pièce jointe.</div>`;
   }
   html += `<div class="rp-blank"></div><div class="rp-h">Localisation :</div><div class="rp-v">${esc(p.site)}${p.lieu ? ' — ' + esc(p.lieu) : ''}</div>`;
+  if(customFields().length){
+    html += `<div class="rp-blank"></div><div class="rp-h">Champs complémentaires</div>`;
+    customFields().forEach(function(f){
+      const val = (p.customFields||{})[f.id];
+      if(val) html += `<div class="rp-v">${esc(f.label)} : ${esc(val)}</div>`;
+    });
+  }
   html += `<div class="rp-footer">Le CSSCT vous informe que ce document sera transmis aux membres du CS2E ainsi qu'au président du CSSCT</div>`;
 
   return html;
@@ -1384,6 +1433,15 @@ function generateDocxFile(p){
   children.push(blank());
   children.push(GH('Localisation :'));
   children.push(...P((p.site || '') + (p.lieu ? ' — ' + p.lieu : '')));
+
+  if(customFields().length){
+    children.push(blank());
+    children.push(GH('Champs complémentaires'));
+    customFields().forEach(function(f){
+      const val = (p.customFields||{})[f.id];
+      if(val) children.push(...P(f.label + ' : ' + val));
+    });
+  }
 
   const footer = new Footer({
     children: [
