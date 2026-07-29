@@ -178,6 +178,20 @@
   </div>
 </div>
 
+<div class="modal-overlay" id="integrateModal">
+  <div class="modal" style="max-width:700px;">
+    <div class="modal-head"><h3>Intégrer un retour IA</h3><button class="modal-close" onclick="document.getElementById('integrateModal').classList.remove('show')">×</button></div>
+    <div class="modal-body">
+      <p style="font-size:12.5px;color:var(--ink-soft);margin:0 0 10px;">Colle ici la réponse complète de ton IA. Relis-la et modifie/coupe ce que tu veux avant de valider — seul le texte que tu valides sera enregistré dans les "Notes suite inspection" du dossier.</p>
+      <textarea id="integrateText" placeholder="Colle ici le texte renvoyé par l'IA..." style="width:100%;min-height:320px;font-size:12.5px;padding:10px;border:1px solid var(--line);border-radius:8px;font-family:'Inter',sans-serif;"></textarea>
+    </div>
+    <div class="modal-actions">
+      <button class="ghost" onclick="document.getElementById('integrateModal').classList.remove('show')">Annuler</button>
+      <button class="primary" onclick="validateIntegration()">Valider et enregistrer dans les notes</button>
+    </div>
+  </div>
+</div>
+
 <div id="toast"></div>
 
 <script type="module">
@@ -263,6 +277,68 @@ const THEMES = [
   "Bilan et DUERP"
 ];
 
+const QUESTIONS_BY_THEME = {
+  "Activité réelle vs prescrite": [
+    "Décrire une journée ou semaine type dans le poste.",
+    "Comparer avec la fiche de poste : y a-t-il des tâches non écrites ?",
+    "Le poste et les missions ont-ils évolué récemment ?",
+    "Quelles tâches prennent le plus de temps / génèrent le plus de difficultés ?",
+    "Qu'est-ce qui est le plus contraignant au quotidien ?"
+  ],
+  "Risques physiques et météo": [
+    "Évaluation du matériel, des outils et des EPI mis à disposition.",
+    "Douleurs liées aux postures, port de charges, gestes répétitifs ?",
+    "Gestion des contraintes climatiques (chaleur, froid, intempéries).",
+    "Des pauses sont-elles prévues ou possibles sur les tâches fatigantes ?"
+  ],
+  "Outils, machines et conduite": [
+    "État des outils manuels et des engins (tracteurs, machines).",
+    "Vibrations ressenties, confort de conduite.",
+    "Coactivité engins/piétons sur le site.",
+    "Les dysfonctionnements sont-ils rapidement signalés et traités ?"
+  ],
+  "Produits chimiques et biologiques": [
+    "Manipulation de produits phytosanitaires, engrais, nouvelles molécules.",
+    "Stockage, préparation, gestion des déchets (EVPP, PPNU).",
+    "Port effectif des EPI adaptés.",
+    "Allergies, poussières, pollens (notamment en milieu confiné type serre)."
+  ],
+  "Travail isolé": [
+    "Fréquence du travail seul (champs, serres, bureaux...).",
+    "Existe-t-il une procédure d'alerte en cas de malaise/accident (DATI, téléphone) ?",
+    "Le travail en binôme est-il suffisamment développé ?",
+    "Que se passe-t-il en cas de problème ou d'urgence en étant seul ?"
+  ],
+  "Accidents et prévention": [
+    "Accident de travail vécu ou évité de peu (presqu'accident) ?",
+    "Connaissance des accidents précédents et mesures correctives associées.",
+    "Retour sur d'éventuelles Visites d'Observation Préventive (VOP).",
+    "Situations à risque connues mais non signalées ?"
+  ],
+  "Risques psycho-sociaux": [
+    "Charge de travail et périodes de forte activité : comment sont-elles anticipées ?",
+    "Sentiment de pression, urgence, interruptions fréquentes ?",
+    "Autonomie et marges de manœuvre dans le travail.",
+    "Qualité du soutien hiérarchique et de l'entraide entre collègues.",
+    "Reconnaissance du travail fourni, clarté des objectifs.",
+    "Circulation de l'information : arrive-t-elle au bon moment, est-elle tracée ?"
+  ],
+  "Bilan et DUERP": [
+    "Présenter les risques identifiés dans le DUERP actuel pour ce poste.",
+    "Ces risques correspondent-ils à la réalité ? Un danger manque-t-il ?",
+    "Le DUERP est-il accessible/affiché et connu des salariés ?",
+    "Propositions d'amélioration de la sécurité ou de l'organisation."
+  ]
+};
+
+const DOCUMENTS_OPTIONS = [
+  "DUERP du site", "Fiches de poste", "Situations à risque connues",
+  "Reporting des accidents du travail", "Reporting des Visites d'Observation Préventive (VOP)",
+  "Organigramme du site", "Données d'absentéisme (anonymisées)",
+  "Grille d'entretien RPS (INRS)", "Comptes rendus d'instances précédentes",
+  "Plans d'action RPS précédents", "Procédures de signalement des situations à risque"
+];
+
 const GUIDE_TEXT = [
   ["A. Introduction (5 min)", "Rappeler le rôle du CSSCT et l'objectif de l'entretien. Garantir la confidentialité des échanges vis-à-vis de la direction pour libérer la parole."],
   ["B. Activité réelle vs prescrite (5 min)", "Décrire une journée ou semaine type. Comparer avec la fiche de poste. Identifier les tâches non écrites. Ce qui est le plus difficile au quotidien."],
@@ -302,7 +378,7 @@ window.createInspection = async function(){
   if(!site || !sujet){ showToast('Site et sujet sont obligatoires.'); return; }
   const item = {
     site: site, date: date, sujet: sujet,
-    contexte: '', intervenants: '', documentsNecessaires: '', modalite: '', infoSalaries: '',
+    contexte: '', intervenants: '', documentsNecessaires: [], modalite: '', infoSalaries: '',
     dateRetourCR: '', pointsComplementaires: '', notesSuiteInspection: '',
     entretiens: [], createdAt: new Date().toISOString()
   };
@@ -317,7 +393,9 @@ window.createInspection = async function(){
 function findInspection(id){ return (window._inspections||[]).find(function(x){ return x.id === id; }); }
 
 function fieldBlock(id, label, value){
-  return '<div class="dfield" data-field="' + id + '"><div class="dlabel">' + label + '</div><div class="dval ' + (value?'':'empty') + '">' + (esc(value) || 'Non renseigné') + '</div></div>';
+  const isArr = Array.isArray(value);
+  const display = isArr ? (value.length ? value.join(', ') : '') : value;
+  return '<div class="dfield" data-field="' + id + '"><div class="dlabel">' + label + '</div><div class="dval ' + (display?'':'empty') + '">' + (esc(display) || 'Non renseigné') + '</div></div>';
 }
 function sectionCard(title, num, inspId, fields){
   const rows = fields.map(function(f){ return fieldBlock(f.id, f.label, f.value); }).join('');
@@ -369,7 +447,8 @@ window.openDrawer = function(id){
       sectionCard('Notes suite inspection', 5, id, [
         {id:'notesSuiteInspection', label:'Notes', value:it.notesSuiteInspection}
       ]) +
-      '<div class="dsection"><button class="ai-btn" onclick="copyInspectionPrompt(\'' + id + '\')">✦ Générer un prompt IA pour structurer le dossier</button></div>' +
+      '<div class="dsection"><button class="ai-btn" onclick="copyInspectionPrompt(\'' + id + '\')">✦ Générer un prompt IA pour structurer le dossier</button>' +
+      '<button class="ai-btn" onclick="openIntegrateModal(\'' + id + '\')">📥 Intégrer un retour IA</button></div>' +
       '<div class="dsection danger-zone"><h3>Actions</h3><div class="action-row">' +
         '<button class="btn" onclick="exportInspectionDocx(\'' + id + '\')">⬇️ Exporter en Word</button>' +
         '<button class="btn btn-danger" onclick="deleteInspection(\'' + id + '\')">Supprimer l\'inspection</button>' +
@@ -391,6 +470,19 @@ window.toggleEdit = function(inspId, sectionNum){
     const long = longFields.indexOf(id) !== -1;
     const label = f.querySelector('.dlabel').textContent;
     const inputType = id === 'date' || id === 'dateRetourCR' ? 'date' : 'text';
+    if(id === 'documentsNecessaires'){
+      const selected = Array.isArray(val) ? val : (val ? [val] : []);
+      const checks = DOCUMENTS_OPTIONS.map(function(opt, i){
+        const checked = selected.indexOf(opt) !== -1 ? 'checked' : '';
+        return '<label style="display:flex;align-items:center;gap:6px;font-size:12.5px;font-weight:400;margin-bottom:4px;">' +
+          '<input type="checkbox" data-doc-option="' + i + '" value="' + esc(opt) + '" ' + checked + '> ' + esc(opt) + '</label>';
+      }).join('');
+      const autres = selected.filter(function(s){ return DOCUMENTS_OPTIONS.indexOf(s) === -1; }).join(', ');
+      f.innerHTML = '<div class="dlabel">' + label + '</div>' + checks +
+        '<label class="dlabel" style="display:block;margin-top:8px;">Autres (séparés par une virgule)</label>' +
+        '<input type="text" id="docsAutres" value="' + esc(autres).replace(/"/g,'&quot;') + '" placeholder="Ex : Fiche de sécurité produit X">';
+      return;
+    }
     f.innerHTML = '<div class="dlabel">' + label + '</div>' + (long
       ? '<textarea data-edit="' + id + '">' + esc(val) + '</textarea>'
       : '<input type="' + inputType + '" data-edit="' + id + '" value="' + esc(val).replace(/"/g,'&quot;') + '">');
@@ -405,7 +497,15 @@ window.saveSection = async function(inspId, sectionNum){
   const it = findInspection(inspId);
   const sec = document.querySelector('.dsection[data-section="' + sectionNum + '"]');
   const fields = {};
-  sec.querySelectorAll('[data-edit]').forEach(function(el){ fields[el.dataset.edit] = el.value; Object.assign(it, fields); });
+  sec.querySelectorAll('[data-edit]').forEach(function(el){ fields[el.dataset.edit] = el.value; });
+  const docCheckboxes = sec.querySelectorAll('[data-doc-option]');
+  if(docCheckboxes.length){
+    const selected = Array.prototype.slice.call(docCheckboxes).filter(function(cb){ return cb.checked; }).map(function(cb){ return cb.value; });
+    const autresInput = document.getElementById('docsAutres');
+    const autres = autresInput ? autresInput.value.split(',').map(function(s){ return s.trim(); }).filter(Boolean) : [];
+    fields.documentsNecessaires = selected.concat(autres);
+  }
+  Object.assign(it, fields);
   try{
     await window.INSP_FIREBASE.update(inspId, fields);
     showToast('Mis à jour');
@@ -423,12 +523,21 @@ window.deleteInspection = async function(inspId){
 };
 
 // ---- Entretiens ----
+window.toggleThemeInfo = function(i){
+  const el = document.getElementById('themeInfo' + i);
+  if(el) el.style.display = el.style.display === 'none' ? 'block' : 'none';
+};
+
 window.openEntretienModal = function(inspId){
   const body = document.getElementById('entretienModalBody');
   body.dataset.inspId = inspId;
   const rowsHtml = THEMES.map(function(t, i){
+    const questions = (QUESTIONS_BY_THEME[t]||[]).map(function(q){ return '<li>' + esc(q) + '</li>'; }).join('');
     return '<tr>' +
-      '<td style="font-size:12px;font-weight:600;padding:6px 4px;width:170px;">' + esc(t) + '</td>' +
+      '<td style="font-size:12px;font-weight:600;padding:6px 4px;width:170px;">' + esc(t) +
+        ' <span title="Voir les points à aborder" onclick="toggleThemeInfo(' + i + ')" style="cursor:pointer;color:var(--teal-dark);font-weight:700;border:1px solid var(--teal-dark);border-radius:50%;width:15px;height:15px;display:inline-flex;align-items:center;justify-content:center;font-size:10px;">i</span>' +
+        '<div id="themeInfo' + i + '" style="display:none;margin-top:6px;background:#FBFAF7;border-left:3px solid var(--gold);padding:8px 10px;border-radius:6px;"><ul style="margin:0;padding-left:16px;font-weight:400;font-size:11px;">' + questions + '</ul></div>' +
+      '</td>' +
       '<td style="padding:4px;"><textarea data-theme-notes="' + i + '" style="width:100%;min-height:40px;font-size:12px;padding:6px;border:1px solid var(--line);border-radius:6px;"></textarea></td>' +
       '<td style="padding:4px;"><textarea data-theme-vigilance="' + i + '" style="width:100%;min-height:40px;font-size:12px;padding:6px;border:1px solid var(--line);border-radius:6px;"></textarea></td>' +
     '</tr>';
@@ -488,6 +597,30 @@ window.deleteEntretien = async function(inspId, idx){
   }catch(err){ showToast('Erreur : ' + err.message); }
 };
 
+// ---- Intégration validée d'un retour IA ----
+window.openIntegrateModal = function(inspId){
+  document.getElementById('integrateModal').dataset.inspId = inspId;
+  document.getElementById('integrateText').value = '';
+  document.getElementById('integrateModal').classList.add('show');
+};
+
+window.validateIntegration = async function(){
+  const inspId = document.getElementById('integrateModal').dataset.inspId;
+  const it = findInspection(inspId);
+  const texte = document.getElementById('integrateText').value.trim();
+  if(!texte){ showToast('Colle et valide un texte avant d\'enregistrer.'); return; }
+  const dateLabel = new Date().toLocaleDateString('fr-FR');
+  const existing = it.notesSuiteInspection || '';
+  const newNotes = (existing ? existing + '\n\n' : '') + '--- Retour IA intégré le ' + dateLabel + ' ---\n' + texte;
+  try{
+    await window.INSP_FIREBASE.update(inspId, { notesSuiteInspection: newNotes });
+    it.notesSuiteInspection = newNotes;
+    document.getElementById('integrateModal').classList.remove('show');
+    showToast('Retour IA intégré aux notes ✓');
+    openDrawer(inspId);
+  }catch(err){ showToast('Erreur : ' + err.message); }
+};
+
 // ---- Prompt IA ----
 window.copyInspectionPrompt = async function(inspId){
   const it = findInspection(inspId);
@@ -507,7 +640,7 @@ window.copyInspectionPrompt = async function(inspId){
     'Date : ' + (it.date||'') + '\n' +
     'Contexte : ' + (it.contexte||'') + '\n' +
     'Intervenants : ' + (it.intervenants||'') + '\n' +
-    'Documents nécessaires : ' + (it.documentsNecessaires||'') + '\n' +
+    'Documents nécessaires : ' + (Array.isArray(it.documentsNecessaires) ? it.documentsNecessaires.join(', ') : (it.documentsNecessaires||'')) + '\n' +
     'Modalité : ' + (it.modalite||'') + '\n' +
     'Information aux salariés : ' + (it.infoSalaries||'') + '\n' +
     'Points complémentaires à vérifier : ' + (it.pointsComplementaires||'') + '\n' +
@@ -541,7 +674,7 @@ window.exportInspectionDocx = function(inspId){
     blank(),
     GH('Contexte / objectif'), ...P(it.contexte),
     blank(), GH('Intervenants'), ...P(it.intervenants),
-    blank(), GH('Documents nécessaires'), ...P(it.documentsNecessaires),
+    blank(), GH('Documents nécessaires'), ...P(Array.isArray(it.documentsNecessaires) ? it.documentsNecessaires.join(', ') : (it.documentsNecessaires||'')),
     blank(), GH('Modalité d\'inspection'), ...P(it.modalite),
     blank(), GH('Information aux salariés'), ...P(it.infoSalaries),
     blank(), GH('Points complémentaires à vérifier'), ...P(it.pointsComplementaires),
