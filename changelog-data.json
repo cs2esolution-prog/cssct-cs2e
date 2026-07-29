@@ -1,5 +1,17 @@
 [
   {
+    "hash": "2d1c873",
+    "date": "29/07/2026",
+    "title": "Add files via upload",
+    "description": "Mode administrateur pour la trame d'inspection\r\n\r\nLa trame des inspections (guide d'entretien, thèmes de la grille, documents nécessaires, prompt IA) est maintenant administrable et s'applique à toutes les inspections. Ajout du statut d'inspection, de photos, de lignes libres dans la grille d'entretien, et d'une intégration plus fine des retours IA (choix du champ cible et du mode ajout/remplacement)."
+  },
+  {
+    "hash": "c42796c",
+    "date": "29/07/2026",
+    "title": "chore: mise a jour automatique du changelog [skip ci]",
+    "description": ""
+  },
+  {
     "hash": "f5bea61",
     "date": "29/07/2026",
     "title": "Add files via upload",
