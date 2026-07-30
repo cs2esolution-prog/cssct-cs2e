@@ -234,8 +234,7 @@ window.renderQR = function(){
   });
 
   const collabUrl = window.location.origin + '/signalement_collaborateur.html';
-
-  const qrUrlCollab = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(collabUrl)}`;
+  document.getElementById('qrUrlCollab').textContent = url;
   if(window.QRCode){
     QRCode.toCanvas(document.getElementById('qrCanvasCollab'), qrUrlCollab, { width: 200, margin: 1, color: { dark: '#5A4570', light: '#F7F5F1' } });
   }
