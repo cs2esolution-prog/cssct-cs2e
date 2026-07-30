@@ -1,5 +1,17 @@
 [
   {
+    "hash": "057bed5",
+    "date": "30/07/2026",
+    "title": "Add files via upload",
+    "description": ""
+  },
+  {
+    "hash": "8375d6c",
+    "date": "29/07/2026",
+    "title": "chore: mise a jour automatique du changelog [skip ci]",
+    "description": ""
+  },
+  {
     "hash": "29c1144",
     "date": "29/07/2026",
     "title": "Update index.html",
