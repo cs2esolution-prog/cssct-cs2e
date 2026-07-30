@@ -1,5 +1,17 @@
 [
   {
+    "hash": "03f1e3a",
+    "date": "30/07/2026",
+    "title": "Update administration.html",
+    "description": ""
+  },
+  {
+    "hash": "c70dbfc",
+    "date": "30/07/2026",
+    "title": "chore: mise a jour automatique du changelog [skip ci]",
+    "description": ""
+  },
+  {
     "hash": "ded4f82",
     "date": "30/07/2026",
     "title": "Update administration.html",
