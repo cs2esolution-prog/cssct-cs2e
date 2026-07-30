@@ -54,8 +54,14 @@ Le suivi se fera sous le numéro ${numero}
 
 
 Ce message a été envoyé automatiquement de l'application CSSCT.`;
+console.log('MAILJET_FROM_EMAIL présent :', !!env.MAILJET_FROM_EMAIL);
+console.log('MAILJET_FROM_EMAIL longueur :', env.MAILJET_FROM_EMAIL?.length || 0);
+const fromEmail = env.MAILJET_FROM_EMAIL || 'cs2esolution@gmail.com';
 
-    const fromEmail = env.MAILJET_FROM_EMAIL;
+console.log(
+  'MAILJET_FROM_EMAIL présent :',
+  !!env.MAILJET_FROM_EMAIL
+);
     const fromName = env.MAILJET_FROM_NAME || 'CSSCT';
     const cssctEmails = ('choudayer@smag.tech' || '').split(',').map(function(e){ return e.trim(); }).filter(Boolean);
 
