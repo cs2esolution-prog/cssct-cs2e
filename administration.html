@@ -223,7 +223,7 @@ const firebaseConfig = {
 
 <script>
 window.renderQR = function(){
-  const url = window.location.origin + window.location.pathname.replace(/administration\.html$/, 'index.html');
+  const url = window.location.origin + 'index.html';
   document.getElementById('qrUrl').textContent = url;
   if(window.QRCode){
     QRCode.toCanvas(document.getElementById('qrCanvas'), url, { width: 200, margin: 1, color: { dark: '#2B2A2E', light: '#F7F5F1' } });
@@ -237,7 +237,7 @@ window.renderQR = function(){
     });
   });
 
-  const collabUrl = window.location.origin + window.location.pathname.replace(/administration\.html$/, 'signalement_collaborateur.html');
+  const collabUrl = window.location.origin + 'signalement_collaborateur.html';
   document.getElementById('qrUrlCollab').textContent = collabUrl;
   if(window.QRCode){
     QRCode.toCanvas(document.getElementById('qrCanvasCollab'), collabUrl, { width: 200, margin: 1, color: { dark: '#5A4570', light: '#F7F5F1' } });
