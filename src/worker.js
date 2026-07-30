@@ -90,12 +90,35 @@ Ce message a été envoyé automatiquement de l'application CSSCT.`;
       return new Response(JSON.stringify({ error: 'Erreur envoi email', detail: errText }), { status: 502, headers: CORS_HEADERS });
     }
 
-if (env.NTFY_TOPIC) {
-  ctx.waitUntil(fetch('https://ntfy.sh/' + env.NTFY_TOPIC, {
-    method: 'POST',
-    headers: { 'Title': 'Nouveau signalement ' + numero },
-    body: rapporteur + ' - ' + site + ' - ' + nature + ' : ' + objet
-  }));
+if (!env.NTFY_TOPIC) {
+  console.error('NTFY_TOPIC absent du Worker');
+} else {
+  const ntfyUrl = 'https://ntfy.sh/' + env.NTFY_TOPIC;
+
+  console.log('Envoi NTFY vers le topic configuré');
+
+  try {
+    const ntfyResponse = await fetch(ntfyUrl, {
+      method: 'POST',
+      headers: {
+        'Title': 'Nouveau signalement ' + numero,
+        'Priority': 'default',
+        'Tags': 'bell'
+      },
+      body: rapporteur + ' - ' + site + ' - ' + nature + ' : ' + objet
+    });
+
+    const ntfyResponseText = await ntfyResponse.text();
+
+    console.log('NTFY HTTP status:', ntfyResponse.status);
+    console.log('NTFY réponse:', ntfyResponseText);
+
+    if (!ntfyResponse.ok) {
+      console.error('Erreur NTFY');
+    }
+  } catch (error) {
+    console.error('Erreur appel NTFY:', error.message);
+  }
 }
     return new Response(JSON.stringify({ ok: true }), { status: 200, headers: CORS_HEADERS });
   } catch (err) {
