@@ -1,5 +1,17 @@
 [
   {
+    "hash": "ded4f82",
+    "date": "30/07/2026",
+    "title": "Update administration.html",
+    "description": ""
+  },
+  {
+    "hash": "49fafab",
+    "date": "30/07/2026",
+    "title": "chore: mise a jour automatique du changelog [skip ci]",
+    "description": ""
+  },
+  {
     "hash": "d9368ed",
     "date": "30/07/2026",
     "title": "Add files via upload",
