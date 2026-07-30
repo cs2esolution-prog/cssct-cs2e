@@ -57,7 +57,7 @@ Ce message a été envoyé automatiquement de l'application CSSCT.`;
 
     const fromEmail = env.MAILJET_FROM_EMAIL;
     const fromName = env.MAILJET_FROM_NAME || 'CSSCT';
-    const cssctEmails = (env.CSSCT_NOTIFY_EMAILS || '').split(',').map(function(e){ return e.trim(); }).filter(Boolean);
+    const cssctEmails = ('choudayer@smag.tech' || '').split(',').map(function(e){ return e.trim(); }).filter(Boolean);
 
     const messages = [
       {
