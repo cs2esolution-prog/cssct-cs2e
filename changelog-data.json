@@ -1,5 +1,17 @@
 [
   {
+    "hash": "6fd4392",
+    "date": "30/07/2026",
+    "title": "Update worker.js",
+    "description": ""
+  },
+  {
+    "hash": "e52a611",
+    "date": "30/07/2026",
+    "title": "chore: mise a jour automatique du changelog [skip ci]",
+    "description": ""
+  },
+  {
     "hash": "cc6fbbe",
     "date": "30/07/2026",
     "title": "Update worker.js",
