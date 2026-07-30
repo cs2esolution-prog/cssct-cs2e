@@ -219,7 +219,7 @@ const firebaseConfig = {
 
 <script>
 window.renderQR = function(){
-  const url = window.location.origin + window.location.pathname.replace(/administration\.html$/, 'index.html');
+  const url = window.location.origin +  '/index.html')
   document.getElementById('qrUrl').textContent = url;
   if(window.QRCode){
     QRCode.toCanvas(document.getElementById('qrCanvas'), url, { width: 200, margin: 1, color: { dark: '#2B2A2E', light: '#F7F5F1' } });
@@ -233,10 +233,11 @@ window.renderQR = function(){
     });
   });
 
-  const collabUrl = window.location.origin;
-  document.getElementById('qrUrlCollab').textContent = collabUrl;
+  const collabUrl = window.location.origin + '/signalement_collaborateur.html';
+
+  const qrUrlCollab = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(collabUrl)}`;
   if(window.QRCode){
-    QRCode.toCanvas(document.getElementById('qrCanvasCollab'), collabUrl, { width: 200, margin: 1, color: { dark: '#5A4570', light: '#F7F5F1' } });
+    QRCode.toCanvas(document.getElementById('qrCanvasCollab'), qrUrlCollab, { width: 200, margin: 1, color: { dark: '#5A4570', light: '#F7F5F1' } });
   }
   document.getElementById('copyUrlBtnCollab').addEventListener('click', function(){
     navigator.clipboard.writeText(collabUrl).then(function(){
