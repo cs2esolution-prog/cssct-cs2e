@@ -1,5 +1,17 @@
 [
   {
+    "hash": "4be3879",
+    "date": "30/07/2026",
+    "title": "Update worker.js 2",
+    "description": ""
+  },
+  {
+    "hash": "4496a17",
+    "date": "30/07/2026",
+    "title": "chore: mise a jour automatique du changelog [skip ci]",
+    "description": ""
+  },
+  {
     "hash": "6f6f276",
     "date": "30/07/2026",
     "title": "Update wrangler.jsonc 2",
