@@ -166,7 +166,7 @@ const firebaseConfig = {
     const msg = document.getElementById('authMsg');
     if (!email) { msg.textContent = "Merci de saisir ton email."; return; }
     sendSignInLinkToEmail(auth, email, actionCodeSettings)
-      .then(() => { msg.style.color = '#019682'; msg.textContent = "Lien envoyé, vérifie ta boîte mail."; })
+      .then(() => { msg.style.color = '#019682'; msg.textContent = "Lien envoyé, vérifie ta boîte mail et tes spams."; })
       .catch(err => { msg.textContent = "Erreur : " + err.message; });
   });
 
