@@ -1,5 +1,17 @@
 [
   {
+    "hash": "dba9e04",
+    "date": "30/07/2026",
+    "title": "Update index.html",
+    "description": ""
+  },
+  {
+    "hash": "97a07a7",
+    "date": "30/07/2026",
+    "title": "chore: mise a jour automatique du changelog [skip ci]",
+    "description": ""
+  },
+  {
     "hash": "5d85ce4",
     "date": "30/07/2026",
     "title": "Update signalement_collaborateur.html",
