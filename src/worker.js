@@ -91,44 +91,12 @@ Ce message a été envoyé automatiquement de l'application CSSCT.`;
     }
 
 if (env.NTFY_TOPIC) {
-  const ntfyUrl = 'https://ntfy.sh/' + env.NTFY_TOPIC;
-
-  ctx.waitUntil(
-    fetch(ntfyUrl, {
-      method: 'POST',
-      headers: {
-        'Title': 'Nouveau signalement ' + numero,
-        'Priority': 'default',
-        'Tags': 'bell'
-      },
-      body: rapporteur + ' - ' + site + ' - ' + nature + ' : ' + objet
-    })
-      .then(async response => {
-        const responseText = await response.text();
-
-        if (!response.ok) {
-          console.error(
-            '❌ Erreur NTFY',
-            response.status,
-            responseText
-          );
-          return;
-        }
-
-        console.log(
-          '✅ Notification NTFY envoyée',
-          response.status,
-          responseText
-        );
-      })
-      .catch(error => {
-        console.error('❌ Erreur réseau NTFY :', error.message);
-      })
-  );
-} else {
-  console.error('❌ NTFY_TOPIC non configuré');
+  ctx.waitUntil(fetch('https://ntfy.sh/' + env.NTFY_TOPIC, {
+    method: 'POST',
+    headers: { 'Title': 'Nouveau signalement ' + numero },
+    body: rapporteur + ' - ' + site + ' - ' + nature + ' : ' + objet
+  }));
 }
-
     return new Response(JSON.stringify({ ok: true }), { status: 200, headers: CORS_HEADERS });
   } catch (err) {
     return new Response(JSON.stringify({ error: err.message }), { status: 500, headers: CORS_HEADERS });
