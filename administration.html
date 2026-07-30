@@ -127,6 +127,10 @@
     <div><div class="a-title">Tableau de bord Cloudflare</div><div class="a-desc">Déploiements, statut du site</div></div>
     <div class="a-arrow">↗</div>
   </a>
+        <button class="tile" id="ntfy-share-btn" style="border:none;width:100%;">
+        <div class="tile-icon">📲</div>
+        <div class="tile-title">Partager les notifs (QR)</div>
+      </button>
 
   <div class="section-lbl">Toutes les pages de l'application</div>
   <div class="sitemap-grid">
@@ -219,7 +223,7 @@ const firebaseConfig = {
 
 <script>
 window.renderQR = function(){
-  const url = window.location.origin +  '/index.html')
+  const url = window.location.origin + window.location.pathname.replace(/administration\.html$/, 'index.html');
   document.getElementById('qrUrl').textContent = url;
   if(window.QRCode){
     QRCode.toCanvas(document.getElementById('qrCanvas'), url, { width: 200, margin: 1, color: { dark: '#2B2A2E', light: '#F7F5F1' } });
@@ -233,10 +237,10 @@ window.renderQR = function(){
     });
   });
 
-  const collabUrl = window.location.origin + '/signalement_collaborateur.html';
-  document.getElementById('qrUrlCollab').textContent = url;
+  const collabUrl = window.location.origin + window.location.pathname.replace(/administration\.html$/, 'signalement_collaborateur.html');
+  document.getElementById('qrUrlCollab').textContent = collabUrl;
   if(window.QRCode){
-    QRCode.toCanvas(document.getElementById('qrCanvasCollab'), qrUrlCollab, { width: 200, margin: 1, color: { dark: '#5A4570', light: '#F7F5F1' } });
+    QRCode.toCanvas(document.getElementById('qrCanvasCollab'), collabUrl, { width: 200, margin: 1, color: { dark: '#5A4570', light: '#F7F5F1' } });
   }
   document.getElementById('copyUrlBtnCollab').addEventListener('click', function(){
     navigator.clipboard.writeText(collabUrl).then(function(){
@@ -247,6 +251,28 @@ window.renderQR = function(){
     });
   });
 };
+
+document.getElementById('ntfy-share-btn').addEventListener('click', showNtfyShareModal);
+
+function showNtfyShareModal() {
+  const topic = 'cse-invivoag-cssct';
+  const subscribeUrl = `https://ntfy.sh/${topic}`;
+  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(subscribeUrl)}`;
+
+  const overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.8);z-index:999;display:flex;align-items:center;justify-content:center;padding:16px;';
+  overlay.innerHTML = `
+    <div style="background:#163C74;border-radius:16px;padding:20px;width:100%;max-width:340px;text-align:center;">
+      <div style="color:#fff;font-size:16px;font-weight:600;margin-bottom:6px;">📲 Recevoir les notifications</div>
+      <div style="color:#9FB3D6;font-size:12px;margin-bottom:12px;">La personne doit installer l'app gratuite "ntfy" (App Store/Play Store), puis scanner ce code pour s'abonner.</div>
+      <img src="${qrUrl}" alt="QR code" style="border-radius:10px;background:#fff;padding:10px;">
+      <div style="color:#9FB3D6;font-size:11px;margin-top:10px;word-break:break-all;">${subscribeUrl}</div>
+      <button class="detail-action-btn" id="ntfy-share-close" style="margin-top:14px;">Fermer</button>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+  overlay.querySelector('#ntfy-share-close').addEventListener('click', () => overlay.remove());
+}
 </script>
 </body>
 </html>
