@@ -1,5 +1,17 @@
 [
   {
+    "hash": "f60e4a4",
+    "date": "02/08/2026",
+    "title": "Update comptes_rendus_reunion.html",
+    "description": ""
+  },
+  {
+    "hash": "60db740",
+    "date": "02/08/2026",
+    "title": "chore: mise a jour automatique du changelog [skip ci]",
+    "description": ""
+  },
+  {
     "hash": "41dd873",
     "date": "02/08/2026",
     "title": "Update comptes_rendus_reunion.html",
