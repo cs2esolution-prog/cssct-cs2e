@@ -69,6 +69,20 @@
 
   .info-icon{cursor:pointer; color:var(--teal-dark); font-weight:700; border:1px solid var(--teal-dark); border-radius:50%; width:14px; height:14px; display:inline-flex; align-items:center; justify-content:center; font-size:9px;}
 
+  #reportPrintArea{background:#fff; padding:8px 4px; font-family:'Inter',sans-serif; color:#1a1a1a;}
+  .rp-header{display:flex; align-items:center; justify-content:space-between; margin-bottom:20px;}
+  .rp-bold{font-weight:700; font-size:13px; margin:1px 0; color:#1a1a1a;}
+  .rp-plain{font-size:12.5px; margin:1px 0; color:#1a1a1a;}
+  .rp-blank{height:12px;}
+  .rp-h{color:#019682; font-weight:700; font-size:12.5px; margin:3px 0;}
+  .rp-v{margin:0 0 10px; white-space:pre-wrap; font-size:12.5px; color:#1a1a1a;}
+  .rp-footer{margin:16px 0; font-size:11px; color:#333; font-style:italic;}
+  @media print{
+    body *{ visibility:hidden; }
+    #reportPrintArea, #reportPrintArea *{ visibility:visible; }
+    #reportPrintArea{ position:absolute; left:0; top:0; width:100%; padding:20px; }
+  }
+
   .ai-btn{display:inline-flex; align-items:center; gap:6px; background:#fff; border:1px solid var(--line); color:var(--ink); font-size:12px; font-weight:600; padding:8px 14px; border-radius:20px; cursor:pointer; margin-top:8px; margin-right:8px;}
   .ai-btn:hover{border-color:var(--teal); color:var(--teal-dark);}
 
@@ -170,6 +184,18 @@
   </div>
 </div>
 
+<div class="modal-overlay" id="reportModal">
+  <div class="modal wide">
+    <div class="modal-head"><h3>Aperçu du rapport</h3><button class="modal-close" onclick="document.getElementById('reportModal').classList.remove('show')">×</button></div>
+    <div class="modal-body"><div id="reportPrintArea"></div></div>
+    <div class="modal-actions">
+      <button onclick="printCR()">🖨️ Imprimer</button>
+      <button onclick="exportCRDocx(document.getElementById('reportModal').dataset.crId)">⬇️ Télécharger en Word</button>
+      <button class="primary" onclick="mailCR()">✉️ Envoyer par mail</button>
+    </div>
+  </div>
+</div>
+
 <div class="modal-overlay" id="promptModal">
   <div class="modal">
     <div class="modal-head"><h3>Prompt IA — compte-rendu de réunion</h3><button class="modal-close" onclick="document.getElementById('promptModal').classList.remove('show')">×</button></div>
@@ -240,14 +266,14 @@
   import { getAuth, sendSignInLinkToEmail, isSignInWithEmailLink, signInWithEmailLink, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js";
   import { getFirestore, collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
 
-const firebaseConfig = {
-  apiKey: "AIzaSyACY8fyy8Rd9NyLJ855xsDyknuUMV-pAag",
-  authDomain: "cssct-cs2e-c655b.firebaseapp.com",
-  projectId: "cssct-cs2e-c655b",
-  storageBucket: "cssct-cs2e-c655b.firebasestorage.app",
-  messagingSenderId: "277603883255",
-  appId: "1:277603883255:web:b3b7a5c3097a60caac1bf2"
-};
+  const firebaseConfig = {
+    apiKey: "AIzaSyB6c5xe4bg5JVUCJXsHcJBj3mFniALh39E",
+    authDomain: "cssct-cs2e.firebaseapp.com",
+    projectId: "cssct-cs2e",
+    storageBucket: "cssct-cs2e.firebasestorage.app",
+    messagingSenderId: "921964040050",
+    appId: "1:921964040050:web:578fcc81ca212b741697eb"
+  };
   const app = initializeApp(firebaseConfig);
   const auth = getAuth(app);
   const db = getFirestore(app);
@@ -431,8 +457,7 @@ window.openDrawer = function(id){
       '<div class="dsection"><button class="ai-btn" onclick="copyCRPrompt(\'' + id + '\')">✦ Générer un prompt IA pour structurer le CR</button>' +
       '<button class="ai-btn" onclick="openIntegrateModal(\'' + id + '\')">📥 Intégrer un retour IA</button></div>' +
       '<div class="dsection danger-zone"><h3>Actions</h3><div class="action-row">' +
-        '<button class="btn" onclick="exportCRDocx(\'' + id + '\')">⬇️ Exporter en Word</button>' +
-        '<button class="btn" onclick="printCR(\'' + id + '\')">🖨️ Imprimer / PDF</button>' +
+        '<button class="btn" onclick="previewReport(\'' + id + '\')">🔍 Prévisualiser le rapport</button>' +
         '<button class="btn btn-danger" onclick="deleteCR(\'' + id + '\')">Supprimer le CR</button>' +
       '</div></div>' +
     '</div>';
@@ -623,32 +648,55 @@ window.saveAdminConfig = async function(){
   }catch(err){ showToast('Erreur : ' + err.message); }
 };
 
-// ---- Impression rapide ----
-window.printCR = function(crId){
-  const it = findCR(crId);
-  const html = buildPrintHtml(it);
-  const w = window.open('', '_blank');
-  if(!w){ showToast("Le navigateur a bloqué l'ouverture de la fenêtre d'impression."); return; }
-  const css = `body{font-family:Arial,Helvetica,sans-serif;color:#1a1a1a;padding:28px;max-width:800px;margin:0 auto;font-size:12.5px;} h1,h2{margin:0 0 8px;} .h{color:#019682;font-weight:700;margin:14px 0 4px;}`;
-  w.document.open();
-  w.document.write('<!DOCTYPE html><html><head><meta charset="utf-8"><title>CR</title><style>' + css + '</style></head><body>' + html + '</body></html>');
-  w.document.close();
-  w.focus();
-  w.print();
-};
-function buildPrintHtml(it){
-  let html = '<h1>Compte-rendu — ' + esc(it.titre) + '</h1><p>' + esc(it.date) + '</p>';
+// ---- Aperçu du rapport (identique aux autres modules) ----
+function buildReportHtml(it){
+  let html =
+    '<div class="rp-header">' +
+      '<img src="data:image/png;base64,' + CS2E_LOGO_B64 + '" alt="CS2E" style="height:34px;">' +
+      '<img src="data:image/png;base64,' + CSSCT_LOGO_B64 + '" alt="CSSCT" style="height:56px;">' +
+    '</div>' +
+    '<div class="rp-bold" style="text-align:center;">COMPTE-RENDU DE REUNION CSSCT</div>' +
+    '<div class="rp-plain" style="text-align:center;">' + esc(it.titre) + '</div>' +
+    '<div class="rp-plain" style="text-align:center;">' + esc(it.date) + '</div>' +
+    '<div class="rp-blank"></div>';
+
   const blocks = [
     ['Participants', it.participants], ['Ordre du jour', it.ordreJour],
     ['Points abordés', it.pointsAbordes], ['Décisions prises', it.decisions],
     ['Prochaine échéance', it.prochaineEcheance]
   ];
-  blocks.forEach(function(b){ if(b[1]) html += '<div class="h">' + esc(b[0]) + '</div><p style="white-space:pre-wrap;">' + esc(b[1]) + '</p>'; });
-  (it.sectionsComplementaires||[]).forEach(function(s){
-    if(s.texte) html += '<div class="h">' + esc(s.titre) + '</div><p style="white-space:pre-wrap;">' + esc(s.texte) + '</p>';
+  blocks.forEach(function(b){
+    if(b[1]){ html += '<div class="rp-h">' + esc(b[0]) + '</div><div class="rp-v">' + esc(b[1]) + '</div><div class="rp-blank"></div>'; }
   });
+  (it.sectionsComplementaires||[]).forEach(function(s){
+    if(s.texte){ html += '<div class="rp-h">' + esc(s.titre) + '</div><div class="rp-v">' + esc(s.texte) + '</div><div class="rp-blank"></div>'; }
+  });
+
+  html += '<div class="rp-footer">Le CSSCT vous informe que ce document sera transmis aux membres du CS2E ainsi qu' + String.fromCharCode(39) + 'au president du CSSCT</div>';
   return html;
 }
+
+window.previewReport = function(crId){
+  const it = findCR(crId);
+  document.getElementById('reportPrintArea').innerHTML = buildReportHtml(it);
+  document.getElementById('reportModal').dataset.crId = crId;
+  document.getElementById('reportModal').classList.add('show');
+};
+
+window.printCR = function(){
+  window.print();
+};
+
+window.mailCR = function(){
+  const crId = document.getElementById('reportModal').dataset.crId;
+  const it = findCR(crId);
+  const subject = encodeURIComponent('Compte-rendu CSSCT — ' + (it.titre||''));
+  const body = encodeURIComponent(
+    "Bonjour,\n\nVeuillez trouver ci-joint le compte-rendu de la réunion : " + (it.titre||'') +
+    ".\n\n(Le fichier Word peut être téléchargé via le bouton dédié, puis joint manuellement à ce mail.)\n\nCordialement,"
+  );
+  window.location.href = 'mailto:?subject=' + subject + '&body=' + body;
+};
 
 // ---- Export Word ----
 window.exportCRDocx = function(crId){
