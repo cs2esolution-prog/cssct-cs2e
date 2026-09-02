@@ -1,5 +1,17 @@
 [
   {
+    "hash": "7573218",
+    "date": "02/09/2026",
+    "title": "Add files via upload",
+    "description": ""
+  },
+  {
+    "hash": "7bfbbc4",
+    "date": "02/08/2026",
+    "title": "chore: mise a jour automatique du changelog [skip ci]",
+    "description": ""
+  },
+  {
     "hash": "f60e4a4",
     "date": "02/08/2026",
     "title": "Update comptes_rendus_reunion.html",
