@@ -1163,13 +1163,14 @@ function openMailRelance(dossierId){
   const cfg = window._mailRelanceConfig || window.MAIL_RELANCE_DEFAULTS || {};
   const last = (d.suivi && d.suivi.length) ? d.suivi[d.suivi.length-1] : null;
   const dateSuivi = last ? toFR(last.date) : 'inconnue';
-  const texteSuivi = last ? ('_' + last.text + '_') : "_aucun suivi enregistré pour l'instant_";
+  const texteSuivi = last ? ('_« ' + last.text + ' »_') : "_aucun suivi enregistré pour l'instant_";
   const numero = isBadNumero(d.numero) ? '?' : d.numero;
 
   const subject = 'CSSCT - Dossier de suivi ' + numero;
   const body =
     'Bonjour,\n' +
-    'sur le sujet ' + (d.objet || '') + ' et dont le dernier suivi du ' + dateSuivi + ' était ' + texteSuivi + '\n' +
+    'sur le sujet « ' + (d.objet || '') + ' » et dont le dernier suivi du ' + dateSuivi + ' était :\n' +
+    texteSuivi + '\n' +
     '\n\n' +
     'Peux tu nous dire ou on en est ?\n' +
     'Merci de ton retour.';
