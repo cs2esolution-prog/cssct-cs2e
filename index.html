@@ -209,9 +209,9 @@ const firebaseConfig = {
       });
 
       let html = '';
-      html += '<a class="alert-card' + (enCours ? '' : ' ok') + '" href="signalement_liste.html">' +
+      html += '<a class="alert-card' + (enCours ? '' : ' ok') + '" href="signalement_liste.html?statut=1-En%20Cours">' +
         '<div class="a-num">' + enCours + '</div><div><div class="a-title">Dossiers en cours</div><div class="a-text">Signalements actifs à traiter</div></div></a>';
-      html += '<a class="alert-card' + (enSouffrance ? '' : ' ok') + '" href="signalement_liste.html">' +
+      html += '<a class="alert-card' + (enSouffrance ? '' : ' ok') + '" href="signalement_liste.html?vue=souffrance">' +
         '<div class="a-num">' + enSouffrance + '</div><div><div class="a-title">Dossiers en souffrance</div><div class="a-text">Ouverts depuis plus de 30 jours</div></div></a>';
       html += '<a class="alert-card' + (trousseAlerte ? '' : ' ok') + '" href="trousses_secours.html">' +
         '<div class="a-num">' + trousseAlerte + '</div><div><div class="a-title">Trousses à traiter</div><div class="a-text">Péremption, contrôle ou réappro</div></div></a>';

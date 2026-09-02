@@ -52,6 +52,30 @@
   .qr-url{font-family:'IBM Plex Mono',monospace; font-size:11.5px; color:var(--ink-soft); word-break:break-all;}
   .copy-btn{margin-top:10px; background:var(--ink); color:#fff; border:none; padding:9px 18px; border-radius:20px; font-weight:600; font-size:12.5px; cursor:pointer;}
 
+  button.admin-card{font-family:inherit; font-size:inherit; width:100%; text-align:left; cursor:pointer;}
+
+  .settings-card{background:#fff; border:1px solid var(--line); border-radius:var(--radius); padding:18px 20px; margin-bottom:10px;}
+  .settings-card .s-label{font-size:11.5px; font-weight:600; margin-bottom:4px; display:block;}
+  .settings-card .s-help{font-size:11px; color:var(--ink-soft); margin:0 0 8px;}
+  .settings-card input[type="text"], .settings-card input[type="email"]{
+    width:100%; padding:9px 12px; border:1px solid var(--line); border-radius:8px; font-size:13px; font-family:'Inter',sans-serif; margin-bottom:14px;
+  }
+  .settings-save-btn{background:var(--ink); color:#fff; border:none; padding:9px 18px; border-radius:20px; font-weight:600; font-size:12.5px; cursor:pointer;}
+  .settings-msg{font-size:11.5px; margin-top:8px; min-height:14px;}
+
+  .modal-overlay{position:fixed; inset:0; background:rgba(30,28,32,.55); display:none; align-items:center; justify-content:center; z-index:150; padding:20px;}
+  .modal-overlay.show{display:flex;}
+  .modal{background:#fff; border-radius:14px; max-width:520px; width:100%; max-height:85vh; overflow-y:auto; box-shadow:0 10px 50px rgba(0,0,0,.3);}
+  .modal-head{position:sticky; top:0; background:#fff; display:flex; align-items:center; justify-content:space-between; padding:16px 20px; border-bottom:1px solid var(--line);}
+  .modal-head h3{font-family:'Source Serif 4',serif; font-size:15.5px; margin:0;}
+  .modal-close{background:none; border:none; font-size:20px; cursor:pointer; color:var(--ink-soft);}
+  .modal-body{padding:18px 20px;}
+  .tuto-step{border-left:3px solid var(--teal); padding:4px 0 4px 14px; margin-bottom:18px;}
+  .tuto-step h4{font-size:13px; margin:0 0 6px; font-family:'Source Serif 4',serif;}
+  .tuto-step ol{margin:0 0 8px; padding-left:18px; font-size:12.5px; line-height:1.6;}
+  .tuto-step .tuto-note{font-size:11.5px; color:var(--ink-soft); background:var(--paper); border-radius:8px; padding:8px 10px; margin-top:6px;}
+  .tuto-link{display:inline-block; margin-top:4px; font-size:12px; font-weight:600; color:var(--teal-dark); text-decoration:none;}
+
   #authGate{position:fixed;inset:0;background:#2B2A2E;display:flex;align-items:center;justify-content:center;z-index:200;padding:20px;}
   #authForm{display:none;background:#fff;border-radius:14px;padding:32px;max-width:360px;width:100%;text-align:center;}
 </style>
@@ -95,11 +119,11 @@
   </a>
 
   <div class="section-lbl">Accès et données (Firebase)</div>
-  <a class="admin-card" href="https://console.firebase.google.com/project/cssct-cs2e-c655b/firestore/data/~2Fauthorized_emails" target="_blank" rel="noopener">
+  <button type="button" class="admin-card" onclick="document.getElementById('comptesTutoModal').classList.add('show')">
     <div class="a-icon">👤</div>
-    <div><div class="a-title">Comptes autorisés</div><div class="a-desc">Ajouter ou retirer un email ayant accès à l'application</div></div>
-    <div class="a-arrow">↗</div>
-  </a>
+    <div><div class="a-title">Comptes autorisés</div><div class="a-desc">Tuto : comment autoriser un nouveau compte à accéder à l'application</div></div>
+    <div class="a-arrow">›</div>
+  </button>
   <a class="admin-card" href="https://console.firebase.google.com/project/cssct-cs2e-c655b/firestore/data" target="_blank" rel="noopener">
     <div class="a-icon">🗄️</div>
     <div><div class="a-title">Base de données (Firestore)</div><div class="a-desc">Voir et modifier directement les données enregistrées</div></div>
@@ -115,6 +139,17 @@
     <div><div class="a-title">Console Firebase (vue d'ensemble)</div><div class="a-desc">Accès général au projet Firebase</div></div>
     <div class="a-arrow">↗</div>
   </a>
+
+  <div class="section-lbl">Mail de relance (dossiers de signalement)</div>
+  <div class="settings-card">
+    <p class="s-help" style="margin-top:0;">Destinataire et copie utilisés par le bouton "✉️ Mail de relance" dans un dossier de signalement.</p>
+    <label class="s-label" for="mrPresident">Destinataire — Président du CSE</label>
+    <input type="email" id="mrPresident" placeholder="alhermitte@smag.tech">
+    <label class="s-label" for="mrElus">Copie — Élus CSSCT (adresses séparées par ;)</label>
+    <input type="text" id="mrElus" placeholder="cdizien@agrosolutions.com;imariotti@smag.tech;choudayer@smag.tech">
+    <button class="settings-save-btn" id="mrSaveBtn">Enregistrer</button>
+    <div class="settings-msg" id="mrMsg"></div>
+  </div>
 
   <div class="section-lbl">Code et hébergement</div>
   <a class="admin-card" href="https://github.com/cs2esolution-prog/cssct-cs2e-c655b" target="_blank" rel="noopener">
@@ -165,9 +200,45 @@
   </div>
 </div>
 
+<div class="modal-overlay" id="comptesTutoModal">
+  <div class="modal">
+    <div class="modal-head">
+      <h3>👤 Autoriser un nouveau compte</h3>
+      <button class="modal-close" onclick="document.getElementById('comptesTutoModal').classList.remove('show')">×</button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:12.5px;color:var(--ink-soft);margin:0 0 16px;">Deux étapes, dans cet ordre, pour donner l'accès à l'application à une nouvelle personne.</p>
+
+      <div class="tuto-step">
+        <h4>Étape 1 — Autoriser l'email dans Firestore (donne l'accès)</h4>
+        <ol>
+          <li>Ouvre la console Firebase → <strong>Firestore Database</strong> → collection <strong>authorized_emails</strong>.</li>
+          <li>Clique sur un document déjà existant dans la liste pour voir sa structure exacte (nom du/des champ(s), valeur), puis clique sur "Ajouter un document" et reproduis exactement la même structure.</li>
+          <li>Comme <strong>ID du document</strong>, saisis l'adresse email exacte de la personne (ex : prenom.nom@entreprise.com) — l'orthographe doit être identique à celle qu'elle utilisera pour se connecter.</li>
+          <li>Enregistre.</li>
+        </ol>
+        <div class="tuto-note">C'est cette étape qui donne réellement accès aux données. Sans elle, la personne peut recevoir un lien de connexion mais n'aura accès à aucun dossier (accès refusé).</div>
+        <a class="tuto-link" href="https://console.firebase.google.com/project/cssct-cs2e-c655b/firestore/data/~2Fauthorized_emails" target="_blank" rel="noopener">Ouvrir la collection authorized_emails ↗</a>
+      </div>
+
+      <div class="tuto-step">
+        <h4>Étape 2 — Vérifier la connexion dans Firebase Authentication</h4>
+        <ol>
+          <li>Demande à la personne d'ouvrir l'application et de saisir son email professionnel sur l'écran de connexion : elle reçoit alors un lien de connexion par email.</li>
+          <li>Dès son premier clic sur ce lien, son compte apparaît automatiquement dans Firebase → <strong>Authentication → Users</strong> (aucune création manuelle nécessaire de ton côté).</li>
+          <li>Tu peux vérifier ici que sa connexion a bien fonctionné, et voir la date de dernière connexion.</li>
+        </ol>
+        <div class="tuto-note">Cette étape ne fait qu'enregistrer que la personne s'est connectée — elle ne suffit pas seule à autoriser l'accès : c'est bien l'étape 1 (Firestore) qui l'autorise.</div>
+        <a class="tuto-link" href="https://console.firebase.google.com/project/cssct-cs2e-c655b/authentication/users" target="_blank" rel="noopener">Ouvrir Authentication → Users ↗</a>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js";
   import { getAuth, sendSignInLinkToEmail, isSignInWithEmailLink, signInWithEmailLink, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js";
+  import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyACY8fyy8Rd9NyLJ855xsDyknuUMV-pAag",
@@ -179,6 +250,12 @@ const firebaseConfig = {
 };
   const app = initializeApp(firebaseConfig);
   const auth = getAuth(app);
+  const db = getFirestore(app);
+  const mailRelanceConfigRef = doc(db, "config", "mail_relance");
+  const MAIL_RELANCE_DEFAULTS = {
+    presidentCSE: "alhermitte@smag.tech",
+    elusCSSCT: "cdizien@agrosolutions.com;imariotti@smag.tech;choudayer@smag.tech"
+  };
   const actionCodeSettings = { url: window.location.origin + window.location.pathname, handleCodeInApp: true };
 
   if (isSignInWithEmailLink(auth, window.location.href)) {
@@ -193,6 +270,7 @@ const firebaseConfig = {
     if (user) {
       document.getElementById('authGate').style.display = 'none';
       window.renderQR();
+      loadMailRelanceConfig();
     } else {
       document.getElementById('authGate').style.display = 'flex';
       document.getElementById('authForm').style.display = 'block';
@@ -218,6 +296,27 @@ const firebaseConfig = {
     sendSignInLinkToEmail(auth, email, actionCodeSettings)
       .then(() => { msg.style.color = '#019682'; msg.textContent = "Lien envoyé, vérifie ta boîte mail."; })
       .catch(err => { msg.textContent = "Erreur : " + err.message; });
+  });
+
+  function loadMailRelanceConfig(){
+    getDoc(mailRelanceConfigRef).then((snap) => {
+      const data = snap.exists() ? snap.data() : {};
+      document.getElementById('mrPresident').value = data.presidentCSE || MAIL_RELANCE_DEFAULTS.presidentCSE;
+      document.getElementById('mrElus').value = data.elusCSSCT || MAIL_RELANCE_DEFAULTS.elusCSSCT;
+    }).catch(() => {
+      document.getElementById('mrPresident').value = MAIL_RELANCE_DEFAULTS.presidentCSE;
+      document.getElementById('mrElus').value = MAIL_RELANCE_DEFAULTS.elusCSSCT;
+    });
+  }
+
+  document.getElementById('mrSaveBtn').addEventListener('click', () => {
+    const msg = document.getElementById('mrMsg');
+    const presidentCSE = document.getElementById('mrPresident').value.trim();
+    const elusCSSCT = document.getElementById('mrElus').value.trim();
+    if(!presidentCSE){ msg.style.color = '#A85D45'; msg.textContent = "L'email du président du CSE est obligatoire."; return; }
+    setDoc(mailRelanceConfigRef, { presidentCSE: presidentCSE, elusCSSCT: elusCSSCT })
+      .then(() => { msg.style.color = '#019682'; msg.textContent = "Enregistré ✓"; })
+      .catch((err) => { msg.style.color = '#A85D45'; msg.textContent = "Erreur : " + err.message; });
   });
 </script>
 

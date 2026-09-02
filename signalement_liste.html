@@ -75,6 +75,19 @@
   .status-2{background:#C6AB76; color:#3a2f10;}
   .status-3{background:#8C8A86;}
 
+  .suivi-info{display:inline-flex; align-items:center; gap:4px; font-size:11px; color:var(--ink-soft); margin-top:5px;}
+  .suivi-info .i-badge{
+    display:inline-flex; align-items:center; justify-content:center; width:14px; height:14px; border-radius:50%;
+    border:1px solid var(--ink-soft); color:var(--ink-soft); font-size:9.5px; font-style:italic; font-weight:700; cursor:help; flex:none;
+  }
+
+  .incoming-filter-banner{
+    display:flex; align-items:center; justify-content:space-between; gap:10px; background:#fff;
+    border:1px solid var(--teal); border-left:4px solid var(--teal); border-radius:var(--radius);
+    padding:10px 16px; margin-bottom:14px; font-size:12.5px; color:var(--ink);
+  }
+  .incoming-filter-banner a{color:var(--teal-dark); font-weight:600; text-decoration:none; white-space:nowrap;}
+
   .empty-state{
     text-align:center; padding:60px 20px; color:var(--ink-soft); font-size:14px;
     border:1.5px dashed var(--line); border-radius:var(--radius);
@@ -243,13 +256,14 @@
     <select class="filter" id="filterStatut">
       <option value="">Tous les statuts</option>
       <option value="1-En Cours">1-En Cours</option>
-      <option value="2-A suivre">2-À suivre</option>
       <option value="3-Clos">3-Clos</option>
     </select>
     <select class="filter" id="filterNature"><option value="">Toutes natures</option></select>
     <select class="filter" id="filterSite"><option value="">Tous les sites</option></select>
     <span class="count-tag" id="countTag"></span>
   </div>
+
+  <div class="incoming-filter-banner" id="incomingFilterBanner" style="display:none;"></div>
 
   <div class="list" id="list"></div>
   <div class="empty-state" id="emptyState" style="display:none;">Aucun dossier ne correspond a ta recherche.</div>
@@ -340,6 +354,11 @@
   const db = getFirestore(app);
   const signalementsCol = collection(db, "signalements");
   const customFieldsConfigRef = doc(db, "config", "signalement_custom_fields");
+  const mailRelanceConfigRef = doc(db, "config", "mail_relance");
+  window.MAIL_RELANCE_DEFAULTS = {
+    presidentCSE: "alhermitte@smag.tech",
+    elusCSSCT: "cdizien@agrosolutions.com;imariotti@smag.tech;choudayer@smag.tech"
+  };
 
   const actionCodeSettings = {
     url: window.location.origin + window.location.pathname,
@@ -371,6 +390,13 @@
         window._customFields = snap.exists() ? (snap.data().fields || []) : [];
         if (typeof window.onDossiersUpdated === 'function') window.onDossiersUpdated();
       }).catch(() => { window._customFields = []; });
+      getDoc(mailRelanceConfigRef).then((snap) => {
+        const data = snap.exists() ? snap.data() : {};
+        window._mailRelanceConfig = {
+          presidentCSE: data.presidentCSE || window.MAIL_RELANCE_DEFAULTS.presidentCSE,
+          elusCSSCT: data.elusCSSCT || window.MAIL_RELANCE_DEFAULTS.elusCSSCT
+        };
+      }).catch(() => { window._mailRelanceConfig = Object.assign({}, window.MAIL_RELANCE_DEFAULTS); });
     }
   });
 
@@ -447,6 +473,29 @@ function populateFilters(){
 }
 populateFilters();
 
+function parseISO(s){ if(!s) return null; const m = String(s).match(/^(\d{4})-(\d{2})-(\d{2})/); if(!m) return null; return new Date(+m[1], +m[2]-1, +m[3]); }
+
+let vueSouffrance = false;
+(function applyIncomingFilterFromURL(){
+  const params = new URLSearchParams(window.location.search);
+  const vue = params.get('vue');
+  const statutParam = params.get('statut');
+  const filterEl = document.getElementById('filterStatut');
+  const banner = document.getElementById('incomingFilterBanner');
+  if(vue === 'souffrance'){
+    vueSouffrance = true;
+    filterEl.value = '';
+    banner.style.display = 'flex';
+    banner.innerHTML = '<span>⏳ Filtré depuis l\'accueil : dossiers en souffrance (ouverts depuis plus de 30 jours, non clos)</span><a href="signalement_liste.html">Voir tous les dossiers</a>';
+  } else if(statutParam){
+    filterEl.value = statutParam;
+    banner.style.display = 'flex';
+    banner.innerHTML = '<span>Filtré depuis l\'accueil : statut « ' + statutParam + ' »</span><a href="signalement_liste.html">Voir tous les dossiers</a>';
+  } else {
+    filterEl.value = '1-En Cours';
+  }
+})();
+
 window.onDossiersUpdated = function(){
   dossiers = window.dossiers || [];
   populateFilters();
@@ -462,16 +511,29 @@ function statusClass(s){
   return 'status-3';
 }
 
+function lastSuiviInfoHtml(d){
+  if(!d.suivi || !d.suivi.length) return '';
+  const last = d.suivi[d.suivi.length-1];
+  const tip = 'Dernier suivi du ' + toFR(last.date) + ' : ' + last.text;
+  return '<div class="suivi-info">' + toFR(last.date) + '<span class="i-badge" title="' + esc(tip).replace(/"/g,'&quot;') + '">i</span></div>';
+}
+
 function render(){
   const q = document.getElementById('searchInput').value.toLowerCase();
   const fStatut = document.getElementById('filterStatut').value;
   const fNature = document.getElementById('filterNature').value;
   const fSite = document.getElementById('filterSite').value;
 
+  const today = new Date();
   const filtered = dossiers.filter(function(d){
     if(fStatut && d.statut !== fStatut) return false;
     if(fNature && d.natureIncident !== fNature) return false;
     if(fSite && d.site !== fSite) return false;
+    if(vueSouffrance){
+      if((d.statut||'').startsWith('3')) return false;
+      const a = parseISO(d.date);
+      if(!(a && Math.round((today-a)/(1000*60*60*24)) > 30)) return false;
+    }
     if(q){
       const hay = [d.objet,d.description,d.site,d.rapporteur,String(d.numero)].join(' ').toLowerCase();
       if(hay.indexOf(q) === -1) return false;
@@ -501,7 +563,7 @@ function render(){
       '<div class="col-main"><div class="objet">' + (d.origineCollaborateur ? '<span style="background:#5A4570;color:#fff;font-size:9.5px;font-weight:700;padding:2px 7px;border-radius:10px;margin-right:6px;vertical-align:middle;">📥 COLLABORATEUR</span>' : '') + d.objet + '</div><div class="meta">' + (d.rapporteur || '-') + '</div></div>' +
       '<div class="col-nature" style="color:' + (NATURE_COLORS[d.natureIncident]||'#019682') + '">' + d.natureIncident + '</div>' +
       '<div class="col-site">' + d.site + (d.lieu ? ' - '+d.lieu : '') + '<br><span style="font-size:11px;">' + d.date + '</span></div>' +
-      '<div><span class="status-chip ' + statusClass(d.statut) + '">' + d.statut + '</span></div>';
+      '<div><span class="status-chip ' + statusClass(d.statut) + '">' + d.statut + '</span>' + lastSuiviInfoHtml(d) + '</div>';
     row.addEventListener('click', function(){
       if(row.dataset.swiping === 'true') return;
       openDrawer(d.id);
@@ -541,8 +603,8 @@ function bindSwipeToDelete(row, id){
   });
 }
 ['searchInput','filterStatut','filterNature','filterSite'].forEach(function(id){
-  document.getElementById(id).addEventListener('input', render);
-  document.getElementById(id).addEventListener('change', render);
+  document.getElementById(id).addEventListener('input', function(){ vueSouffrance = false; document.getElementById('incomingFilterBanner').style.display = 'none'; render(); });
+  document.getElementById(id).addEventListener('change', function(){ vueSouffrance = false; document.getElementById('incomingFilterBanner').style.display = 'none'; render(); });
 });
 render();
 
@@ -729,6 +791,7 @@ function openDrawer(numero){
       '<button onclick="addSuivi(\'' + d.id + '\')">Ajouter au suivi</button></div></div>' +
       '<div class="dsection danger-zone"><h3>Actions sur le dossier</h3><div class="action-row">' +
       '<button class="btn btn-export" onclick="previewReport(\'' + d.id + '\')">🔍 Prévisualiser le rapport</button>' +
+      '<button class="btn btn-export" onclick="openMailRelance(\'' + d.id + '\')">✉️ Mail de relance</button>' +
       '<button class="btn btn-close-dossier" onclick="closeDossier(\'' + d.id + '\')" ' + (d.statut==='3-Clos'?'disabled':'') + '>Cloturer le dossier</button>' +
       (d.statut==='3-Clos' ? '<button class="btn btn-export" onclick="reopenDossier(\'' + d.id + '\')">↺ Repasser en cours</button>' : '') +
       '<button class="btn btn-danger" onclick="deleteDossier(\'' + d.id + '\')">Supprimer le dossier</button>' +
@@ -1029,6 +1092,31 @@ function buildReportHtml(d){
   html += '<div class="rp-footer">Le CSSCT vous informe que ce document sera transmis aux membres du CS2E ainsi qu' + String.fromCharCode(39) + 'au president du CSSCT</div>';
 
   return html;
+}
+
+function openMailRelance(dossierId){
+  const d = findDossier(dossierId);
+  if(!d) return;
+  const cfg = window._mailRelanceConfig || window.MAIL_RELANCE_DEFAULTS || {};
+  const last = (d.suivi && d.suivi.length) ? d.suivi[d.suivi.length-1] : null;
+  const dateSuivi = last ? toFR(last.date) : 'inconnue';
+  const texteSuivi = last ? ('_' + last.text + '_') : "_aucun suivi enregistré pour l'instant_";
+  const numero = isBadNumero(d.numero) ? '?' : d.numero;
+
+  const subject = 'CSSCT - Dossier de suivi ' + numero;
+  const body =
+    'Bonjour,\n' +
+    'sur le sujet ' + (d.objet || '') + ' et dont le dernier suivi du ' + dateSuivi + ' était ' + texteSuivi + '\n' +
+    '\n\n' +
+    'Peux tu nous dire ou on en est ?\n' +
+    'Merci de ton retour.';
+
+  const cc = (cfg.elusCSSCT || '').split(/[;,]/).map(function(e){ return e.trim(); }).filter(Boolean).join(',');
+  const mailto = 'mailto:' + (cfg.presidentCSE || '') +
+    '?cc=' + encodeURIComponent(cc) +
+    '&subject=' + encodeURIComponent(subject) +
+    '&body=' + encodeURIComponent(body);
+  window.location.href = mailto;
 }
 
 let currentReportDossier = null;
