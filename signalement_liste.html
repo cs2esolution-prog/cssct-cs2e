@@ -77,9 +77,18 @@
 
   .suivi-info{display:inline-flex; align-items:center; gap:4px; font-size:11px; color:var(--ink-soft); margin-top:5px;}
   .suivi-info .i-badge{
-    display:inline-flex; align-items:center; justify-content:center; width:14px; height:14px; border-radius:50%;
-    border:1px solid var(--ink-soft); color:var(--ink-soft); font-size:9.5px; font-style:italic; font-weight:700; cursor:help; flex:none;
+    display:inline-flex; align-items:center; justify-content:center; width:16px; height:16px; border-radius:50%;
+    border:1px solid var(--ink-soft); color:var(--ink-soft); font-size:9.5px; font-style:italic; font-weight:700; cursor:pointer; flex:none;
   }
+  .suivi-info .i-badge:hover, .suivi-info .i-badge:focus-visible{background:var(--ink-soft); color:#fff;}
+
+  .suivi-popover{
+    position:fixed; z-index:130; max-width:280px; background:#2B2A2E; color:#fff; font-size:12.5px; line-height:1.5;
+    padding:10px 13px; border-radius:10px; box-shadow:0 8px 26px rgba(0,0,0,.28); display:none;
+  }
+  .suivi-popover.show{display:block;}
+  .suivi-popover .sp-date{font-family:'IBM Plex Mono',monospace; font-size:10.5px; color:var(--gold); margin-bottom:4px; font-weight:600;}
+  .suivi-popover .sp-text{white-space:pre-wrap;}
 
   .incoming-filter-banner{
     display:flex; align-items:center; justify-content:space-between; gap:10px; background:#fff;
@@ -514,9 +523,55 @@ function statusClass(s){
 function lastSuiviInfoHtml(d){
   if(!d.suivi || !d.suivi.length) return '';
   const last = d.suivi[d.suivi.length-1];
-  const tip = 'Dernier suivi du ' + toFR(last.date) + ' : ' + last.text;
-  return '<div class="suivi-info">' + toFR(last.date) + '<span class="i-badge" title="' + esc(tip).replace(/"/g,'&quot;') + '">i</span></div>';
+  return '<div class="suivi-info"><strong>Dernier suivi&nbsp;:</strong>&nbsp;' + toFR(last.date) + '<span class="i-badge">i</span></div>';
 }
+
+let suiviPopoverEl = null;
+let suiviPopoverAnchor = null;
+function ensureSuiviPopover(){
+  if(!suiviPopoverEl){
+    suiviPopoverEl = document.createElement('div');
+    suiviPopoverEl.className = 'suivi-popover';
+    document.body.appendChild(suiviPopoverEl);
+  }
+  return suiviPopoverEl;
+}
+function hideSuiviPopover(){
+  if(suiviPopoverEl) suiviPopoverEl.classList.remove('show');
+  suiviPopoverAnchor = null;
+}
+function showSuiviPopover(anchorEl, last){
+  const pop = ensureSuiviPopover();
+  if(suiviPopoverAnchor === anchorEl && pop.classList.contains('show')){
+    hideSuiviPopover();
+    return;
+  }
+  pop.innerHTML = '<div class="sp-date">Dernier suivi du ' + esc(toFR(last.date)) + '</div><div class="sp-text">' + esc(last.text) + '</div>';
+  pop.classList.add('show');
+  suiviPopoverAnchor = anchorEl;
+
+  const margin = 10;
+  const popWidth = Math.min(280, window.innerWidth - margin*2);
+  pop.style.maxWidth = popWidth + 'px';
+  const rect = anchorEl.getBoundingClientRect();
+  const popRect = pop.getBoundingClientRect();
+
+  let left = rect.left;
+  if(left + popRect.width > window.innerWidth - margin) left = window.innerWidth - margin - popRect.width;
+  if(left < margin) left = margin;
+
+  let top = rect.bottom + 6;
+  if(top + popRect.height > window.innerHeight - margin) top = rect.top - popRect.height - 6;
+  if(top < margin) top = margin;
+
+  pop.style.left = left + 'px';
+  pop.style.top = top + 'px';
+}
+document.addEventListener('click', function(e){
+  if(suiviPopoverEl && suiviPopoverEl.classList.contains('show') && !suiviPopoverEl.contains(e.target)){
+    hideSuiviPopover();
+  }
+});
 
 function render(){
   const q = document.getElementById('searchInput').value.toLowerCase();
@@ -568,6 +623,14 @@ function render(){
       if(row.dataset.swiping === 'true') return;
       openDrawer(d.id);
     });
+    const suiviBadge = row.querySelector('.i-badge');
+    if(suiviBadge){
+      suiviBadge.addEventListener('click', function(e){
+        e.stopPropagation();
+        const last = d.suivi[d.suivi.length-1];
+        showSuiviPopover(suiviBadge, last);
+      });
+    }
     wrap.appendChild(row);
     list.appendChild(wrap);
     bindSwipeToDelete(row, d.id);
