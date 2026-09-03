@@ -128,13 +128,6 @@
   <h1>Administration</h1>
   <p class="subtitle">Accès rapide aux réglages techniques et à la gestion de l'application.</p>
 
-  <div class="section-lbl">Signalements</div>
-  <a class="admin-card" href="nouveau_signalement.html" style="background:var(--ink);">
-    <div class="a-icon">🗂️</div>
-    <div><div class="a-title" style="color:#fff;">Nouveau signalement</div><div class="a-desc" style="color:#D8D5CE;">Créer un nouveau dossier de signalement</div></div>
-    <div class="a-arrow" style="color:#D8D5CE;">›</div>
-  </a>
-
   <div class="section-lbl">Statistiques</div>
   <a class="admin-card" href="dashboard.html">
     <div class="a-icon">📊</div>
@@ -151,6 +144,19 @@
     <button type="button" class="settings-save-btn" id="logoRemoveBtn" style="background:#fff;color:var(--danger);border:1px solid var(--line);">Retirer le logo personnalisé</button>
     <div class="settings-msg" id="logoMsg"></div>
   </div>
+
+  <div class="section-lbl">Sites de l'application</div>
+  <div class="settings-card">
+    <p class="s-help" style="margin-top:0;">Liste des sites proposée dans tous les menus déroulants "Site" de l'application (signalements, trousses de secours, exercices d'évacuation...).</p>
+    <div id="sitesPanel">Chargement…</div>
+  </div>
+
+  <div class="section-lbl">Déploiement multi-CSSCT</div>
+  <button type="button" class="admin-card" onclick="document.getElementById('multiCsstModal').classList.add('show')">
+    <div class="a-icon">🧬</div>
+    <div><div class="a-title">Dupliquer l'application pour un nouveau CSSCT</div><div class="a-desc">Mode opératoire complet : projet Firebase, dépôt Git, hébergement, comptes</div></div>
+    <div class="a-arrow">›</div>
+  </button>
 
   <div class="section-lbl">Accès et données (Firebase)</div>
   <button type="button" class="admin-card" onclick="document.getElementById('comptesTutoModal').classList.add('show')">
@@ -278,6 +284,63 @@
   </div>
 </div>
 
+<div class="modal-overlay" id="multiCsstModal">
+  <div class="modal">
+    <div class="modal-head">
+      <h3>🧬 Dupliquer l'application pour un nouveau CSSCT</h3>
+      <button class="modal-close" onclick="document.getElementById('multiCsstModal').classList.remove('show')">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="tuto-note" style="margin-bottom:16px;">Option retenue : une instance <strong>complètement séparée</strong> par CSSCT (projet Firebase dédié + site Cloudflare dédié). Aucune donnée n'est jamais partagée entre CSSCT. Contrepartie : le code est dupliqué, pas de configuration centralisée pour l'instant — toute évolution devra être reportée manuellement sur chaque dépôt. Prévoir 45-60 min par nouvelle instance une fois rodé.</div>
+
+      <div class="tuto-step">
+        <h4>Étape 1 — Créer le projet Firebase</h4>
+        <ol>
+          <li>console.firebase.google.com → "Ajouter un projet" → nomme-le clairement (ex. cssct-&lt;nom-entreprise&gt;).</li>
+          <li>Build &gt; Authentication → Sign-in method → active "Email/Password", puis dans ses paramètres avancés, active "Lien de messagerie (connexion sans mot de passe)".</li>
+          <li>Authentication → Settings → Authorized domains : ajoute le futur domaine Cloudflare (tu pourras revenir après l'étape 3).</li>
+          <li>Build &gt; Firestore Database → Créer une base → région proche (ex. eur3) → mode production.</li>
+          <li>Paramètres du projet → Général → "Vos applications" → icône &lt;/&gt; (Web) → ne coche pas Firebase Hosting → Enregistrer. Copie intégralement l'objet <code>firebaseConfig</code> affiché (6 valeurs).</li>
+        </ol>
+        <div class="tuto-note">⚠️ Règles de sécurité Firestore : à recopier depuis la console du projet existant (cssct-cs2e-c655b) dans le nouveau projet, onglet "Règles". Sans ça la base sera soit totalement ouverte, soit totalement fermée. Demande à Claude si besoin d'aide pour les relire.</div>
+      </div>
+
+      <div class="tuto-step">
+        <h4>Étape 2 — Créer le dépôt Git de la nouvelle instance</h4>
+        <ol>
+          <li>Crée un nouveau dépôt GitHub vide, puis clone en mode miroir le dépôt actuel dedans (<code>git clone --bare</code> + <code>git push --mirror</code>).</li>
+          <li>Remplace l'objet <code>firebaseConfig</code> (les 6 valeurs de l'étape 1) dans tous les fichiers HTML qui le contiennent — cherche <code>apiKey: "AIzaSyACY8fyy8Rd9NyLJ855xsDyknuUMV-pAag"</code> pour repérer chaque occurrence.</li>
+          <li>Adapte le nom de l'appli (titres, manifest.json) et les icônes PWA (manifest.json, apple-touch-icon.png, icon-192.png, icon-512.png).</li>
+          <li>Le logo n'est plus à modifier dans le code : une fois l'instance en ligne, uploade-le directement depuis cette page (section "Identité visuelle").</li>
+          <li>Adapte <code>MAIL_RELANCE_DEFAULTS</code> (président CSE, élus CSSCT par défaut) et <code>wrangler.jsonc</code> (valeur "name").</li>
+          <li>Commit et push sur le nouveau dépôt.</li>
+        </ol>
+      </div>
+
+      <div class="tuto-step">
+        <h4>Étape 3 — Créer le site Cloudflare Workers</h4>
+        <ol>
+          <li><code>npx wrangler deploy</code> depuis le nouveau dépôt (poste avec wrangler installé, authentifié sur le bon compte Cloudflare).</li>
+          <li>Ajoute l'URL <code>*.workers.dev</code> obtenue (ou ton domaine personnalisé) aux "Authorized domains" Firebase (étape 1).</li>
+          <li>Optionnel : configure un domaine personnalisé dans Cloudflare (Workers &amp; Pages → ton Worker → Settings → Domains &amp; Routes), et ajoute-le aussi côté Firebase.</li>
+        </ol>
+      </div>
+
+      <div class="tuto-step">
+        <h4>Étape 4 — Premiers comptes et premier administrateur</h4>
+        <ol>
+          <li>Console Firebase du nouveau projet → Firestore → collection <code>authorized_emails</code> → ajoute un document dont l'ID est ton email.</li>
+          <li>Ouvre le site déployé, connecte-toi avec ce même email (lien magique) : ton compte Authentication se crée automatiquement.</li>
+          <li>Dans Administration de la nouvelle instance, la liste des administrateurs est vide au départ ("mode bootstrap") : ajoute-toi en premier pour sécuriser la gestion des comptes.</li>
+          <li>Complète ensuite "Mail de relance" et ajoute les comptes autorisés suivants (collègues élus CSSCT), toujours depuis Administration.</li>
+        </ol>
+      </div>
+
+      <div class="tuto-note">Limites à garder en tête : maintenance à reporter sur chaque dépôt manuellement (gérable pour 2-3 instances) ; règles de sécurité Firestore à vérifier à chaque nouveau projet ; icônes PWA encore à remplacer dans le code (contrairement au logo). Le détail complet est aussi conservé dans le Projet Claude ("mode-operatoire-multi-cssct.md") si besoin d'aide pour une nouvelle instance.</div>
+    </div>
+  </div>
+</div>
+
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js";
   import { getAuth, sendSignInLinkToEmail, isSignInWithEmailLink, signInWithEmailLink, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js";
@@ -297,6 +360,8 @@ const firebaseConfig = {
   const mailRelanceConfigRef = doc(db, "config", "mail_relance");
   const brandingConfigRef = doc(db, "config", "branding");
   const adminsConfigRef = doc(db, "config", "admins");
+  const sitesConfigRef = doc(db, "config", "sites");
+  const DEFAULT_SITES = ["Bezannes","Chalons-en-Champagne","Evreux","Milly-la-Forêt","Montpellier","Nancy","Paris","Poitiers","Reims","Télétravail","Wavre"].sort((a,b)=>a.localeCompare(b,'fr'));
   const MAIL_RELANCE_DEFAULTS = {
     presidentCSE: "alhermitte@smag.tech",
     elusCSSCT: "cdizien@agrosolutions.com;imariotti@smag.tech;choudayer@smag.tech"
@@ -322,6 +387,7 @@ const firebaseConfig = {
       loadMailRelanceConfig();
       loadBranding();
       loadAccessManagement();
+      loadSitesPanel();
     } else {
       document.getElementById('authGate').style.display = 'flex';
       document.getElementById('authForm').style.display = 'block';
@@ -522,6 +588,67 @@ const firebaseConfig = {
           .catch(function(err){ alert('Erreur : ' + err.message); });
       });
     }).catch((err) => { box.innerHTML = '<p style="color:var(--danger);margin:0;">Erreur de chargement : ' + esc(err.message) + '</p>'; });
+  }
+
+  // --- Sites de l'application ---
+  function loadSitesPanel(){
+    getDoc(sitesConfigRef).then((snap) => {
+      if(snap.exists() && Array.isArray(snap.data().list) && snap.data().list.length){
+        renderSitesPanel(snap.data().list.slice().sort((a,b)=>a.localeCompare(b,'fr')));
+      } else {
+        // Amorce la config avec la liste actuelle si elle n'existe pas encore.
+        setDoc(sitesConfigRef, { list: DEFAULT_SITES }, { merge: true })
+          .then(() => renderSitesPanel(DEFAULT_SITES))
+          .catch(() => renderSitesPanel(DEFAULT_SITES));
+      }
+    }).catch(() => { renderSitesPanel(DEFAULT_SITES); });
+  }
+
+  function renderSitesPanel(sites){
+    const box = document.getElementById('sitesPanel');
+    box.innerHTML =
+      '<ul style="list-style:none;padding:0;margin:0 0 10px;">' +
+      sites.map(function(s){
+        return '<li style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--line);">' +
+          esc(s) + '<button type="button" class="mini-del-btn" data-site="' + esc(s) + '">Retirer</button></li>';
+      }).join('') +
+      (sites.length ? '' : '<li style="padding:6px 0;color:var(--ink-soft);">Aucun site pour l’instant.</li>') +
+      '</ul>' +
+      '<div style="display:flex;gap:8px;">' +
+        '<input type="text" id="newSiteName" placeholder="Nom du site">' +
+        '<button type="button" class="settings-save-btn" id="addSiteBtn">Ajouter</button>' +
+      '</div>' +
+      '<div class="settings-msg" id="sitesMsg"></div>';
+
+    box.querySelectorAll('.mini-del-btn').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        if(!confirm('Retirer "' + btn.dataset.site + '" de la liste des sites ? (les dossiers existants qui utilisent déjà ce site ne sont pas modifiés)')) return;
+        btn.disabled = true;
+        const newList = sites.filter(function(s){ return s !== btn.dataset.site; });
+        setDoc(sitesConfigRef, { list: newList }, { merge: true })
+          .then(function(){ renderSitesPanel(newList); })
+          .catch(function(err){ btn.disabled = false; alert('Erreur : ' + err.message); });
+      });
+    });
+    document.getElementById('addSiteBtn').addEventListener('click', function(){
+      const input = document.getElementById('newSiteName');
+      const btn = document.getElementById('addSiteBtn');
+      const msg = document.getElementById('sitesMsg');
+      const name = input.value.trim();
+      if(!name) return;
+      if(sites.indexOf(name) !== -1){ msg.style.color = 'var(--danger)'; msg.textContent = 'Ce site existe déjà.'; return; }
+      const newList = sites.concat([name]).sort((a,b)=>a.localeCompare(b,'fr'));
+      btn.disabled = true;
+      btn.textContent = 'Ajout…';
+      setDoc(sitesConfigRef, { list: newList }, { merge: true })
+        .then(function(){ renderSitesPanel(newList); })
+        .catch(function(err){
+          btn.disabled = false;
+          btn.textContent = 'Ajouter';
+          msg.style.color = 'var(--danger)';
+          msg.textContent = 'Erreur lors de l’ajout : ' + err.message;
+        });
+    });
   }
 </script>
 

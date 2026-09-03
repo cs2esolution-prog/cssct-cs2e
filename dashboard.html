@@ -99,7 +99,7 @@
 <div class="wrap">
   <header class="top">
     <div class="brand" style="cursor:pointer;" onclick="window.location.href='index.html'">
-      <div class="brand-mark"></div>
+      <div class="brand-mark" id="brandMark"></div>
       <div class="brand-text">CS<span>2E</span> · CSSCT</div>
     </div>
     <div style="display:flex; align-items:center; gap:10px; margin-left:auto;">
@@ -110,6 +110,11 @@
 
   <h1>Tableau de bord</h1>
   <p class="subtitle">Indicateurs calculés sur l'ensemble des dossiers de signalement.</p>
+
+  <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap;">
+    <label style="font-size:12.5px;color:var(--ink-soft);">Filtrer l'écran par campagne :</label>
+    <select id="campaignFilterSelect" style="padding:8px 12px;border:1px solid var(--line);border-radius:16px;font-size:12.5px;"></select>
+  </div>
 
   <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px;flex-wrap:wrap;">
     <label style="font-size:12.5px;color:var(--ink-soft);">Bilan annuel pour :</label>
@@ -125,7 +130,7 @@
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js";
   import { getAuth, sendSignInLinkToEmail, isSignInWithEmailLink, signInWithEmailLink, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js";
-  import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
+  import { getFirestore, collection, getDocs, doc, getDoc } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyACY8fyy8Rd9NyLJ855xsDyknuUMV-pAag",
@@ -149,10 +154,22 @@ const firebaseConfig = {
       .catch(err => alert("Connexion impossible : " + err.message));
   }
 
+  function applyBrandingLogo(){
+    getDoc(doc(db, 'config', 'branding')).then((snap) => {
+      const data = snap.exists() ? snap.data() : {};
+      if(!data.logoBase64) return;
+      document.querySelectorAll('.brand-mark').forEach(function(el){
+        el.style.background = 'none';
+        el.innerHTML = '<img src="data:image/png;base64,' + data.logoBase64 + '" alt="Logo" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">';
+      });
+    }).catch(() => {});
+  }
+
   onAuthStateChanged(auth, (user) => {
     document.getElementById('authChecking').style.display = 'none';
     if (user) {
       document.getElementById('authGate').style.display = 'none';
+      applyBrandingLogo();
       loadDossiersAndRender();
     } else {
       document.getElementById('authGate').style.display = 'flex';
@@ -212,27 +229,50 @@ function esc(s){ return (s==null?'':String(s)).replace(/[&<>"']/g, function(c){ 
 function parseISO(s){ if(!s) return null; const m = String(s).match(/^(\d{4})-(\d{2})-(\d{2})/); if(!m) return null; return new Date(Number(m[1]), Number(m[2])-1, Number(m[3])); }
 function daysBetween(a,b){ return Math.round((b-a)/(1000*60*60*24)); }
 
+// Un dossier compte pour l'année Y s'il était actif (ouvert et pas encore clos, ou clos pendant Y)
+// à un moment quelconque de l'année Y — ouvert avant/pendant Y, et clos avant Y exclut le dossier.
+// Un même dossier peut donc être actif sur plusieurs années consécutives (report d'une année sur l'autre).
+function activeInYear(dossiers, year){
+  return dossiers.filter(function(d){
+    const opened = parseISO(d.date);
+    if(!opened) return false;
+    if(opened.getFullYear() > year) return false;
+    const isClosed = (d.statut||'').startsWith('3');
+    if(!isClosed) return true;
+    const closedDate = parseISO(d.dateCloture);
+    if(!closedDate) return true; // clos sans date renseignée : on ne peut pas exclure à tort
+    return closedDate.getFullYear() >= year;
+  });
+}
+
+window._campaignFilter = '';
+
 window.renderDashboard = function(dossiers){
   window._allDossiers = dossiers;
   populateYearSelect(dossiers);
+  populateCampaignFilterSelect(dossiers);
   const container = document.getElementById('dashboardContent');
   if(!dossiers.length){
     container.innerHTML = '<div class="empty-note">Aucun dossier enregistré pour le moment.</div>';
     return;
   }
 
+  const campaignYear = window._campaignFilter ? Number(window._campaignFilter) : null;
+  const scopedDossiers = campaignYear ? activeInYear(dossiers, campaignYear) : dossiers;
+  const scopeLabel = campaignYear
+    ? ('Campagne ' + campaignYear + ' \u2014 dossiers actifs pendant cette année (ouverts avant ou pendant, pas encore clos ou clos en ' + campaignYear + ')')
+    : 'Sur l\u2019ensemble des dossiers enregistrés, toutes campagnes confondues';
+
   // ---- Bloc 1 : vue d'ensemble ----
-  const total = dossiers.length;
-  const enCours = dossiers.filter(d => (d.statut||'').startsWith('1')).length;
-  const aSuivre = dossiers.filter(d => (d.statut||'').startsWith('2')).length;
-  const clos = dossiers.filter(d => (d.statut||'').startsWith('3')).length;
+  const total = scopedDossiers.length;
+  const enCours = scopedDossiers.filter(d => (d.statut||'').startsWith('1')).length;
+  const clos = scopedDossiers.filter(d => (d.statut||'').startsWith('3')).length;
   const tauxCloture = total ? Math.round(clos/total*100) : 0;
 
-  let html = '<div class="card"><h2>Vue d\u2019ensemble</h2><p class="card-sub">Sur l\u2019ensemble des dossiers enregistrés</p>' +
+  let html = '<div class="card"><h2>Vue d\u2019ensemble</h2><p class="card-sub">' + esc(scopeLabel) + '</p>' +
     '<div class="stat-row">' +
       '<div class="stat"><div class="num">' + total + '</div><div class="lbl">Total</div></div>' +
       '<div class="stat"><div class="num" style="color:#3E7CB1;">' + enCours + '</div><div class="lbl">En cours</div></div>' +
-      '<div class="stat"><div class="num" style="color:#8A6A2E;">' + aSuivre + '</div><div class="lbl">A suivre</div></div>' +
       '<div class="stat"><div class="num" style="color:#8C8A86;">' + clos + '</div><div class="lbl">Clos</div></div>' +
     '</div>' +
     '<div style="margin-top:16px;"><div class="big-num">' + tauxCloture + '%</div><div class="big-lbl">Taux de clôture (dossiers clos / total)</div></div>' +
@@ -244,8 +284,8 @@ window.renderDashboard = function(dossiers){
     arr.forEach(d => { const v = d[key] || 'Non renseigné'; m[v] = (m[v]||0)+1; });
     return Object.entries(m).sort((a,b)=>b[1]-a[1]);
   }
-  const byNature = countBy(dossiers, 'natureIncident');
-  const bySite = countBy(dossiers, 'site');
+  const byNature = countBy(scopedDossiers, 'natureIncident');
+  const bySite = countBy(scopedDossiers, 'site');
   const maxNature = byNature.length ? byNature[0][1] : 1;
   const maxSite = bySite.length ? bySite[0][1] : 1;
 
@@ -266,7 +306,7 @@ window.renderDashboard = function(dossiers){
   html += '</div></div>';
 
   // ---- Bloc 3 : délai de traitement + dossiers en souffrance ----
-  const closedWithDates = dossiers.filter(d => d.date && d.dateCloture && (d.statut||'').startsWith('3'));
+  const closedWithDates = scopedDossiers.filter(d => d.date && d.dateCloture && (d.statut||'').startsWith('3'));
   let avgDelay = null;
   if(closedWithDates.length){
     const total_days = closedWithDates.reduce(function(sum, d){
@@ -278,7 +318,7 @@ window.renderDashboard = function(dossiers){
   }
 
   const today = new Date();
-  const openDossiers = dossiers.filter(d => !(d.statut||'').startsWith('3') && d.date);
+  const openDossiers = scopedDossiers.filter(d => !(d.statut||'').startsWith('3') && d.date);
   const aged = openDossiers.map(function(d){
     const a = parseISO(d.date);
     const age = a ? daysBetween(a, today) : null;
@@ -306,10 +346,17 @@ window.renderDashboard = function(dossiers){
 
   // ---- Bloc 4 : tendance mensuelle ----
   const months = [];
-  const now = new Date();
-  for(let i=11; i>=0; i--){
-    const d = new Date(now.getFullYear(), now.getMonth()-i, 1);
-    months.push({ key: d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0'), label: d.toLocaleDateString('fr-FR', { month:'short', year:'2-digit' }) });
+  if(campaignYear){
+    for(let m=0; m<12; m++){
+      const d = new Date(campaignYear, m, 1);
+      months.push({ key: d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0'), label: d.toLocaleDateString('fr-FR', { month:'short', year:'2-digit' }) });
+    }
+  } else {
+    const now = new Date();
+    for(let i=11; i>=0; i--){
+      const d = new Date(now.getFullYear(), now.getMonth()-i, 1);
+      months.push({ key: d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0'), label: d.toLocaleDateString('fr-FR', { month:'short', year:'2-digit' }) });
+    }
   }
   const countsByMonth = {};
   months.forEach(function(m){ countsByMonth[m.key] = 0; });
@@ -321,7 +368,9 @@ window.renderDashboard = function(dossiers){
   });
   const maxMonth = Math.max(1, Math.max.apply(null, months.map(function(m){ return countsByMonth[m.key]; })));
 
-  html += '<div class="card"><h2>Tendance mensuelle</h2><p class="card-sub">Nouveaux signalements sur les 12 derniers mois</p>';
+  html += '<div class="card"><h2>Tendance mensuelle</h2><p class="card-sub">' +
+    (campaignYear ? ('Nouveaux signalements ouverts, mois par mois — ' + campaignYear) : 'Nouveaux signalements sur les 12 derniers mois') +
+    '</p>';
   html += '<div class="month-chart">';
   months.forEach(function(m){
     const val = countsByMonth[m.key];
@@ -330,24 +379,29 @@ window.renderDashboard = function(dossiers){
   });
   html += '</div></div>';
 
-  // ---- Bloc 5 : comparaison par année civile ----
+  // ---- Bloc 5 : comparaison par année civile (toujours toutes campagnes confondues, un dossier peut
+  // apparaitre sur plusieurs années consécutives s'il est reporté) ----
+  const openYearsForDossiers = dossiers.map(function(d){ const a = parseISO(d.date); return a ? a.getFullYear() : null; }).filter(function(y){ return y !== null; });
+  const years = [];
+  if(openYearsForDossiers.length){
+    const minY = Math.min.apply(null, openYearsForDossiers);
+    const maxY = Math.max(Math.max.apply(null, openYearsForDossiers), new Date().getFullYear());
+    for(let y=minY; y<=maxY; y++) years.push(y);
+  }
   const byYear = {};
-  dossiers.forEach(function(d){
-    const a = parseISO(d.date);
-    if(!a) return;
-    const y = a.getFullYear();
-    if(!byYear[y]) byYear[y] = { total:0, enCours:0, aSuivre:0, clos:0 };
-    byYear[y].total++;
-    if((d.statut||'').startsWith('1')) byYear[y].enCours++;
-    else if((d.statut||'').startsWith('2')) byYear[y].aSuivre++;
-    else if((d.statut||'').startsWith('3')) byYear[y].clos++;
+  years.forEach(function(y){
+    const activeSet = activeInYear(dossiers, y);
+    byYear[y] = {
+      total: activeSet.length,
+      enCours: activeSet.filter(function(d){ return (d.statut||'').startsWith('1'); }).length,
+      clos: activeSet.filter(function(d){ return (d.statut||'').startsWith('3'); }).length
+    };
   });
-  const years = Object.keys(byYear).map(Number).sort(function(a,b){ return a-b; });
 
   if(years.length){
     const maxYear = Math.max.apply(null, years.map(function(y){ return byYear[y].total; }));
 
-    html += '<div class="card"><h2>Comparaison par année civile</h2><p class="card-sub">Volume et clôture, année par année</p>';
+    html += '<div class="card"><h2>Comparaison par année civile</h2><p class="card-sub">Charge active par année (un dossier reporté compte sur chaque année où il était en cours) — toutes campagnes confondues</p>';
     html += '<div class="month-chart" style="height:110px;">';
     years.forEach(function(y){
       const val = byYear[y].total;
@@ -356,7 +410,7 @@ window.renderDashboard = function(dossiers){
     });
     html += '</div>';
 
-    html += '<table style="margin-top:20px;"><thead><tr><th>Année</th><th>Total</th><th>En cours</th><th>A suivre</th><th>Clos</th><th>Taux clôture</th><th>Evolution</th></tr></thead><tbody>';
+    html += '<table style="margin-top:20px;"><thead><tr><th>Année</th><th>Total</th><th>En cours</th><th>Clos</th><th>Taux clôture</th><th>Evolution</th></tr></thead><tbody>';
     years.forEach(function(y, i){
       const yr = byYear[y];
       const taux = yr.total ? Math.round(yr.clos/yr.total*100) : 0;
@@ -368,7 +422,7 @@ window.renderDashboard = function(dossiers){
           evo = (pct > 0 ? '+' : '') + pct + '% vs ' + years[i-1];
         }
       }
-      html += '<tr><td><strong>' + y + '</strong></td><td>' + yr.total + '</td><td>' + yr.enCours + '</td><td>' + yr.aSuivre + '</td><td>' + yr.clos + '</td><td>' + taux + '%</td><td>' + evo + '</td></tr>';
+      html += '<tr><td><strong>' + y + '</strong></td><td>' + yr.total + '</td><td>' + yr.enCours + '</td><td>' + yr.clos + '</td><td>' + taux + '%</td><td>' + evo + '</td></tr>';
     });
     html += '</tbody></table></div>';
   }
@@ -387,18 +441,42 @@ function populateYearSelect(dossiers){
   sel.value = String(currentYear);
 }
 
+function populateCampaignFilterSelect(dossiers){
+  const sel = document.getElementById('campaignFilterSelect');
+  const keep = sel.value || window._campaignFilter || '';
+  const yearsSet = new Set();
+  dossiers.forEach(function(d){ const a = parseISO(d.date); if(a) yearsSet.add(a.getFullYear()); });
+  yearsSet.add(new Date().getFullYear());
+  const years = Array.from(yearsSet).sort(function(a,b){ return b-a; });
+  sel.innerHTML = '<option value="">Toutes campagnes confondues</option>' +
+    years.map(function(y){ return '<option value="' + y + '">Campagne ' + y + '</option>'; }).join('');
+  sel.value = keep;
+  if(sel.value !== keep) sel.value = ''; // valeur devenue invalide (ex. dossiers rechargés) : repli sur "toutes campagnes"
+  window._campaignFilter = sel.value;
+}
+
+document.getElementById('campaignFilterSelect').addEventListener('change', function(){
+  window._campaignFilter = this.value;
+  if(window._allDossiers) window.renderDashboard(window._allDossiers);
+});
+
 function statutLabel(d){ return d.statut || 'Non renseigné'; }
 
 function buildBilanHtml(year){
   const dossiers = window._allDossiers || [];
   const prevYear = year - 1;
 
-  const inYear = function(y){ return dossiers.filter(function(d){ const a = parseISO(d.date); return a && a.getFullYear() === y; }); };
-  const current = inYear(year);
-  const previous = inYear(prevYear);
+  // "current"/"previous" = dossiers ACTIFS pendant l'année (ouverts avant/pendant, pas encore clos ou
+  // clos pendant cette année-là) — un même dossier reporté peut donc apparaitre sur plusieurs années.
+  const current = activeInYear(dossiers, year);
+  const previous = activeInYear(dossiers, prevYear);
+  // Pour la tendance mensuelle uniquement : nouveaux dossiers OUVERTS dans l'année (pas de report ici,
+  // sinon un dossier ancien polluerait le mois de son ouverture d'origine dans le graphique de l'année Y).
+  const openedInYear = function(y){ return dossiers.filter(function(d){ const a = parseISO(d.date); return a && a.getFullYear() === y; }); };
+  const currentOpened = openedInYear(year);
+  const previousOpened = openedInYear(prevYear);
 
   const enCours = current.filter(function(d){ return statutLabel(d).startsWith('1'); });
-  const aSuivre = current.filter(function(d){ return statutLabel(d).startsWith('2'); });
   const clos = current.filter(function(d){ return statutLabel(d).startsWith('3'); });
   const tauxCloture = current.length ? Math.round(clos.length/current.length*100) : 0;
 
@@ -411,11 +489,36 @@ function buildBilanHtml(year){
   const natCur = countByNature(current), natPrev = countByNature(previous);
   const allNatures = Array.from(new Set(Object.keys(natCur).concat(Object.keys(natPrev))));
 
+  // Répartition par site (année courante)
+  function countBySite(arr){
+    const m = {};
+    arr.forEach(function(d){ const s = d.site || 'Non renseigné'; m[s] = (m[s]||0)+1; });
+    return Object.entries(m).sort(function(a,b){ return b[1]-a[1]; });
+  }
+  const siteCur = countBySite(current);
+
+  // Réactivité (délai moyen de clôture + dossiers ouverts depuis plus de 30 jours, sur l'année courante)
+  const closedWithDatesBilan = current.filter(function(d){ return d.date && d.dateCloture && statutLabel(d).startsWith('3'); });
+  let avgDelayBilan = null;
+  if(closedWithDatesBilan.length){
+    const totalDays = closedWithDatesBilan.reduce(function(sum, d){
+      const a = parseISO(d.date), b = parseISO(d.dateCloture);
+      if(!a || !b) return sum;
+      return sum + Math.max(0, daysBetween(a,b));
+    }, 0);
+    avgDelayBilan = Math.round(totalDays / closedWithDatesBilan.length);
+  }
+  const todayBilan = new Date();
+  const agedBilan = current.filter(function(d){ return !statutLabel(d).startsWith('3') && d.date; })
+    .map(function(d){ const a = parseISO(d.date); return Object.assign({}, d, { _age: a ? daysBetween(a, todayBilan) : null }); })
+    .filter(function(d){ return d._age !== null && d._age >= 30; })
+    .sort(function(a,b){ return b._age - a._age; });
+
   // Comparaison par mois
   const moisLabels = ['Janv','Fevr','Mars','Avr','Mai','Juin','Juil','Aout','Sept','Oct','Nov','Dec'];
   const monthCur = new Array(12).fill(0), monthPrev = new Array(12).fill(0);
-  current.forEach(function(d){ const a = parseISO(d.date); if(a) monthCur[a.getMonth()]++; });
-  previous.forEach(function(d){ const a = parseISO(d.date); if(a) monthPrev[a.getMonth()]++; });
+  currentOpened.forEach(function(d){ const a = parseISO(d.date); if(a) monthCur[a.getMonth()]++; });
+  previousOpened.forEach(function(d){ const a = parseISO(d.date); if(a) monthPrev[a.getMonth()]++; });
 
   function rowsTable(list, cols){
     if(!list.length) return '<p class="rp-v">Aucun dossier.</p>';
@@ -433,10 +536,11 @@ function buildBilanHtml(year){
   '</div>';
   html += '<h1 style="text-align:center;font-size:19px;margin:0 0 4px;">Bilan annuel CSSCT — ' + year + '</h1>';
   html += '<p style="text-align:center;color:#666;font-size:12.5px;margin:0 0 24px;">Comparaison avec l\u2019année ' + prevYear + '</p>';
+  html += '<p style="background:#FBFAF7;border-left:3px solid #019682;padding:8px 12px;font-size:10.5px;color:#555;margin:0 0 20px;">Les indicateurs ci-dessous comptent les dossiers <strong>actifs pendant l\u2019année</strong> : ouverts avant ou pendant, et pas encore clos ou clos pendant cette année-l\u00e0. Un dossier report\u00e9 d\u2019une ann\u00e9e sur l\u2019autre appara\u00eet donc dans les deux bilans (sauf la tendance mensuelle, qui ne compte que les nouvelles ouvertures du mois).</p>'
 
   html += '<h2 style="color:#019682;font-size:14px;">Résumé de l\u2019année ' + year + '</h2>';
-  html += '<table><thead><tr><th>Total</th><th>En cours</th><th>A suivre</th><th>Clos</th><th>Taux de clôture</th></tr></thead><tbody>' +
-    '<tr><td>' + current.length + '</td><td>' + enCours.length + '</td><td>' + aSuivre.length + '</td><td>' + clos.length + '</td><td>' + tauxCloture + '%</td></tr>' +
+  html += '<table><thead><tr><th>Total</th><th>En cours</th><th>Clos</th><th>Taux de clôture</th></tr></thead><tbody>' +
+    '<tr><td>' + current.length + '</td><td>' + enCours.length + '</td><td>' + clos.length + '</td><td>' + tauxCloture + '%</td></tr>' +
   '</tbody></table>';
 
   html += '<h2 style="color:#019682;font-size:14px;margin-top:24px;">Comparaison par nature d\u2019incident</h2>';
@@ -449,22 +553,40 @@ function buildBilanHtml(year){
   html += '</tbody></table>';
 
   html += '<h2 style="color:#019682;font-size:14px;margin-top:24px;">Comparaison par mois</h2>';
+  html += '<p style="font-size:10px;color:#888;margin:0 0 4px;">Nouvelles ouvertures du mois (hors dossiers reportés).</p>';
   html += '<table><thead><tr><th>Mois</th>' + moisLabels.map(function(m){ return '<th>'+m+'</th>'; }).join('') + '</tr></thead><tbody>' +
     '<tr><td><strong>' + year + '</strong></td>' + monthCur.map(function(v){ return '<td>'+v+'</td>'; }).join('') + '</tr>' +
     '<tr><td><strong>' + prevYear + '</strong></td>' + monthPrev.map(function(v){ return '<td>'+v+'</td>'; }).join('') + '</tr>' +
   '</tbody></table>';
 
+  html += '<h2 style="color:#019682;font-size:14px;margin-top:24px;">Répartition par site — ' + year + '</h2>';
+  if(siteCur.length){
+    html += '<table><thead><tr><th>Site</th><th>Nombre</th></tr></thead><tbody>';
+    siteCur.forEach(function(entry){
+      html += '<tr><td>' + esc(entry[0]) + '</td><td>' + entry[1] + '</td></tr>';
+    });
+    html += '</tbody></table>';
+  } else {
+    html += '<p class="rp-v">Aucun dossier.</p>';
+  }
+
+  html += '<h2 style="color:#019682;font-size:14px;margin-top:24px;">Réactivité — ' + year + '</h2>';
+  html += '<table><thead><tr><th>Délai moyen de clôture</th></tr></thead><tbody><tr><td>' + (avgDelayBilan !== null ? avgDelayBilan + ' jours' : '\u2014') + '</td></tr></tbody></table>';
+  if(agedBilan.length){
+    html += '<p style="font-size:10.5px;color:#555;margin:10px 0 4px;">Dossiers ouverts depuis plus de 30 jours (' + agedBilan.length + ')</p>';
+    html += rowsTable(agedBilan.slice(0,20), [
+      {label:'N°', get:function(d){ return d.numero; }},
+      {label:'Objet', get:function(d){ return d.objet; }},
+      {label:'Site', get:function(d){ return d.site; }},
+      {label:'Ouvert depuis', get:function(d){ return d._age + ' jours'; }}
+    ]);
+    if(agedBilan.length > 20) html += '<p style="font-size:10px;color:#888;">+ ' + (agedBilan.length-20) + ' autre(s).</p>';
+  } else {
+    html += '<p class="rp-v">Aucun dossier ouvert depuis plus de 30 jours.</p>';
+  }
+
   html += '<h2 style="color:#019682;font-size:14px;margin-top:24px;page-break-before:always;">Dossiers en cours (' + enCours.length + ')</h2>';
   html += rowsTable(enCours, [
-    {label:'N°', get:function(d){ return d.numero; }},
-    {label:'Objet', get:function(d){ return d.objet; }},
-    {label:'Nature', get:function(d){ return d.natureIncident; }},
-    {label:'Site', get:function(d){ return d.site; }},
-    {label:'Date', get:function(d){ return d.date; }}
-  ]);
-
-  html += '<h2 style="color:#019682;font-size:14px;margin-top:24px;">Dossiers à suivre (' + aSuivre.length + ')</h2>';
-  html += rowsTable(aSuivre, [
     {label:'N°', get:function(d){ return d.numero; }},
     {label:'Objet', get:function(d){ return d.objet; }},
     {label:'Nature', get:function(d){ return d.natureIncident; }},

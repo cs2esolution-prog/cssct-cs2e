@@ -256,11 +256,21 @@ const firebaseConfig = {
     }).catch(() => {});
   }
 
+  function loadSitesConfig(){
+    getDoc(doc(db, 'config', 'sites')).then((snap) => {
+      const data = snap.exists() ? snap.data() : {};
+      if(!Array.isArray(data.list) || !data.list.length) return;
+      window.SITES = data.list.slice().sort((a,b)=>a.localeCompare(b,'fr'));
+      if(window.populateSiteOptions) window.populateSiteOptions();
+    }).catch(() => {});
+  }
+
   onAuthStateChanged(auth, (user) => {
     document.getElementById('authChecking').style.display = 'none';
     if (user) {
       document.getElementById('authGate').style.display = 'none';
       applyBrandingLogo();
+      loadSitesConfig();
       if(!unsubscribe){
         unsubscribe = onSnapshot(col, (snap) => {
           window._items = snap.docs.map(d => ({ id: d.id, ...d.data() }));
@@ -319,11 +329,15 @@ const alertFilter = new URLSearchParams(window.location.search).get('alerte'); /
   banner.innerHTML = '<span>⏳ Filtré depuis l\'accueil : ' + label + '</span><a href="trousses_secours.html">Voir toutes les trousses</a>';
 })();
 
-const SITES = ["Bezannes","Chalons-en-Champagne","Evreux","Milly-la-Forêt","Montpellier","Nancy","Paris","Poitiers","Reims","Télétravail","Wavre"].sort((a,b)=>a.localeCompare(b,'fr'));
-(function populateSiteSelect(){
+const DEFAULT_SITES = ["Bezannes","Chalons-en-Champagne","Evreux","Milly-la-Forêt","Montpellier","Nancy","Paris","Poitiers","Reims","Télétravail","Wavre"].sort((a,b)=>a.localeCompare(b,'fr'));
+window.SITES = DEFAULT_SITES.slice();
+window.populateSiteOptions = function(){
   const sel = document.getElementById('itemSite');
-  sel.innerHTML = '<option value="">Choisir…</option>' + SITES.map(function(s){ return '<option>' + s + '</option>'; }).join('');
-})();
+  const keep = sel.value;
+  sel.innerHTML = '<option value="">Choisir…</option>' + window.SITES.map(function(s){ return '<option>' + s + '</option>'; }).join('');
+  if(keep) sel.value = keep;
+};
+window.populateSiteOptions();
 
 function getEntiteSuggestions(){
   const set = new Set();

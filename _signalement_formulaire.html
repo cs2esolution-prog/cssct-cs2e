@@ -387,7 +387,7 @@
 <div class="wrap">
   <header class="top">
     <div class="brand" style="cursor:pointer;" onclick="window.location.href='index.html'">
-      <div class="brand-mark"></div>
+      <div class="brand-mark" id="brandMark"></div>
       <div class="brand-text">CS<span>2E</span> · CSSCT</div>
     </div>
     <a href="changelog.html" id="changelogLink" title="Notes de mise à jour" style="font-size:16px;text-decoration:none;margin-left:6px;">🆕</a>
@@ -646,7 +646,7 @@
     getAuth, sendSignInLinkToEmail, isSignInWithEmailLink, signInWithEmailLink, onAuthStateChanged, signOut
   } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js";
   import {
-    getFirestore, collection, addDoc, getDocs, query, orderBy, limit
+    getFirestore, collection, addDoc, getDocs, query, orderBy, limit, doc, getDoc
   } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
 
  const firebaseConfig = {
@@ -676,10 +676,32 @@
       .catch(err => alert("Connexion impossible : " + err.message));
   }
 
+  function applyBrandingLogo(){
+    getDoc(doc(db, 'config', 'branding')).then((snap) => {
+      const data = snap.exists() ? snap.data() : {};
+      if(!data.logoBase64) return;
+      document.querySelectorAll('.brand-mark').forEach(function(el){
+        el.style.background = 'none';
+        el.innerHTML = '<img src="data:image/png;base64,' + data.logoBase64 + '" alt="Logo" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">';
+      });
+    }).catch(() => {});
+  }
+
+  function loadSitesConfig(){
+    getDoc(doc(db, 'config', 'sites')).then((snap) => {
+      const data = snap.exists() ? snap.data() : {};
+      if(!Array.isArray(data.list) || !data.list.length) return;
+      window.SITES = data.list.slice().sort((a,b)=>a.localeCompare(b,'fr'));
+      if(window.populateSiteOptions) window.populateSiteOptions();
+    }).catch(() => {});
+  }
+
   onAuthStateChanged(auth, (user) => {
     document.getElementById('authChecking').style.display = 'none';
     if (user) {
       document.getElementById('authGate').style.display = 'none';
+      applyBrandingLogo();
+      loadSitesConfig();
     } else {
       document.getElementById('authGate').style.display = 'flex';
       document.getElementById('authForm').style.display = 'block';
@@ -742,9 +764,15 @@
   });
 </script>
 <script>
-const SITES = ["Bezannes","Chalons-en-Champagne","Evreux","Milly-la-Forêt","Montpellier","Nancy","Paris","Poitiers","Reims","Télétravail","Wavre"].sort((a,b)=>a.localeCompare(b,'fr'));
+const DEFAULT_SITES = ["Bezannes","Chalons-en-Champagne","Evreux","Milly-la-Forêt","Montpellier","Nancy","Paris","Poitiers","Reims","Télétravail","Wavre"].sort((a,b)=>a.localeCompare(b,'fr'));
+window.SITES = DEFAULT_SITES.slice();
 const siteSelect = document.getElementById('site');
-siteSelect.innerHTML = '<option value="">Choisir…</option>' + SITES.map(s=>`<option>${s}</option>`).join('');
+window.populateSiteOptions = function(){
+  const keep = siteSelect.value;
+  siteSelect.innerHTML = '<option value="">Choisir…</option>' + window.SITES.map(s=>`<option>${s}</option>`).join('');
+  if(keep) siteSelect.value = keep;
+};
+window.populateSiteOptions();
 
 const NATURES = [
   {v:"Situation dangereuse", c:"#A85D45"},
