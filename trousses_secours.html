@@ -44,6 +44,9 @@
   .summary-tile{background:#fff; border:1px solid var(--line); border-radius:var(--radius); padding:14px 18px; flex:1; min-width:140px;}
   .summary-tile .num{font-family:'IBM Plex Mono',monospace; font-size:22px; font-weight:700;}
   .summary-tile .lbl{font-size:10.5px; color:var(--ink-soft); text-transform:uppercase; letter-spacing:.05em;}
+  .summary-tile.clickable{cursor:pointer; transition:box-shadow .15s, border-color .15s;}
+  .summary-tile.clickable:hover{box-shadow:0 2px 10px rgba(0,0,0,.08);}
+  .summary-tile.active{border-color:var(--ink); box-shadow:0 0 0 2px var(--ink) inset;}
 
   .site-card{background:#fff; border:1px solid var(--line); border-radius:var(--radius); margin-bottom:16px; overflow:hidden;}
   .site-head{display:flex; align-items:center; justify-content:space-between; padding:16px 20px; cursor:pointer; background:#fff;}
@@ -70,6 +73,8 @@
   table{width:100%; border-collapse:collapse; font-size:12.5px;}
   th, td{text-align:left; padding:8px 8px; border-bottom:1px solid var(--line);}
   th{color:var(--ink-soft); font-weight:600; font-size:10.5px; text-transform:uppercase; letter-spacing:.04em;}
+  th.sortable{cursor:pointer; user-select:none;}
+  th.sortable:hover{color:var(--ink);}
   tr.item-row{cursor:pointer;}
   tr.item-row:hover{background:#FBFAF7;}
   .dot{display:inline-block; width:8px; height:8px; border-radius:50%; margin-right:6px;}
@@ -328,14 +333,27 @@ const firebaseConfig = {
 <script>
 function esc(s){ return (s==null?'':String(s)).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
 
-const alertFilter = new URLSearchParams(window.location.search).get('alerte'); // 'peremption' | 'controle' | null
-(function showIncomingFilterBanner(){
-  if(!alertFilter) return;
-  const banner = document.getElementById('incomingFilterBanner');
-  const label = alertFilter === 'peremption' ? 'articles périmés' : 'articles à contrôler';
-  banner.style.display = 'flex';
-  banner.innerHTML = '<span>⏳ Filtré depuis l\'accueil : ' + label + '</span><a href="trousses_secours.html">Voir toutes les trousses</a>';
+// Filtre par tuile de résumé : 'traiter' | 'surveiller' | 'reappro' | 'controle' | null
+// Peut être amorcé depuis l'accueil via ?alerte=peremption ou ?alerte=controle, puis piloté par clic sur les tuiles.
+(function initTileFilterFromUrl(){
+  const urlAlert = new URLSearchParams(window.location.search).get('alerte');
+  window._tileFilter = urlAlert === 'peremption' ? 'traiter' : (urlAlert === 'controle' ? 'controle' : null);
 })();
+
+const TILE_LABELS = {
+  traiter: 'A traiter — péremption dépassée',
+  surveiller: 'A surveiller — péremption dans moins de 30 jours',
+  reappro: 'A réapprovisionner — quantité réelle inférieure à la quantité théorique',
+  controle: 'A contrôler — prochain contrôle dépassé'
+};
+
+function updateFilterBanner(){
+  const banner = document.getElementById('incomingFilterBanner');
+  if(!window._tileFilter){ banner.style.display = 'none'; banner.innerHTML = ''; return; }
+  banner.style.display = 'flex';
+  banner.innerHTML = '<span>⏳ Filtre actif : ' + esc(TILE_LABELS[window._tileFilter] || window._tileFilter) + '</span><a href="#" id="clearTileFilterLink">Voir tous les articles</a>';
+  document.getElementById('clearTileFilterLink').addEventListener('click', function(e){ e.preventDefault(); window.setTileFilter(null, true); });
+}
 
 const DEFAULT_SITES = ["Bezannes","Chalons-en-Champagne","Evreux","Milly-la-Forêt","Montpellier","Nancy","Paris","Poitiers","Reims","Télétravail","Wavre"].sort((a,b)=>a.localeCompare(b,'fr'));
 window.SITES = DEFAULT_SITES.slice();
@@ -431,14 +449,56 @@ function emplacementOf(item){
   return (item.emplacement || '').trim() || SANS_EMPLACEMENT;
 }
 
+function tileMatch(it, key){
+  const st = itemStatus(it);
+  if(key === 'traiter') return st.peremptionDays !== null && st.peremptionDays < 0;
+  if(key === 'surveiller') return st.peremptionDays !== null && st.peremptionDays >= 0 && st.peremptionDays <= 30;
+  if(key === 'reappro') return st.reapproNeeded;
+  if(key === 'controle') return st.controleDays !== null && st.controleDays < 0;
+  return true;
+}
+
+window.setTileFilter = function(key, forceClear){
+  window._tileFilter = forceClear ? null : (window._tileFilter === key ? null : key);
+  window.renderTrousses();
+};
+
+// Tri par clic sur les en-têtes de colonnes, au sein de chaque groupe emplacement/site.
+window._sortField = null; // 'contenu' | 'peremption' | 'controle'
+window._sortDir = 1;
+window.setSort = function(field){
+  if(window._sortField === field){ window._sortDir = -window._sortDir; }
+  else { window._sortField = field; window._sortDir = 1; }
+  window.renderTrousses();
+};
+function sortArrow(field){
+  if(window._sortField !== field) return '';
+  return window._sortDir === 1 ? ' ▲' : ' ▼';
+}
+function sortItems(list){
+  if(!window._sortField) return list;
+  const field = window._sortField, dir = window._sortDir;
+  const copy = list.slice();
+  copy.sort(function(a,b){
+    if(field === 'contenu'){
+      return (a.contenu||'').toLowerCase().localeCompare((b.contenu||'').toLowerCase(),'fr') * dir;
+    }
+    const av = field === 'peremption' ? (a.datePeremption || '') : (computeNextControl(a) || '');
+    const bv = field === 'peremption' ? (b.datePeremption || '') : (computeNextControl(b) || '');
+    if(!av && !bv) return 0;
+    if(!av) return 1; // les dates non renseignées restent en fin de liste
+    if(!bv) return -1;
+    if(av < bv) return -1 * dir;
+    if(av > bv) return 1 * dir;
+    return 0;
+  });
+  return copy;
+}
+
 window.renderTrousses = function(){
   const allItems = window._items || [];
-  const items = alertFilter ? allItems.filter(function(it){
-    const st = itemStatus(it);
-    if(alertFilter === 'peremption') return st.peremptionDays !== null && st.peremptionDays < 0;
-    if(alertFilter === 'controle') return st.controleDays !== null && st.controleDays < 0;
-    return true;
-  }) : allItems;
+  updateFilterBanner();
+  const items = window._tileFilter ? allItems.filter(function(it){ return tileMatch(it, window._tileFilter); }) : allItems;
   const bySite = {};
   items.forEach(function(it){
     const s = it.site || 'Non renseigné';
@@ -447,28 +507,37 @@ window.renderTrousses = function(){
   });
   const sites = Object.keys(bySite).sort(function(a,b){ return a.localeCompare(b,'fr'); });
 
-  // Résumé global
-  let totalBad = 0, totalWarn = 0, totalReappro = 0;
-  items.forEach(function(it){
-    const st = itemStatus(it);
-    if(st.worst === 'bad') totalBad++;
-    else if(st.worst === 'warn') totalWarn++;
-    if(st.reapproNeeded) totalReappro++;
+  // Résumé global — compté sur la totalité des articles (pas seulement ceux affichés), pour que les tuiles restent stables
+  let cTraiter = 0, cSurveiller = 0, cReappro = 0, cControle = 0;
+  allItems.forEach(function(it){
+    if(tileMatch(it,'traiter')) cTraiter++;
+    if(tileMatch(it,'surveiller')) cSurveiller++;
+    if(tileMatch(it,'reappro')) cReappro++;
+    if(tileMatch(it,'controle')) cControle++;
   });
+  function tileClass(key){ return 'summary-tile clickable' + (window._tileFilter === key ? ' active' : ''); }
   document.getElementById('summaryRow').innerHTML =
-    '<div class="summary-tile"><div class="num">' + items.length + '</div><div class="lbl">Articles suivis</div></div>' +
-    '<div class="summary-tile"><div class="num" style="color:var(--bad);">' + totalBad + '</div><div class="lbl">A traiter (dépassé)</div></div>' +
-    '<div class="summary-tile"><div class="num" style="color:var(--warn);">' + totalWarn + '</div><div class="lbl">A surveiller (&lt; 30j)</div></div>' +
-    '<div class="summary-tile"><div class="num" style="color:var(--bad);">' + totalReappro + '</div><div class="lbl">A réapprovisionner</div></div>';
+    '<div class="summary-tile"><div class="num">' + allItems.length + '</div><div class="lbl">Articles suivis</div></div>' +
+    '<div class="' + tileClass('traiter') + '" onclick="setTileFilter(\'traiter\')"><div class="num" style="color:var(--bad);">' + cTraiter + '</div><div class="lbl">A traiter (dépassé)</div></div>' +
+    '<div class="' + tileClass('surveiller') + '" onclick="setTileFilter(\'surveiller\')"><div class="num" style="color:var(--warn);">' + cSurveiller + '</div><div class="lbl">A surveiller (&lt; 30j)</div></div>' +
+    '<div class="' + tileClass('reappro') + '" onclick="setTileFilter(\'reappro\')"><div class="num" style="color:var(--bad);">' + cReappro + '</div><div class="lbl">A réapprovisionner</div></div>' +
+    '<div class="' + tileClass('controle') + '" onclick="setTileFilter(\'controle\')"><div class="num" style="color:var(--warn);">' + cControle + '</div><div class="lbl">A contrôler</div></div>';
 
   const container = document.getElementById('sitesContainer');
   if(!sites.length){
-    container.innerHTML = alertFilter
+    container.innerHTML = window._tileFilter
       ? '<div style="font-size:13px;color:var(--ink-soft);">Aucun article ne correspond à ce filtre.</div>'
       : '<div style="font-size:13px;color:var(--ink-soft);">Aucun article enregistré. Clique sur "Ajouter un article" pour commencer.</div>' +
         '<button class="add-item-btn" onclick="openItemModal(null, \'\')" style="margin-top:12px;">+ Ajouter un article</button>';
     return;
   }
+
+  const theadHtml = '<thead><tr>' +
+    '<th class="sortable" onclick="setSort(\'contenu\')">Article' + sortArrow('contenu') + '</th>' +
+    '<th>Qté (réelle/théo.)</th>' +
+    '<th class="sortable" onclick="setSort(\'peremption\')">Péremption' + sortArrow('peremption') + '</th>' +
+    '<th class="sortable" onclick="setSort(\'controle\')">Prochain contrôle' + sortArrow('controle') + '</th>' +
+  '</tr></thead>';
 
   container.innerHTML = sites.map(function(site, idx){
     const siteItems = bySite[site];
@@ -500,7 +569,7 @@ window.renderTrousses = function(){
         (empWarn ? '<span class="badge badge-warn">' + empWarn + '</span>' : '') +
         (!empBad && !empWarn ? '<span class="badge badge-ok">OK</span>' : '');
 
-      const rows = empItems.map(function(it){
+      const rows = sortItems(empItems).map(function(it){
         const st = itemStatus(it);
         const dotClass = 'dot-' + (st.worst === 'none' ? 'ok' : st.worst);
         const peremptionTxt = it.datePeremption ? it.datePeremption.split('-').reverse().join('/') : '—';
@@ -515,11 +584,11 @@ window.renderTrousses = function(){
 
       return '<div class="emplacement-group">' +
         '<div class="emplacement-head"><h3>📍 ' + esc(emp) + ' <span class="emp-count">(' + empItems.length + ')</span></h3><div class="emplacement-badges">' + empBadges + '</div></div>' +
-        '<table><thead><tr><th>Article</th><th>Qté (réelle/théo.)</th><th>Péremption</th><th>Prochain contrôle</th></tr></thead><tbody>' + rows + '</tbody></table>' +
+        '<table>' + theadHtml + '<tbody>' + rows + '</tbody></table>' +
       '</div>';
     }).join('');
 
-    return '<div class="site-card' + ((alertFilter || idx===0)?' open':'') + '" data-site-idx="' + idx + '">' +
+    return '<div class="site-card' + ((window._tileFilter || idx===0)?' open':'') + '" data-site-idx="' + idx + '">' +
       '<div class="site-head" onclick="this.closest(\'.site-card\').classList.toggle(\'open\')">' +
         '<h2>' + esc(site) + ' <span style="font-size:11px;color:var(--ink-soft);font-weight:400;">(' + siteItems.length + ')</span></h2>' +
         '<div style="display:flex;align-items:center;gap:10px;"><div class="site-badges">' + badges + '</div>' +
