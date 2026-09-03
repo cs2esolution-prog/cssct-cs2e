@@ -1,5 +1,23 @@
 [
   {
+    "hash": "138545c",
+    "date": "03/09/2026",
+    "title": "Add autocomplete suggestions for 'contenu' input",
+    "description": ""
+  },
+  {
+    "hash": "56bb7e7",
+    "date": "03/09/2026",
+    "title": "Update trousses_secours.html",
+    "description": ""
+  },
+  {
+    "hash": "047c1ac",
+    "date": "03/09/2026",
+    "title": "chore: mise a jour automatique du changelog [skip ci]",
+    "description": ""
+  },
+  {
     "hash": "3b84f00",
     "date": "03/09/2026",
     "title": "Update inspections.html",
