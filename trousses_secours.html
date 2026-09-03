@@ -297,7 +297,7 @@
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js";
   import { getAuth, sendSignInLinkToEmail, isSignInWithEmailLink, signInWithEmailLink, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js";
-  import { getFirestore, collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc, getDoc, writeBatch } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
+  import { getFirestore, collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc, getDoc, setDoc, writeBatch } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyACY8fyy8Rd9NyLJ855xsDyknuUMV-pAag",
@@ -311,6 +311,7 @@ const firebaseConfig = {
   const auth = getAuth(app);
   const db = getFirestore(app);
   const col = collection(db, "trousses_secours");
+  const catalogueCol = collection(db, "articles_catalogue");
 
   const actionCodeSettings = { url: window.location.origin + window.location.pathname, handleCodeInApp: true };
 
@@ -322,6 +323,7 @@ const firebaseConfig = {
   }
 
   let unsubscribe = null;
+  let unsubscribeCatalogue = null;
   function applyBrandingLogo(){
     getDoc(doc(db, 'config', 'branding')).then((snap) => {
       const data = snap.exists() ? snap.data() : {};
@@ -352,6 +354,13 @@ const firebaseConfig = {
         unsubscribe = onSnapshot(col, (snap) => {
           window._items = snap.docs.map(d => ({ id: d.id, ...d.data() }));
           window.renderTrousses();
+        });
+      }
+      if(!unsubscribeCatalogue){
+        unsubscribeCatalogue = onSnapshot(catalogueCol, (snap) => {
+          window._catalogue = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+          window.renderTrousses();
+          if(window.onCatalogueUpdated) window.onCatalogueUpdated();
         });
       }
     } else {
@@ -390,6 +399,11 @@ const firebaseConfig = {
       const batch = writeBatch(db);
       entries.forEach(function(e){ batch.update(doc(db,'trousses_secours', e.id), e.fields); });
       await batch.commit();
+    },
+    async upsertCatalogue(slugId, fields){
+      // Photo/catégories partagées par tous les articles du même nom (tous sites confondus).
+      if(!slugId) return;
+      await setDoc(doc(db, 'articles_catalogue', slugId), fields, { merge: true });
     }
   };
 
@@ -404,6 +418,16 @@ const firebaseConfig = {
 function esc(s){ return (s==null?'':String(s)).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
 
 const CATEGORIES = ["Hémorragie","Réanimation","Plaie","Brûlure","Trauma","Malaise","Autre"];
+
+// ---- Catalogue partagé (photo + catégories communes à tous les articles du même nom, tous sites confondus) ----
+function slugifyArticle(name){
+  return (name||'').trim().toLowerCase().replace(/\s+/g,' ').replace(/\//g,'-');
+}
+function catalogueFor(contenu){
+  const id = slugifyArticle(contenu);
+  if(!id) return null;
+  return (window._catalogue||[]).find(function(c){ return c.id === id; }) || null;
+}
 
 // Compression photo côté navigateur avant stockage (comme pour les signalements / inspections)
 function compressImageFile(file, maxDim, quality){
@@ -492,6 +516,7 @@ function bindAutocomplete(inputId, suggestionsBoxId, getSuggestionsFn){
       el.addEventListener('mousedown', function(e){
         e.preventDefault();
         input.value = matches[i];
+        input.dispatchEvent(new Event('input'));
         box.classList.remove('show');
       });
     });
@@ -597,7 +622,8 @@ window._categoryFilter = null;
 function passesFilters(it){
   if(window._tileFilter && !tileMatch(it, window._tileFilter)) return false;
   if(window._categoryFilter){
-    const cats = Array.isArray(it.categories) ? it.categories : [];
+    const cat = catalogueFor(it.contenu);
+    const cats = (cat && Array.isArray(cat.categories)) ? cat.categories : [];
     // un article sans catégorie reste visible dans toutes les recherches par besoin
     if(cats.length && cats.indexOf(window._categoryFilter) === -1) return false;
   }
@@ -699,8 +725,10 @@ function renderControlBar(){
 // ---- Zoom photo ----
 window.openPhotoZoom = function(id){
   const it = (window._items||[]).find(function(x){ return x.id === id; });
-  if(!it || !it.photoBase64) return;
-  document.getElementById('photoZoomImg').src = it.photoBase64;
+  if(!it) return;
+  const cat = catalogueFor(it.contenu);
+  if(!cat || !cat.photoBase64) return;
+  document.getElementById('photoZoomImg').src = cat.photoBase64;
   document.getElementById('photoZoomModal').classList.add('show');
 };
 document.getElementById('closePhotoZoom').addEventListener('click', function(){ document.getElementById('photoZoomModal').classList.remove('show'); });
@@ -804,11 +832,12 @@ window.renderTrousses = function(){
         const checkboxCell = window._controlMode
           ? '<td onclick="event.stopPropagation();"><input type="checkbox" class="control-check" ' + (checked ? 'checked' : '') + ' onchange="toggleControlCheck(\'' + it.id + '\')"></td>'
           : '';
-        const thumb = it.photoBase64
-          ? '<img class="item-thumb" src="' + it.photoBase64 + '" onclick="event.stopPropagation();openPhotoZoom(\'' + it.id + '\')" alt="">'
+        const itCat = catalogueFor(it.contenu);
+        const thumb = (itCat && itCat.photoBase64)
+          ? '<img class="item-thumb" src="' + itCat.photoBase64 + '" onclick="event.stopPropagation();openPhotoZoom(\'' + it.id + '\')" alt="">'
           : '';
-        const catTags = (Array.isArray(it.categories) && it.categories.length)
-          ? '<div class="cat-tags">' + it.categories.map(function(c){ return '<span class="cat-tag">' + esc(c) + '</span>'; }).join('') + '</div>'
+        const catTags = (itCat && Array.isArray(itCat.categories) && itCat.categories.length)
+          ? '<div class="cat-tags">' + itCat.categories.map(function(c){ return '<span class="cat-tag">' + esc(c) + '</span>'; }).join('') + '</div>'
           : '';
         const qtyCell = (window._controlMode && checked)
           ? '<td onclick="event.stopPropagation();"><input type="number" class="qty-edit-input" value="' + (it.quantiteReelle ?? '') + '" oninput="setControlQty(\'' + it.id + '\', this.value)"> / ' + (it.quantiteTheorique ?? '—') + '</td>'
@@ -876,6 +905,17 @@ document.getElementById('itemPhotoInput').addEventListener('change', async funct
   e.target.value = '';
 });
 
+// Dès que le nom saisi correspond à un article déjà connu, on reprend sa photo/ses catégories partagées
+// (sans effacer une saisie en cours si le nom tapé ne correspond encore à rien).
+document.getElementById('itemContenu').addEventListener('input', function(){
+  const cat = catalogueFor(this.value);
+  if(!cat) return;
+  const cats = Array.isArray(cat.categories) ? cat.categories : [];
+  document.querySelectorAll('.item-cat-check').forEach(function(cb){ cb.checked = cats.indexOf(cb.value) !== -1; });
+  itemPhotoDataUrl = cat.photoBase64 || null;
+  renderItemPhotoPreview();
+});
+
 window.openItemModal = function(id, prefillSite){
   const modal = document.getElementById('itemModal');
   document.getElementById('deleteItemBtn').style.display = id ? 'inline-block' : 'none';
@@ -892,9 +932,10 @@ window.openItemModal = function(id, prefillSite){
     document.getElementById('itemPeremption').value = it.datePeremption || '';
     document.getElementById('itemDernierControle').value = it.dateDernierControle || '';
     document.getElementById('itemPeriodicite').value = it.periodiciteControleMois || 12;
-    const itCats = Array.isArray(it.categories) ? it.categories : [];
+    const itCat = catalogueFor(it.contenu);
+    const itCats = (itCat && Array.isArray(itCat.categories)) ? itCat.categories : [];
     document.querySelectorAll('.item-cat-check').forEach(function(cb){ cb.checked = itCats.indexOf(cb.value) !== -1; });
-    itemPhotoDataUrl = it.photoBase64 || null;
+    itemPhotoDataUrl = (itCat && itCat.photoBase64) || null;
   } else {
     document.getElementById('itemModalTitle').textContent = 'Ajouter un article';
     document.getElementById('itemId').value = '';
@@ -930,14 +971,17 @@ document.getElementById('saveItemBtn').addEventListener('click', async function(
     quantiteReelle: document.getElementById('itemQteReelle').value === '' ? null : Number(document.getElementById('itemQteReelle').value),
     datePeremption: document.getElementById('itemPeremption').value || null,
     dateDernierControle: document.getElementById('itemDernierControle').value || null,
-    categories: checkedCats,
-    photoBase64: itemPhotoDataUrl || null,
     periodiciteControleMois: Number(document.getElementById('itemPeriodicite').value) || 12
   };
   if(!fields.site || !fields.contenu){ showToast('Site et Contenu sont obligatoires.'); return; }
   try{
     if(id){ await window.TROUSSES_FIREBASE.update(id, fields); showToast('Article mis à jour'); }
     else { await window.TROUSSES_FIREBASE.add(fields); showToast('Article ajouté'); }
+    // Photo + catégories sont partagées par tous les articles du même nom (catalogue commun, tous sites confondus).
+    const slugId = slugifyArticle(fields.contenu);
+    if(slugId){
+      await window.TROUSSES_FIREBASE.upsertCatalogue(slugId, { nom: fields.contenu, categories: checkedCats, photoBase64: itemPhotoDataUrl || null });
+    }
     document.getElementById('itemModal').classList.remove('show');
   }catch(err){ showToast('Erreur : ' + err.message); }
 });
