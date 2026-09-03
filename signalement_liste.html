@@ -14,6 +14,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,500;8..60,600;8..60,700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
 <script src="https://unpkg.com/docx"></script>
+<script src="https://unpkg.com/html2pdf.js@0.10.1/dist/html2pdf.bundle.min.js"></script>
 <style>
   :root{
     --teal:#019682; --teal-dark:#017162; --purple:#5A4570; --gold:#C6AB76;
@@ -1367,11 +1368,45 @@ document.getElementById('btnDownloadPdf').addEventListener('click', function(){
 });
 
 document.getElementById('btnMailReport').addEventListener('click', function(){
-  if(currentReportDossier) generateDocxFile(currentReportDossier);
-  const subject = encodeURIComponent('Signalement CSSCT');
-  const body = encodeURIComponent("Bonjour,\n\nVeuillez trouver ci-joint le signalement CSSCT.\n\n(Le fichier Word vient d'etre telecharge, pense a le joindre manuellement.)\n\nCordialement,");
-  setTimeout(function(){ window.location.href = 'mailto:?subject=' + subject + '&body=' + body; }, 300);
+  if(!currentReportDossier) return;
+  const d = currentReportDossier;
+  const cfg = window._mailRelanceConfig || window.MAIL_RELANCE_DEFAULTS || {};
+  const numero = isBadNumero(d.numero) ? '?' : d.numero;
+  const subject = 'CSSCT - Dossier de suivi ' + numero;
+  const body =
+    "(Le fichier PDF vient d'etre telechargé, pense a le joindre manuellement.)\n" +
+    'Bonjour,\n\n' +
+    'vous trouverez ci joint le document à jour relatif à "' + (d.objet || '') + '" N° ' + numero + ' dont l\'objet est : "' + (d.description || '') + '".\n\n' +
+    'Vous souhaitant bonne réception.\n' +
+    'Cordialement';
+  const cc = (cfg.elusCSSCT || '').split(/[;,]/).map(function(e){ return e.trim(); }).filter(Boolean).join(';');
+  const mailto = 'mailto:' + (cfg.presidentCSE || '') +
+    '?cc=' + encodeURIComponent(cc) +
+    '&subject=' + encodeURIComponent(subject) +
+    '&body=' + encodeURIComponent(body);
+  generatePdfFile(d).then(function(){
+    setTimeout(function(){ window.location.href = mailto; }, 300);
+  }).catch(function(){
+    setTimeout(function(){ window.location.href = mailto; }, 300);
+  });
 });
+
+function generatePdfFile(d){
+  const el = document.getElementById('reportPrintArea');
+  const numeroLabel = isBadNumero(d.numero) ? '' : d.numero;
+  const opt = {
+    margin: 10,
+    filename: 'Signalement_N' + numeroLabel + '.pdf',
+    image: { type: 'jpeg', quality: 0.95 },
+    html2canvas: { scale: 2, useCORS: true },
+    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+  };
+  return window.html2pdf().set(opt).from(el).save().then(function(){
+    showToast('PDF telecharge');
+  }).catch(function(err){
+    showToast('Erreur de generation du PDF : ' + (err && err.message ? err.message : err));
+  });
+}
 
 function generateDocxFile(d){
   const Document = docx.Document, Packer = docx.Packer, Paragraph = docx.Paragraph, TextRun = docx.TextRun,
