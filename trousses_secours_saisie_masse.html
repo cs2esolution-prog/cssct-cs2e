@@ -314,6 +314,11 @@ function getEmplacementSuggestions(site){
   });
   return Array.from(set).sort(function(a,b){ return a.localeCompare(b,'fr'); });
 }
+function getContenuSuggestions(){
+  const set = new Set();
+  (window._allItems||[]).forEach(function(it){ if(it.contenu) set.add(it.contenu); });
+  return Array.from(set).sort(function(a,b){ return a.localeCompare(b,'fr'); });
+}
 
 function bindAutocompleteEl(input, box, getSuggestionsFn){
   function renderList(){
@@ -327,8 +332,8 @@ function bindAutocompleteEl(input, box, getSuggestionsFn){
       el.addEventListener('mousedown', function(e){
         e.preventDefault();
         input.value = matches[i];
-        box.classList.remove('show');
         input.dispatchEvent(new Event('input'));
+        box.classList.remove('show');
       });
     });
   }
@@ -414,7 +419,7 @@ function renderGroups(){
     const rowsHtml = sortedRowIndices(group).map(function(idx){
       const r = group.rows[idx];
       return '<tr class="' + (r._id ? 'existing-row' : '') + '" data-idx="' + idx + '">' +
-        '<td class="col-article"><input type="text" data-field="contenu" value="' + esc(r.contenu) + '" placeholder="Ex : Compresses stériles"></td>' +
+        '<td class="col-article"><div class="ac-wrap"><input type="text" data-field="contenu" value="' + esc(r.contenu) + '" placeholder="Ex : Compresses stériles" autocomplete="off"><div class="ac-suggestions row-contenu-ac"></div></div></td>' +
         '<td class="col-qty"><input type="number" min="0" data-field="quantiteTheorique" value="' + esc(r.quantiteTheorique) + '"></td>' +
         '<td class="col-qty"><input type="number" min="0" data-field="quantiteReelle" value="' + esc(r.quantiteReelle) + '"></td>' +
         '<td class="col-date"><input type="date" data-field="datePeremption" value="' + esc(r.datePeremption) + '"></td>' +
@@ -504,6 +509,9 @@ function renderGroups(){
           }
         });
       });
+      const contenuInput = tr.querySelector('input[data-field="contenu"]');
+      const contenuBox = tr.querySelector('.row-contenu-ac');
+      if(contenuInput && contenuBox) bindAutocompleteEl(contenuInput, contenuBox, getContenuSuggestions);
       tr.querySelector('.row-del-btn').addEventListener('click', function(){
         removeRowFromGroup(gIdx, idx);
       });
