@@ -1,5 +1,23 @@
 [
   {
+    "hash": "f169990",
+    "date": "03/09/2026",
+    "title": "Update trousses_secours.html",
+    "description": ""
+  },
+  {
+    "hash": "aec25f9",
+    "date": "03/09/2026",
+    "title": "Refactor emergency kit input form for better usability",
+    "description": "Updated the HTML structure and JavaScript logic for managing groups and articles in the emergency kit input form. Enhanced user experience by improving loading and sorting functionalities."
+  },
+  {
+    "hash": "9deb377",
+    "date": "03/09/2026",
+    "title": "chore: mise a jour automatique du changelog [skip ci]",
+    "description": ""
+  },
+  {
     "hash": "d2bd2ed",
     "date": "03/09/2026",
     "title": "Update trousses_secours.html",
