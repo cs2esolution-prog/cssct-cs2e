@@ -1,5 +1,17 @@
 [
   {
+    "hash": "5024230",
+    "date": "03/09/2026",
+    "title": "Update signalement_liste.html",
+    "description": ""
+  },
+  {
+    "hash": "1d74032",
+    "date": "03/09/2026",
+    "title": "chore: mise a jour automatique du changelog [skip ci]",
+    "description": ""
+  },
+  {
     "hash": "f3c2891",
     "date": "03/09/2026",
     "title": "Update trousses_secours_saisie_masse.html",
