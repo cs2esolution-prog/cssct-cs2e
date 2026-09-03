@@ -1,5 +1,17 @@
 [
   {
+    "hash": "3b84f00",
+    "date": "03/09/2026",
+    "title": "Update inspections.html",
+    "description": ""
+  },
+  {
+    "hash": "c3abf2f",
+    "date": "03/09/2026",
+    "title": "chore: mise a jour automatique du changelog [skip ci]",
+    "description": ""
+  },
+  {
     "hash": "f169990",
     "date": "03/09/2026",
     "title": "Update trousses_secours.html",
