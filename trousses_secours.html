@@ -56,8 +56,16 @@
   .chevron{width:18px; height:18px; color:var(--ink-soft); transition:transform .2s;}
   .site-card.open .chevron{transform:rotate(180deg);}
   .site-body{max-height:0; overflow:hidden; transition:max-height .25s ease;}
-  .site-card.open .site-body{max-height:4000px;}
+  .site-card.open .site-body{max-height:8000px;}
   .site-body-inner{padding:0 20px 20px;}
+
+  .emplacement-group{margin-bottom:18px;}
+  .emplacement-group:last-child{margin-bottom:0;}
+  .emplacement-head{display:flex; align-items:center; justify-content:space-between; gap:10px; padding:10px 0 6px; border-bottom:1px solid var(--line); margin-bottom:2px;}
+  .emplacement-head h3{font-size:12.5px; font-weight:600; margin:0; color:var(--ink); display:flex; align-items:center; gap:8px;}
+  .emplacement-head .emp-count{font-weight:400; color:var(--ink-soft); font-size:11px;}
+  .emplacement-badges{display:flex; gap:6px; flex:none;}
+  .emplacement-badges .badge{padding:2px 8px;}
 
   table{width:100%; border-collapse:collapse; font-size:12.5px;}
   th, td{text-align:left; padding:8px 8px; border-bottom:1px solid var(--line);}
@@ -152,7 +160,7 @@
   </header>
 
   <h1>Trousses de secours</h1>
-  <p class="subtitle">Inventaire par site, contrôles et dates de péremption.</p>
+  <p class="subtitle">Inventaire par site et par emplacement, contrôles et dates de péremption.</p>
 
   <div class="incoming-filter-banner" id="incomingFilterBanner" style="display:none;"></div>
   <div class="summary-row" id="summaryRow"></div>
@@ -418,6 +426,11 @@ function itemStatus(item){
   return { peremptionDays, controleDays, reapproNeeded, worst };
 }
 
+const SANS_EMPLACEMENT = 'Sans emplacement précisé';
+function emplacementOf(item){
+  return (item.emplacement || '').trim() || SANS_EMPLACEMENT;
+}
+
 window.renderTrousses = function(){
   const allItems = window._items || [];
   const items = alertFilter ? allItems.filter(function(it){
@@ -465,18 +478,45 @@ window.renderTrousses = function(){
       (siteWarn ? '<span class="badge badge-warn">' + siteWarn + ' à surveiller</span>' : '') +
       (!siteBad && !siteWarn ? '<span class="badge badge-ok">OK</span>' : '');
 
-    const rows = siteItems.map(function(it){
-      const st = itemStatus(it);
-      const dotClass = 'dot-' + (st.worst === 'none' ? 'ok' : st.worst);
-      const peremptionTxt = it.datePeremption ? it.datePeremption.split('-').reverse().join('/') : '—';
-      const controleTxt = computeNextControl(it) ? computeNextControl(it).split('-').reverse().join('/') : '—';
-      return '<tr class="item-row" onclick="openItemModal(\'' + it.id + '\')">' +
-        '<td><span class="dot ' + dotClass + '"></span>' + esc(it.contenu) + '</td>' +
-        '<td class="' + (st.reapproNeeded ? 'qty-bad' : '') + '">' + (it.quantiteReelle ?? '—') + ' / ' + (it.quantiteTheorique ?? '—') + '</td>' +
-        '<td>' + peremptionTxt + '</td>' +
-        '<td>' + controleTxt + '</td>' +
-        '<td>' + esc(it.emplacement) + '</td>' +
-      '</tr>';
+    // Sous-regroupement par emplacement au sein du site
+    const byEmplacement = {};
+    siteItems.forEach(function(it){
+      const emp = emplacementOf(it);
+      if(!byEmplacement[emp]) byEmplacement[emp] = [];
+      byEmplacement[emp].push(it);
+    });
+    const emplacements = Object.keys(byEmplacement).sort(function(a,b){
+      if(a === SANS_EMPLACEMENT) return 1;
+      if(b === SANS_EMPLACEMENT) return -1;
+      return a.localeCompare(b,'fr');
+    });
+
+    const groupsHtml = emplacements.map(function(emp){
+      const empItems = byEmplacement[emp];
+      let empBad = 0, empWarn = 0;
+      empItems.forEach(function(it){ const st = itemStatus(it); if(st.worst==='bad') empBad++; else if(st.worst==='warn') empWarn++; });
+      const empBadges =
+        (empBad ? '<span class="badge badge-bad">' + empBad + '</span>' : '') +
+        (empWarn ? '<span class="badge badge-warn">' + empWarn + '</span>' : '') +
+        (!empBad && !empWarn ? '<span class="badge badge-ok">OK</span>' : '');
+
+      const rows = empItems.map(function(it){
+        const st = itemStatus(it);
+        const dotClass = 'dot-' + (st.worst === 'none' ? 'ok' : st.worst);
+        const peremptionTxt = it.datePeremption ? it.datePeremption.split('-').reverse().join('/') : '—';
+        const controleTxt = computeNextControl(it) ? computeNextControl(it).split('-').reverse().join('/') : '—';
+        return '<tr class="item-row" onclick="openItemModal(\'' + it.id + '\')">' +
+          '<td><span class="dot ' + dotClass + '"></span>' + esc(it.contenu) + '</td>' +
+          '<td class="' + (st.reapproNeeded ? 'qty-bad' : '') + '">' + (it.quantiteReelle ?? '—') + ' / ' + (it.quantiteTheorique ?? '—') + '</td>' +
+          '<td>' + peremptionTxt + '</td>' +
+          '<td>' + controleTxt + '</td>' +
+        '</tr>';
+      }).join('');
+
+      return '<div class="emplacement-group">' +
+        '<div class="emplacement-head"><h3>📍 ' + esc(emp) + ' <span class="emp-count">(' + empItems.length + ')</span></h3><div class="emplacement-badges">' + empBadges + '</div></div>' +
+        '<table><thead><tr><th>Article</th><th>Qté (réelle/théo.)</th><th>Péremption</th><th>Prochain contrôle</th></tr></thead><tbody>' + rows + '</tbody></table>' +
+      '</div>';
     }).join('');
 
     return '<div class="site-card' + ((alertFilter || idx===0)?' open':'') + '" data-site-idx="' + idx + '">' +
@@ -486,7 +526,7 @@ window.renderTrousses = function(){
         '<svg class="chevron" viewBox="0 0 20 20" fill="none"><path d="M5 7l5 6 5-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>' +
       '</div>' +
       '<div class="site-body"><div class="site-body-inner">' +
-        '<table><thead><tr><th>Article</th><th>Qté (réelle/théo.)</th><th>Péremption</th><th>Prochain contrôle</th><th>Emplacement</th></tr></thead><tbody>' + rows + '</tbody></table>' +
+        groupsHtml +
         '<button class="add-item-btn" onclick="event.stopPropagation();openItemModal(null,\'' + esc(site).replace(/'/g,"\\'") + '\')">+ Ajouter un article sur ce site</button>' +
       '</div></div>' +
     '</div>';
@@ -498,7 +538,7 @@ window.openItemModal = function(id, prefillSite){
   document.getElementById('deleteItemBtn').style.display = id ? 'inline-block' : 'none';
   if(id){
     const it = (window._items||[]).find(function(x){ return x.id === id; });
-    document.getElementById('itemModalTitle').textContent = 'Modifier l\u2019article';
+    document.getElementById('itemModalTitle').textContent = 'Modifier l’article';
     document.getElementById('itemId').value = id;
     document.getElementById('itemSite').value = it.site || '';
     document.getElementById('itemEntite').value = it.entite || '';
