@@ -215,7 +215,7 @@
     <div class="modal-head"><h3>Nouvelle inspection</h3><button class="modal-close" onclick="document.getElementById('newInspectionModal').classList.remove('show')">×</button></div>
     <div class="modal-body">
       <div class="grid2">
-        <div class="dfield"><label class="dlabel">Site</label><input type="text" id="newSite" placeholder="Ex : Milly-la-Forêt"></div>
+        <div class="dfield"><label class="dlabel">Site</label><select id="newSite"></select></div>
         <div class="dfield"><label class="dlabel">Date</label><input type="date" id="newDate"></div>
       </div>
       <div class="dfield"><label class="dlabel">Sujet de l'inspection</label><input type="text" id="newSujet" placeholder="Ex : Conditions de travail terrain"></div>
@@ -372,11 +372,21 @@
     }).catch(() => {});
   }
 
+  function loadSitesConfig(){
+    getDoc(doc(db, 'config', 'sites')).then((snap) => {
+      const data = snap.exists() ? snap.data() : {};
+      if(!Array.isArray(data.list) || !data.list.length) return;
+      window.SITES = data.list.slice().sort((a,b)=>a.localeCompare(b,'fr'));
+      if(window.populateSiteOptions) window.populateSiteOptions();
+    }).catch(() => {});
+  }
+
   onAuthStateChanged(auth, (user) => {
     document.getElementById('authChecking').style.display = 'none';
     if (user) {
       document.getElementById('authGate').style.display = 'none';
       applyBrandingLogo();
+      loadSitesConfig();
       loadConfig().then(() => {
         if(!unsubscribe){
           unsubscribe = onSnapshot(col, (snap) => {
@@ -445,6 +455,17 @@
 
 <script>
 function esc(s){ return (s==null?'':String(s)).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+
+const DEFAULT_SITES = ["Bezannes","Chalons-en-Champagne","Evreux","Milly-la-Forêt","Montpellier","Nancy","Paris","Poitiers","Reims","Télétravail","Wavre"].sort((a,b)=>a.localeCompare(b,'fr'));
+window.SITES = DEFAULT_SITES.slice();
+window.populateSiteOptions = function(){
+  const sel = document.getElementById('newSite');
+  if(!sel) return;
+  const keep = sel.value;
+  sel.innerHTML = '<option value="">Choisir…</option>' + window.SITES.map(function(s){ return '<option>' + s + '</option>'; }).join('');
+  if(keep) sel.value = keep;
+};
+window.populateSiteOptions();
 
 window.DEFAULT_CONFIG = {
   guideSections: [
@@ -705,6 +726,14 @@ window.toggleEdit = function(inspId, sectionNum){
       f.innerHTML = '<div class="dlabel">' + label + '</div><div class="doc-checklist">' + checks + '</div>' +
         '<label class="dlabel" style="display:block;margin-top:8px;">Autres (séparés par une virgule)</label>' +
         '<input type="text" id="docsAutres" value="' + esc(autres).replace(/"/g,'&quot;') + '" placeholder="Ex : Fiche de sécurité produit X">';
+      return;
+    }
+    if(id === 'site'){
+      const options = window.SITES.slice();
+      if(val && options.indexOf(val) === -1) options.unshift(val);
+      f.innerHTML = '<div class="dlabel">' + label + '</div><select data-edit="site">' +
+        options.map(function(s){ return '<option ' + (s===val?'selected':'') + '>' + esc(s) + '</option>'; }).join('') +
+      '</select>';
       return;
     }
     f.innerHTML = '<div class="dlabel">' + label + '</div>' + (long
