@@ -14,7 +14,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,500;8..60,600;8..60,700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
 <script src="https://unpkg.com/docx"></script>
-<script src="https://unpkg.com/html2pdf.js@0.10.1/dist/html2pdf.bundle.min.js"></script>
+<script src="https://unpkg.com/jspdf@2.5.2/dist/jspdf.umd.min.js"></script>
 <style>
   :root{
     --teal:#019682; --teal-dark:#017162; --purple:#5A4570; --gold:#C6AB76;
@@ -1392,19 +1392,203 @@ document.getElementById('btnMailReport').addEventListener('click', function(){
 });
 
 function generatePdfFile(d){
-  const el = document.getElementById('reportPrintArea');
-  const numeroLabel = isBadNumero(d.numero) ? '' : d.numero;
-  const opt = {
-    margin: 10,
-    filename: 'Signalement_N' + numeroLabel + '.pdf',
-    image: { type: 'jpeg', quality: 0.95 },
-    html2canvas: { scale: 2, useCORS: true },
-    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-  };
-  return window.html2pdf().set(opt).from(el).save().then(function(){
-    showToast('PDF telecharge');
-  }).catch(function(err){
-    showToast('Erreur de generation du PDF : ' + (err && err.message ? err.message : err));
+  return new Promise(function(resolve, reject){
+    try{
+      const jsPDFCtor = (window.jspdf && window.jspdf.jsPDF) ? window.jspdf.jsPDF : null;
+      if(!jsPDFCtor){ throw new Error('jsPDF non chargé'); }
+      const doc = new jsPDFCtor({ unit: 'mm', format: 'a4', orientation: 'portrait' });
+      const PAGE_W = 210, PAGE_H = 297;
+      const MARGIN_X = 15, MARGIN_TOP = 15, MARGIN_BOTTOM = 25;
+      const CONTENT_W = PAGE_W - MARGIN_X*2;
+      const GREEN = [1,150,130];
+      const DARK = [26,26,26];
+      let y = MARGIN_TOP;
+
+      function ensureSpace(h){
+        if(y + h > PAGE_H - MARGIN_BOTTOM){ doc.addPage(); y = MARGIN_TOP; }
+      }
+      function wrapLines(text){
+        const raw = (text === undefined || text === null) ? '' : String(text);
+        const parts = raw.split('\n');
+        let out = [];
+        parts.forEach(function(p){
+          if(p === ''){ out.push(''); return; }
+          out = out.concat(doc.splitTextToSize(p, CONTENT_W));
+        });
+        return out;
+      }
+      function writeParagraph(text, opts){
+        opts = opts || {};
+        const size = opts.size || 10.5;
+        const color = opts.color || DARK;
+        const align = opts.align || 'left';
+        const lineH = opts.lineH || 5;
+        doc.setFont('helvetica', opts.bold ? 'bold' : 'normal');
+        doc.setFontSize(size);
+        doc.setTextColor(color[0], color[1], color[2]);
+        wrapLines(text).forEach(function(line){
+          ensureSpace(lineH);
+          doc.text(line, align === 'center' ? PAGE_W/2 : MARGIN_X, y, { align: align });
+          y += lineH;
+        });
+      }
+      function blank(h){ y += (h || 3); }
+      function fieldLabelValue(label, value){
+        const labelText = label + ' :';
+        doc.setFont('helvetica','bold');
+        doc.setFontSize(10.5);
+        doc.setTextColor(GREEN[0],GREEN[1],GREEN[2]);
+        ensureSpace(5.5);
+        doc.text(labelText, MARGIN_X, y);
+        const labelWidth = doc.getTextWidth(labelText) + 2;
+        doc.setFont('helvetica','normal');
+        doc.setTextColor(DARK[0],DARK[1],DARK[2]);
+        const valLines = doc.splitTextToSize(value || '', CONTENT_W - labelWidth);
+        if(valLines.length){
+          doc.text(valLines[0], MARGIN_X + labelWidth, y);
+          y += 5.5;
+          for(let i=1;i<valLines.length;i++){
+            ensureSpace(5.5);
+            doc.text(valLines[i], MARGIN_X, y);
+            y += 5.5;
+          }
+        } else {
+          y += 5.5;
+        }
+      }
+      function sectionHeader(label){
+        blank(2);
+        writeParagraph(label, { bold:true, color: GREEN, size: 10.5, lineH: 5.5 });
+      }
+      function addImageScaled(dataUrl, maxWidth, maxHeight){
+        try{
+          const props = doc.getImageProperties(dataUrl);
+          let w = maxWidth;
+          let h = w * (props.height / props.width);
+          if(h > maxHeight){ h = maxHeight; w = h * (props.width / props.height); }
+          ensureSpace(h + 4);
+          const fmt = /^data:image\/png/i.test(dataUrl) ? 'PNG' : 'JPEG';
+          doc.addImage(dataUrl, fmt, MARGIN_X, y, w, h);
+          y += h + 4;
+        }catch(e){ /* image illisible : on l'ignore plutôt que de faire échouer tout le PDF */ }
+      }
+
+      const branding = (window._brandingConfig && window._brandingConfig.logoBase64) ? window._brandingConfig.logoBase64 : null;
+      if(branding){
+        addImageScaled('data:image/png;base64,' + branding, 40, 18);
+      } else {
+        try{
+          const cs2eData = 'data:image/png;base64,' + CS2E_LOGO_B64;
+          const props1 = doc.getImageProperties(cs2eData);
+          const w1 = 35, h1 = w1 * (props1.height/props1.width);
+          doc.addImage(cs2eData, 'PNG', MARGIN_X, y, w1, h1);
+        }catch(e){}
+        try{
+          const cssctData = 'data:image/png;base64,' + CSSCT_LOGO_B64;
+          const props2 = doc.getImageProperties(cssctData);
+          const h2 = 20, w2 = h2 * (props2.width/props2.height);
+          doc.addImage(cssctData, 'PNG', PAGE_W - MARGIN_X - w2, y, w2, h2);
+        }catch(e){}
+        y += 22;
+      }
+
+      blank(4);
+      writeParagraph('Incident N ' + (d.numero || ''), { bold:true, align:'center', size:12, lineH:6 });
+      writeParagraph('Etat : ' + (d.statut || ''), { bold:true, align:'center', size:11, lineH:5.5 });
+      writeParagraph(d.natureIncident || '', { align:'center', size:10.5, lineH:5.5 });
+      blank(4);
+
+      const salarie = [d.prenom, d.nom].filter(Boolean).join(' ');
+      const heure = [d.heureDebut, d.heureFin].filter(Boolean).join(' - ');
+      writeParagraph('Salarie : ' + salarie + ' ( - ) Matricule : ' + (d.matricule || ''), { size:10.5, lineH:5 });
+      writeParagraph('Le : ' + toFR(d.date) + (heure ? ' - ' + heure : ''), { size:10.5, lineH:5 });
+      writeParagraph('Localisation : ' + (d.site || '') + (d.lieu ? ' - ' + d.lieu : ''), { size:10.5, lineH:5 });
+      writeParagraph('Rapporteur : ' + (d.rapporteur || ''), { size:10.5, lineH:5 });
+      writeParagraph('Temoins : ' + (d.temoins || ''), { size:10.5, lineH:5 });
+      blank(4);
+
+      fieldLabelValue('Objet', d.objet);
+      blank(3);
+      const linked = d.incidentOrigineLie ? dossiers.find(function(x){ return String(x.numero) === String(d.incidentOrigineLie); }) : null;
+      const refLabel = d.incidentOrigineLie ? String(d.incidentOrigineLie) + (linked ? ' - ' + linked.objet : '') : '';
+      fieldLabelValue('Incident de reference (si suivi)', refLabel);
+      blank(3);
+      fieldLabelValue('Clos-le', toFR(d.dateCloture));
+      blank(3);
+      fieldLabelValue('Info si cloture', d.infoCloture);
+
+      sectionHeader('Description ou recueil des propos :');
+      writeParagraph(d.description, { size:10.5, lineH:5 });
+
+      if(d.impactCorporel){
+        sectionHeader('Impact corporel remonte par le collaborateur :');
+        writeParagraph(d.impactCorporel, { size:10.5, lineH:5 });
+      }
+      if(d.impactPsychologique){
+        sectionHeader('Impact psychologique remonte par le collaborateur :');
+        writeParagraph(d.impactPsychologique, { size:10.5, lineH:5 });
+      }
+
+      sectionHeader('Risque :');
+      writeParagraph(d.risque, { size:10.5, lineH:5 });
+
+      sectionHeader('Actions realisees :');
+      writeParagraph(d.actionRealisee, { size:10.5, lineH:5 });
+
+      sectionHeader('Actions preconisees par le CSSCT :');
+      writeParagraph(d.actionEnvisagee, { size:10.5, lineH:5 });
+
+      sectionHeader('Suivi :');
+      if(d.suivi && d.suivi.length){
+        d.suivi.forEach(function(s){
+          writeParagraph(toFR(s.date) + ' - ' + s.text, { size:10.5, lineH:5 });
+          blank(2);
+        });
+      } else {
+        writeParagraph("(pas encore d'entree de suivi)", { size:10.5, lineH:5 });
+      }
+
+      sectionHeader('Document joint :');
+      const photos = [];
+      if(d.photoIncidentBase64) photos.push(d.photoIncidentBase64);
+      if(d.photoLocalisationBase64) photos.push(d.photoLocalisationBase64);
+      (d.photosSupplementaires||[]).forEach(function(ph){ photos.push(ph.dataUrl); });
+      if(photos.length){
+        photos.forEach(function(p){ addImageScaled(p, 70, 70); });
+      } else {
+        writeParagraph('Aucune piece jointe.', { size:10.5, lineH:5 });
+      }
+
+      sectionHeader('Localisation :');
+      writeParagraph((d.site || '') + (d.lieu ? ' - ' + d.lieu : ''), { size:10.5, lineH:5 });
+
+      if(customFields().length){
+        sectionHeader('Champs complémentaires');
+        customFields().forEach(function(f){
+          const val = (d.customFields||{})[f.id];
+          if(val) writeParagraph(f.label + ' : ' + val, { size:10.5, lineH:5 });
+        });
+      }
+
+      const pageCount = doc.internal.getNumberOfPages();
+      for(let i=1;i<=pageCount;i++){
+        doc.setPage(i);
+        doc.setFont('helvetica','italic');
+        doc.setFontSize(8);
+        doc.setTextColor(51,51,51);
+        doc.text("Le CSSCT vous informe que ce document sera transmis aux membres du CS2E ainsi qu'au president du CSSCT", MARGIN_X, PAGE_H - 14, { maxWidth: CONTENT_W });
+        doc.setFont('helvetica','normal');
+        doc.text('Page ' + i + ' / ' + pageCount, PAGE_W/2, PAGE_H - 8, { align: 'center' });
+      }
+
+      const numeroLabel = isBadNumero(d.numero) ? '' : d.numero;
+      doc.save('Signalement_N' + numeroLabel + '.pdf');
+      showToast('PDF telecharge');
+      resolve();
+    }catch(err){
+      showToast('Erreur de generation du PDF : ' + (err && err.message ? err.message : err));
+      reject(err);
+    }
   });
 }
 
