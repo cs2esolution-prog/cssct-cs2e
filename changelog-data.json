@@ -1,5 +1,17 @@
 [
   {
+    "hash": "f3c2891",
+    "date": "03/09/2026",
+    "title": "Update trousses_secours_saisie_masse.html",
+    "description": ""
+  },
+  {
+    "hash": "f7cdc91",
+    "date": "03/09/2026",
+    "title": "chore: mise a jour automatique du changelog [skip ci]",
+    "description": ""
+  },
+  {
     "hash": "138545c",
     "date": "03/09/2026",
     "title": "Add autocomplete suggestions for 'contenu' input",
