@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Saisie en masse — Trousses de secours . CSSCT</title>
+<title>Trousses de secours . CSSCT</title>
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" href="icon-192.png">
@@ -17,12 +17,13 @@
   :root{
     --teal:#019682; --teal-dark:#017162; --purple:#5A4570; --gold:#C6AB76;
     --paper:#F7F5F1; --paper-raised:#fff; --ink:#2B2A2E; --ink-soft:#6B6873; --line:#E4E0D8; --danger:#A85D45; --radius:10px;
+    --ok:#019682; --warn:#C6924A; --bad:#A85D45;
   }
   *{box-sizing:border-box;}
   body{margin:0; background:var(--paper); color:var(--ink); font-family:'Inter',system-ui,sans-serif; line-height:1.5;}
-  .wrap{max-width:1180px; margin:0 auto; padding:32px 24px 106px;}
-  header.top{display:flex; align-items:center; justify-content:space-between; padding-bottom:20px; border-bottom:2px solid var(--ink); margin-bottom:20px; flex-wrap:wrap; gap:10px;}
-  .brand{display:flex; align-items:center; gap:12px; cursor:pointer;}
+  .wrap{max-width:1080px; margin:0 auto; padding:32px 24px 106px;}
+  header.top{display:flex; align-items:center; justify-content:space-between; padding-bottom:20px; border-bottom:2px solid var(--ink); margin-bottom:24px; flex-wrap:wrap; gap:10px;}
+  .brand{display:flex; align-items:center; gap:12px;}
   .brand-mark{width:38px; height:38px; border-radius:50%;
     background:conic-gradient(var(--teal) 0deg 120deg, var(--gold) 120deg 240deg, var(--purple) 240deg 360deg); flex:none;}
   .brand-text{font-family:'Source Serif 4', serif; font-weight:700; font-size:19px;}
@@ -30,13 +31,105 @@
   .back-link{font-size:12.5px; font-weight:600; color:var(--ink-soft); text-decoration:none; border:1px solid var(--line); padding:6px 14px; border-radius:20px;}
 
   h1{font-family:'Source Serif 4',serif; font-size:20px; margin:0 0 4px;}
-  .subtitle{font-size:12.5px; color:var(--ink-soft); margin:0 0 20px; max-width:640px;}
+  .subtitle{font-size:12.5px; color:var(--ink-soft); margin:0 0 20px;}
 
-  .card{background:#fff; border:1px solid var(--line); border-radius:var(--radius); padding:20px 22px; margin-bottom:16px;}
-  .card h2{font-family:'Source Serif 4',serif; font-size:15px; margin:0 0 14px;}
-  .ctx-grid{display:grid; grid-template-columns:1fr 1fr 1fr; gap:14px;}
-  @media (max-width:760px){ .ctx-grid{grid-template-columns:1fr;} }
-  .field{display:flex; flex-direction:column; gap:5px;}
+  .incoming-filter-banner{
+    display:flex; align-items:center; justify-content:space-between; gap:10px; background:#fff;
+    border:1px solid var(--teal); border-left:4px solid var(--teal); border-radius:var(--radius);
+    padding:10px 16px; margin-bottom:14px; font-size:12.5px; color:var(--ink);
+  }
+  .incoming-filter-banner a{color:var(--teal-dark); font-weight:600; text-decoration:none; white-space:nowrap;}
+
+  .summary-row{display:flex; gap:14px; margin-bottom:24px; flex-wrap:wrap;}
+  .summary-tile{background:#fff; border:1px solid var(--line); border-radius:var(--radius); padding:14px 18px; flex:1; min-width:140px;}
+  .summary-tile .num{font-family:'IBM Plex Mono',monospace; font-size:22px; font-weight:700;}
+  .summary-tile .lbl{font-size:10.5px; color:var(--ink-soft); text-transform:uppercase; letter-spacing:.05em;}
+  .summary-tile.clickable{cursor:pointer; transition:box-shadow .15s, border-color .15s;}
+  .summary-tile.clickable:hover{box-shadow:0 2px 10px rgba(0,0,0,.08);}
+  .summary-tile.active{border-color:var(--ink); box-shadow:0 0 0 2px var(--ink) inset;}
+
+  .toolbar{display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin-bottom:14px;}
+  .search-input-wrap{position:relative; flex:1; min-width:220px;}
+  .search-input-wrap input{padding-left:34px;}
+  .search-input-wrap .search-icon{position:absolute; left:11px; top:50%; transform:translateY(-50%); color:var(--ink-soft); font-size:14px; pointer-events:none;}
+  .control-toggle-btn{background:var(--ink); color:#fff; border:none; padding:10px 18px; border-radius:20px; font-weight:600; font-size:12.5px; cursor:pointer; white-space:nowrap;}
+  .control-toggle-btn.active{background:var(--danger);}
+  .category-chips{display:flex; gap:8px; flex-wrap:wrap; margin-bottom:16px;}
+  .cat-chip{background:#fff; border:1px solid var(--line); color:var(--ink); font-size:12px; font-weight:600; padding:7px 14px; border-radius:18px; cursor:pointer; user-select:none;}
+  .cat-chip:hover{border-color:var(--purple);}
+  .cat-chip.active{background:var(--purple); border-color:var(--purple); color:#fff;}
+
+  .control-bar{display:none; align-items:center; gap:14px; flex-wrap:wrap; background:#2B2A2E; color:#fff; border-radius:var(--radius); padding:12px 18px; margin-bottom:16px; position:sticky; top:10px; z-index:60;}
+  .control-bar.show{display:flex;}
+  .control-bar label{font-size:12px; font-weight:600;}
+  .control-bar input[type="date"]{width:auto; padding:7px 10px;}
+  .control-bar .cb-count{font-size:12px; color:#ffffffaa;}
+  .control-bar .cb-actions{margin-left:auto; display:flex; gap:8px;}
+  .control-bar button{padding:8px 16px; border-radius:16px; font-size:12.5px; font-weight:600; cursor:pointer; border:none;}
+  .control-bar .cb-validate{background:var(--teal); color:#fff;}
+  .control-bar .cb-cancel{background:transparent; border:1px solid #ffffff55 !important; color:#fff;}
+
+  .control-check{width:auto !important; margin:0;}
+  .qty-edit-input{width:64px !important; padding:4px 6px !important; font-size:12px !important;}
+  .item-thumb{width:26px; height:26px; border-radius:6px; object-fit:cover; margin-right:8px; vertical-align:middle; cursor:zoom-in; border:1px solid var(--line);}
+  .cat-tags{margin-top:2px;}
+  .cat-tag{display:inline-block; font-size:9.5px; color:var(--ink-soft); background:#F2F0EA; padding:1px 6px; border-radius:8px; margin-right:3px;}
+
+  .emp-toggle{background:none; border:none; cursor:pointer; color:var(--ink-soft); display:inline-flex; align-items:center; padding:2px;}
+  .emp-toggle svg{width:14px; height:14px; transition:transform .15s;}
+  .emp-toggle.collapsed svg{transform:rotate(-90deg);}
+
+  .cat-checks{display:grid; grid-template-columns:1fr 1fr; gap:4px 14px;}
+  .cat-checks label{display:flex; align-items:center; gap:6px; font-size:12.5px; font-weight:400;}
+  .cat-checks input{width:auto;}
+  .filebox-sm{display:inline-block; border:1.5px dashed var(--line); border-radius:8px; padding:10px 16px; font-size:12px; color:var(--ink-soft); cursor:pointer;}
+  .filebox-sm input{display:none;}
+  .photo-preview-sm{width:70px; height:70px; object-fit:cover; border-radius:8px; border:1px solid var(--line);}
+
+  .site-card{background:#fff; border:1px solid var(--line); border-radius:var(--radius); margin-bottom:16px; overflow:hidden;}
+  .site-head{display:flex; align-items:center; justify-content:space-between; padding:16px 20px; cursor:pointer; background:#fff;}
+  .site-head h2{font-family:'Source Serif 4',serif; font-size:15.5px; margin:0; display:flex; align-items:center; gap:10px;}
+  .site-badges{display:flex; gap:6px;}
+  .badge{font-size:10.5px; font-weight:600; padding:3px 9px; border-radius:12px;}
+  .badge-ok{background:#E4F3EF; color:var(--ok);}
+  .badge-warn{background:#F5EBD9; color:var(--warn);}
+  .badge-bad{background:#F3DCD6; color:var(--bad);}
+  .chevron{width:18px; height:18px; color:var(--ink-soft); transition:transform .2s;}
+  .site-card.open .chevron{transform:rotate(180deg);}
+  .site-body{max-height:0; overflow:hidden; transition:max-height .25s ease;}
+  .site-card.open .site-body{max-height:8000px;}
+  .site-body-inner{padding:0 20px 20px;}
+
+  .emplacement-group{margin-bottom:18px;}
+  .emplacement-group:last-child{margin-bottom:0;}
+  .emplacement-head{display:flex; align-items:center; justify-content:space-between; gap:10px; padding:10px 0 6px; border-bottom:1px solid var(--line); margin-bottom:2px;}
+  .emplacement-head h3{font-size:12.5px; font-weight:600; margin:0; color:var(--ink); display:flex; align-items:center; gap:8px;}
+  .emplacement-head .emp-count{font-weight:400; color:var(--ink-soft); font-size:11px;}
+  .emplacement-badges{display:flex; gap:6px; flex:none;}
+  .emplacement-badges .badge{padding:2px 8px;}
+
+  table{width:100%; border-collapse:collapse; font-size:12.5px;}
+  th, td{text-align:left; padding:8px 8px; border-bottom:1px solid var(--line);}
+  th{color:var(--ink-soft); font-weight:600; font-size:10.5px; text-transform:uppercase; letter-spacing:.04em;}
+  th.sortable{cursor:pointer; user-select:none;}
+  th.sortable:hover{color:var(--ink);}
+  tr.item-row{cursor:pointer;}
+  tr.item-row:hover{background:#FBFAF7;}
+  .dot{display:inline-block; width:8px; height:8px; border-radius:50%; margin-right:6px;}
+  .dot-ok{background:var(--ok);} .dot-warn{background:var(--warn);} .dot-bad{background:var(--bad);}
+  .qty-bad{color:var(--bad); font-weight:600;}
+
+  .add-item-btn{margin-top:12px; background:#fff; border:1px solid var(--line); color:var(--ink); font-size:12.5px; font-weight:600; padding:9px 16px; border-radius:20px; cursor:pointer;}
+  .add-item-btn:hover{border-color:var(--teal); color:var(--teal-dark);}
+
+  .modal-overlay{position:fixed; inset:0; background:rgba(30,28,32,.55); display:none; align-items:flex-start; justify-content:center; padding:32px 16px; z-index:150; overflow:auto;}
+  .modal-overlay.show{display:flex;}
+  .modal{background:#fff; border-radius:var(--radius); max-width:520px; width:100%; box-shadow:0 20px 60px rgba(0,0,0,.3);}
+  .modal-head{display:flex; align-items:center; justify-content:space-between; padding:18px 24px; border-bottom:1px solid var(--line);}
+  .modal-head h3{font-family:'Source Serif 4',serif; margin:0; font-size:16px;}
+  .modal-close{background:none; border:none; font-size:20px; cursor:pointer; color:var(--ink-soft);}
+  .modal-body{padding:20px 24px;}
+  .field{display:flex; flex-direction:column; gap:5px; margin-bottom:12px;}
   .field label{font-size:12px; font-weight:600;}
   .ac-wrap{position:relative;}
   .ac-suggestions{
@@ -47,40 +140,12 @@
   .ac-suggestions.show{display:block;}
   .ac-item{padding:8px 12px; font-size:13px; cursor:pointer;}
   .ac-item:hover{background:#FBFAF7;}
+  .grid2{display:grid; grid-template-columns:1fr 1fr; gap:12px;}
   input, select{width:100%; padding:9px 11px; border:1px solid var(--line); border-radius:7px; font-size:13.5px; font-family:'Inter',sans-serif;}
-
-  .ctx-actions{display:flex; gap:10px; margin-top:14px; flex-wrap:wrap; align-items:center;}
-  .ctx-note{font-size:11.5px; color:var(--ink-soft); margin-top:10px;}
-
-  button{font-family:'Inter',sans-serif; font-weight:600; font-size:13px; padding:10px 18px; border-radius:20px; border:none; cursor:pointer;}
-  .btn-primary{background:var(--ink); color:#fff;}
-  .btn-ghost{background:#fff; border:1px solid var(--line); color:var(--ink);}
-  .btn-ghost:hover{border-color:var(--teal); color:var(--teal-dark);}
-
-  table.grid{width:100%; border-collapse:collapse; font-size:12.5px;}
-  table.grid th{text-align:left; padding:6px 8px; color:var(--ink-soft); font-weight:600; font-size:10.5px; text-transform:uppercase; letter-spacing:.03em;}
-  table.grid th.sortable{cursor:pointer; user-select:none;}
-  table.grid th.sortable:hover{color:var(--ink);}
-  table.grid td{padding:4px; border-bottom:1px solid var(--line); vertical-align:middle;}
-  table.grid td input{padding:7px 8px; font-size:12.5px;}
-  table.grid td.col-article{min-width:180px;}
-  table.grid td.col-qty{width:80px;}
-  table.grid td.col-date{width:130px;}
-  table.grid td.col-periodicite{width:80px;}
-  table.grid td.col-del{width:36px; text-align:center;}
-  .row-del-btn{background:none; border:none; color:var(--danger); font-size:16px; cursor:pointer; padding:4px;}
-  tr.existing-row td input{background:#FBFAF7;}
-  tr.existing-row td.col-article::before{content:"✓ "; color:var(--teal); font-weight:700;}
-
-  .grid-actions{display:flex; justify-content:space-between; align-items:center; margin-top:14px; flex-wrap:wrap; gap:10px;}
-
-  .group-card{border:1px solid var(--line); border-radius:8px; padding:14px 16px; margin-bottom:14px; background:#FBFAF7;}
-  .group-card:last-child{margin-bottom:0;}
-  .group-head{display:flex; flex-wrap:wrap; gap:10px; align-items:flex-end; margin-bottom:10px;}
-  .group-head .field{flex:1; min-width:160px;}
-  .group-count{font-size:11px; color:var(--ink-soft); white-space:nowrap; padding-bottom:9px;}
-  .group-del-btn{background:none; border:1px solid var(--line); color:var(--danger); border-radius:16px; font-size:11.5px; font-weight:600; padding:8px 14px; cursor:pointer; white-space:nowrap; align-self:flex-end;}
-  .empty-groups-hint{font-size:12.5px; color:var(--ink-soft); margin:0;}
+  .modal-actions{display:flex; justify-content:space-between; padding:14px 24px; border-top:1px solid var(--line);}
+  button.primary{background:var(--ink); color:#fff; border:none; padding:10px 18px; border-radius:20px; font-weight:600; font-size:13px; cursor:pointer;}
+  button.ghost{background:none; border:1px solid var(--line); padding:10px 18px; border-radius:20px; font-weight:600; font-size:13px; cursor:pointer; color:var(--ink-soft);}
+  button.danger-link{background:none; border:none; color:var(--danger); font-size:12.5px; font-weight:600; cursor:pointer;}
 
   #toast{position:fixed; left:50%; bottom:24px; transform:translate(-50%,120%); background:var(--ink); color:#fff; padding:12px 20px; border-radius:12px; font-size:13.5px; transition:transform .3s ease; z-index:250; max-width:90vw;}
   #toast.show{transform:translate(-50%,0);}
@@ -131,45 +196,29 @@
       <div class="brand-text">CS<span>2E</span> · CSSCT</div>
     </div>
     <div style="display:flex; align-items:center; gap:10px; margin-left:auto;">
-      <a class="back-link" href="trousses_secours.html">Retour aux trousses</a>
+      <a class="back-link" href="trousses_secours_saisie_masse.html">📊 Saisie en masse</a>
+      <a class="back-link" href="signalement_liste.html">Retour aux dossiers</a>
       <button id="logoutBtn" title="Se déconnecter" style="background:#fff;border:1px solid #E4E0D8;color:#A85D45;width:34px;height:34px;border-radius:50%;font-weight:700;cursor:pointer;font-size:14px;">✕</button>
     </div>
   </header>
 
-  <h1>Saisie en masse — Trousses de secours</h1>
-  <p class="subtitle">Choisis un site, charge tous ses emplacements d'un coup — chacun s'affiche dans son propre tableau éditable comme dans un tableur — puis complète ou corrige les articles. Ajoute un nouvel emplacement à tout moment avec le bouton dédié.</p>
+  <h1>Trousses de secours</h1>
+  <p class="subtitle">Inventaire par site et par emplacement, contrôles et dates de péremption.</p>
 
-  <div class="card">
-    <h2>1. Site</h2>
-    <div class="ctx-grid" style="grid-template-columns:1fr 1fr;">
-      <div class="field">
-        <label>Site</label>
-        <select id="ctxSite"></select>
-      </div>
-      <div class="field ac-wrap">
-        <label>Entité <span style="font-weight:400;color:var(--ink-soft);">(facultatif — pour restreindre le chargement à une seule entité)</span></label>
-        <input type="text" id="ctxEntite" placeholder="Ex : SMAG / AS" autocomplete="off">
-        <div class="ac-suggestions" id="acEntite"></div>
-      </div>
+  <div class="toolbar">
+    <div class="search-input-wrap">
+      <span class="search-icon">🔍</span>
+      <input type="text" id="articleSearchInput" placeholder="Est-ce qu'on a... ? Cherche un article par nom">
     </div>
-    <div class="ctx-actions">
-      <button type="button" class="btn-ghost" id="loadExistingBtn">🔄 Charger tous les emplacements de ce site</button>
-      <span id="loadExistingMsg" style="font-size:12px;color:var(--ink-soft);"></span>
-    </div>
-    <p class="ctx-note">Chaque emplacement chargé s'affiche dans son propre tableau, ci-dessous. Pour démarrer une saisie sur un emplacement qui n'existe pas encore, utilise le bouton « + Nouvel emplacement ».</p>
+    <button class="control-toggle-btn" id="controlModeBtn">🛠️ Faire le contrôle</button>
   </div>
+  <div class="category-chips" id="categoryChipsRow"></div>
 
-  <div class="card">
-    <h2>2. Articles par emplacement</h2>
-    <div id="groupsContainer"></div>
-    <div class="grid-actions">
-      <button type="button" class="btn-ghost" id="addGroupBtn">+ Nouvel emplacement</button>
-      <button type="button" class="btn-primary" id="saveGridBtn" style="display:none;">Enregistrer</button>
-    </div>
-  </div>
+  <div class="incoming-filter-banner" id="incomingFilterBanner" style="display:none;"></div>
+  <div class="control-bar" id="controlBar"></div>
+  <div class="summary-row" id="summaryRow"></div>
+  <div id="sitesContainer"><div style="font-size:13px;color:var(--ink-soft);">Chargement…</div></div>
 </div>
-
-<div id="toast"></div>
 
 <nav class="tabbar" aria-label="Navigation principale">
   <a href="signalement_liste.html" class="tab-item"><span class="tab-icon">🗃️</span><span class="tab-lbl">Dossiers</span></a>
@@ -180,10 +229,75 @@
   <a href="administration.html" class="tab-item"><span class="tab-icon">⚙️</span><span class="tab-lbl">Admin</span></a>
 </nav>
 
+<div id="toast"></div>
+
+<div class="modal-overlay" id="photoZoomModal">
+  <div class="modal" style="max-width:640px;background:transparent;box-shadow:none;">
+    <div style="text-align:right;"><button class="modal-close" id="closePhotoZoom" style="color:#fff;background:rgba(30,28,32,.6);border-radius:50%;width:32px;height:32px;">×</button></div>
+    <img id="photoZoomImg" src="" alt="Photo article" style="width:100%;border-radius:10px;">
+  </div>
+</div>
+
+<div class="modal-overlay" id="itemModal">
+  <div class="modal">
+    <div class="modal-head">
+      <h3 id="itemModalTitle">Ajouter un article</h3>
+      <button class="modal-close" id="closeItemModal">×</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="itemId">
+      <div class="field">
+        <label>Site</label>
+        <select id="itemSite"></select>
+      </div>
+      <div class="field ac-wrap">
+        <label>Entité</label>
+        <input type="text" id="itemEntite" placeholder="Ex : SMAG / AS" autocomplete="off">
+        <div class="ac-suggestions" id="acEntite"></div>
+      </div>
+      <div class="field ac-wrap">
+        <label>Emplacement de la trousse <span style="font-weight:400;color:var(--ink-soft);">(propositions liées au site choisi)</span></label>
+        <input type="text" id="itemEmplacement" placeholder="Ex : Meuble bas, derrière l'accueil" autocomplete="off">
+        <div class="ac-suggestions" id="acEmplacement"></div>
+      </div>
+      <div class="field ac-wrap">
+        <label>Contenu (article)</label>
+        <input type="text" id="itemContenu" placeholder="Ex : Compresses stériles" autocomplete="off">
+        <div class="ac-suggestions" id="acContenu"></div>
+      </div>
+      <div class="field">
+        <label>Catégories <span style="font-weight:400;color:var(--ink-soft);">(facultatif — sans catégorie, l'article apparaît dans toutes les recherches par besoin)</span></label>
+        <div class="cat-checks" id="itemCategories"></div>
+      </div>
+      <div class="field">
+        <label>Photo de l'article</label>
+        <label class="filebox-sm" for="itemPhotoInput">📎 Ajouter / remplacer une photo<input type="file" id="itemPhotoInput" accept="image/*"></label>
+        <div id="itemPhotoPreview"></div>
+      </div>
+      <div class="grid2">
+        <div class="field"><label>Quantité théorique</label><input type="number" id="itemQteTheo" min="0"></div>
+        <div class="field"><label>Quantité réelle</label><input type="number" id="itemQteReelle" min="0"></div>
+      </div>
+      <div class="grid2">
+        <div class="field"><label>Date de péremption</label><input type="date" id="itemPeremption"></div>
+        <div class="field"><label>Dernier contrôle</label><input type="date" id="itemDernierControle"></div>
+      </div>
+      <div class="field"><label>Périodicité de contrôle (mois)</label><input type="number" id="itemPeriodicite" min="1" value="12"></div>
+    </div>
+    <div class="modal-actions">
+      <button class="danger-link" id="deleteItemBtn" style="display:none;">Supprimer l'article</button>
+      <div style="margin-left:auto;display:flex;gap:8px;">
+        <button class="ghost" id="cancelItemBtn">Annuler</button>
+        <button class="primary" id="saveItemBtn">Enregistrer</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js";
   import { getAuth, sendSignInLinkToEmail, isSignInWithEmailLink, signInWithEmailLink, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js";
-  import { getFirestore, collection, getDocs, doc, getDoc, writeBatch } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
+  import { getFirestore, collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc, getDoc, writeBatch } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyACY8fyy8Rd9NyLJ855xsDyknuUMV-pAag",
@@ -207,6 +321,7 @@ const firebaseConfig = {
       .catch(err => alert("Connexion impossible : " + err.message));
   }
 
+  let unsubscribe = null;
   function applyBrandingLogo(){
     getDoc(doc(db, 'config', 'branding')).then((snap) => {
       const data = snap.exists() ? snap.data() : {};
@@ -233,7 +348,12 @@ const firebaseConfig = {
       document.getElementById('authGate').style.display = 'none';
       applyBrandingLogo();
       loadSitesConfig();
-      window.MASSE_FIREBASE.reloadAllItems();
+      if(!unsubscribe){
+        unsubscribe = onSnapshot(col, (snap) => {
+          window._items = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+          window.renderTrousses();
+        });
+      }
     } else {
       document.getElementById('authGate').style.display = 'flex';
       document.getElementById('authForm').style.display = 'block';
@@ -261,22 +381,15 @@ const firebaseConfig = {
       .catch(err => { msg.textContent = "Erreur : " + err.message; });
   });
 
-  window.MASSE_FIREBASE = {
-    async reloadAllItems(){
-      const snap = await getDocs(col);
-      window._allItems = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-      if(window.onAllItemsLoaded) window.onAllItemsLoaded();
-    },
-    async saveBatch(updates, creations){
+  window.TROUSSES_FIREBASE = {
+    async add(item){ await addDoc(col, item); },
+    async update(id, fields){ await updateDoc(doc(db,'trousses_secours', id), fields); },
+    async remove(id){ await deleteDoc(doc(db,'trousses_secours', id)); },
+    async batchUpdate(entries){
+      // entries: [{ id, fields }] — utilisé pour le contrôle en masse (même date appliquée à plusieurs articles)
       const batch = writeBatch(db);
-      updates.forEach(function(u){ batch.update(doc(db,'trousses_secours', u.id), u.fields); });
-      const newRefs = creations.map(function(fields){
-        const ref = doc(col);
-        batch.set(ref, fields);
-        return { id: ref.id, fields: fields };
-      });
+      entries.forEach(function(e){ batch.update(doc(db,'trousses_secours', e.id), e.fields); });
       await batch.commit();
-      return newRefs;
     }
   };
 
@@ -290,10 +403,57 @@ const firebaseConfig = {
 <script>
 function esc(s){ return (s==null?'':String(s)).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
 
+const CATEGORIES = ["Hémorragie","Réanimation","Plaie","Brûlure","Trauma","Malaise","Autre"];
+
+// Compression photo côté navigateur avant stockage (comme pour les signalements / inspections)
+function compressImageFile(file, maxDim, quality){
+  return new Promise(function(resolve, reject){
+    const reader = new FileReader();
+    reader.onload = function(e){
+      const img = new Image();
+      img.onload = function(){
+        let w = img.width, h = img.height;
+        if(w > h && w > maxDim){ h = Math.round(h * maxDim / w); w = maxDim; }
+        else if(h >= w && h > maxDim){ w = Math.round(w * maxDim / h); h = maxDim; }
+        const canvas = document.createElement('canvas');
+        canvas.width = w; canvas.height = h;
+        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+        resolve({ dataUrl: canvas.toDataURL('image/jpeg', quality), width: w, height: h });
+      };
+      img.onerror = reject;
+      img.src = e.target.result;
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+// Filtre par tuile de résumé : 'traiter' | 'surveiller' | 'reappro' | 'controle' | null
+// Peut être amorcé depuis l'accueil via ?alerte=peremption ou ?alerte=controle, puis piloté par clic sur les tuiles.
+(function initTileFilterFromUrl(){
+  const urlAlert = new URLSearchParams(window.location.search).get('alerte');
+  window._tileFilter = urlAlert === 'peremption' ? 'traiter' : (urlAlert === 'controle' ? 'controle' : null);
+})();
+
+const TILE_LABELS = {
+  traiter: 'A traiter — péremption dépassée',
+  surveiller: 'A surveiller — péremption dans moins de 30 jours',
+  reappro: 'A réapprovisionner — quantité réelle inférieure à la quantité théorique',
+  controle: 'A contrôler — prochain contrôle dépassé'
+};
+
+function updateFilterBanner(){
+  const banner = document.getElementById('incomingFilterBanner');
+  if(!window._tileFilter){ banner.style.display = 'none'; banner.innerHTML = ''; return; }
+  banner.style.display = 'flex';
+  banner.innerHTML = '<span>⏳ Filtre actif : ' + esc(TILE_LABELS[window._tileFilter] || window._tileFilter) + '</span><a href="#" id="clearTileFilterLink">Voir tous les articles</a>';
+  document.getElementById('clearTileFilterLink').addEventListener('click', function(e){ e.preventDefault(); window.setTileFilter(null, true); });
+}
+
 const DEFAULT_SITES = ["Bezannes","Chalons-en-Champagne","Evreux","Milly-la-Forêt","Montpellier","Nancy","Paris","Poitiers","Reims","Télétravail","Wavre"].sort((a,b)=>a.localeCompare(b,'fr'));
 window.SITES = DEFAULT_SITES.slice();
 window.populateSiteOptions = function(){
-  const sel = document.getElementById('ctxSite');
+  const sel = document.getElementById('itemSite');
   const keep = sel.value;
   sel.innerHTML = '<option value="">Choisir…</option>' + window.SITES.map(function(s){ return '<option>' + s + '</option>'; }).join('');
   if(keep) sel.value = keep;
@@ -302,20 +462,25 @@ window.populateSiteOptions();
 
 function getEntiteSuggestions(){
   const set = new Set();
-  (window._allItems||[]).forEach(function(it){ if(it.entite) set.add(it.entite); });
+  (window._items||[]).forEach(function(it){ if(it.entite) set.add(it.entite); });
   return Array.from(set).sort(function(a,b){ return a.localeCompare(b,'fr'); });
 }
-function getEmplacementSuggestions(site){
+function getContenuSuggestions(){
   const set = new Set();
-  (window._allItems||[]).forEach(function(it){
-    if(!it.emplacement) return;
-    if(site && it.site !== site) return;
-    set.add(it.emplacement);
-  });
+  (window._items||[]).forEach(function(it){ if(it.contenu) set.add(it.contenu); });
+  return Array.from(set).sort(function(a,b){ return a.localeCompare(b,'fr'); });
+}
+function getEmplacementSuggestions(){
+  const site = document.getElementById('itemSite').value;
+  const set = new Set();
+  (window._items||[]).forEach(function(it){ if(it.emplacement && it.site === site) set.add(it.emplacement); });
   return Array.from(set).sort(function(a,b){ return a.localeCompare(b,'fr'); });
 }
 
-function bindAutocompleteEl(input, box, getSuggestionsFn){
+function bindAutocomplete(inputId, suggestionsBoxId, getSuggestionsFn){
+  const input = document.getElementById(inputId);
+  const box = document.getElementById(suggestionsBoxId);
+
   function renderList(){
     const q = input.value.toLowerCase().trim();
     const all = getSuggestionsFn();
@@ -328,7 +493,6 @@ function bindAutocompleteEl(input, box, getSuggestionsFn){
         e.preventDefault();
         input.value = matches[i];
         box.classList.remove('show');
-        input.dispatchEvent(new Event('input'));
       });
     });
   }
@@ -337,296 +501,464 @@ function bindAutocompleteEl(input, box, getSuggestionsFn){
   input.addEventListener('blur', function(){ setTimeout(function(){ box.classList.remove('show'); }, 120); });
 }
 
-bindAutocompleteEl(document.getElementById('ctxEntite'), document.getElementById('acEntite'), getEntiteSuggestions);
-
-// --- Groupes : un tableau éditable par couple (entité, emplacement) ---
-let groups = []; // { entite, emplacement, rows:[{ _id, contenu, quantiteTheorique, quantiteReelle, datePeremption, dateDernierControle, periodiciteControleMois }], sortField, sortDir }
-
-function emptyRow(){
-  return { _id: null, contenu:'', quantiteTheorique:'', quantiteReelle:'', datePeremption:'', dateDernierControle:'', periodiciteControleMois: 12 };
+bindAutocomplete('itemEntite', 'acEntite', getEntiteSuggestions);
+bindAutocomplete('itemContenu', 'acContenu', getContenuSuggestions);
+bindAutocomplete('itemEmplacement', 'acEmplacement', getEmplacementSuggestions);
+document.getElementById('itemSite').addEventListener('change', function(){
+  document.getElementById('itemEmplacement').value = '';
+});
+function daysUntil(iso){
+  if(!iso) return null;
+  const d = new Date(iso + 'T00:00:00');
+  if(isNaN(d.getTime())) return null;
+  return Math.round((d - new Date())/(1000*60*60*24));
 }
-function emptyGroup(entite, emplacement){
-  return { entite: entite || '', emplacement: emplacement || '', rows: [emptyRow()], sortField: null, sortDir: 1 };
+function statusFromDays(days){
+  if(days === null) return 'none';
+  if(days < 0) return 'bad';
+  if(days <= 30) return 'warn';
+  return 'ok';
+}
+function computeNextControl(item){
+  if(item.dateProchainControle) return item.dateProchainControle;
+  if(item.dateDernierControle && item.periodiciteControleMois){
+    const d = new Date(item.dateDernierControle + 'T00:00:00');
+    d.setMonth(d.getMonth() + Number(item.periodiciteControleMois));
+    return d.toISOString().slice(0,10);
+  }
+  return null;
+}
+function itemStatus(item){
+  const peremptionDays = daysUntil(item.datePeremption);
+  const controleDays = daysUntil(computeNextControl(item));
+  const reapproNeeded = (item.quantiteReelle !== undefined && item.quantiteTheorique !== undefined) && Number(item.quantiteReelle) < Number(item.quantiteTheorique);
+  const statuses = [statusFromDays(peremptionDays), statusFromDays(controleDays)];
+  let worst = 'ok';
+  if(statuses.includes('bad') || reapproNeeded) worst = reapproNeeded && !statuses.includes('bad') ? 'warn' : (statuses.includes('bad') ? 'bad' : 'ok');
+  else if(statuses.includes('warn')) worst = 'warn';
+  return { peremptionDays, controleDays, reapproNeeded, worst };
 }
 
-function sortedRowIndices(group){
-  const idxs = group.rows.map(function(_, i){ return i; });
-  if(!group.sortField) return idxs;
-  const field = group.sortField, dir = group.sortDir;
-  idxs.sort(function(ia, ib){
-    const a = group.rows[ia], b = group.rows[ib];
+const SANS_EMPLACEMENT = 'Sans emplacement précisé';
+function emplacementOf(item){
+  return (item.emplacement || '').trim() || SANS_EMPLACEMENT;
+}
+
+function tileMatch(it, key){
+  const st = itemStatus(it);
+  if(key === 'traiter') return st.peremptionDays !== null && st.peremptionDays < 0;
+  if(key === 'surveiller') return st.peremptionDays !== null && st.peremptionDays >= 0 && st.peremptionDays <= 30;
+  if(key === 'reappro') return st.reapproNeeded;
+  if(key === 'controle') return st.controleDays !== null && st.controleDays < 0;
+  return true;
+}
+
+window.setTileFilter = function(key, forceClear){
+  window._tileFilter = forceClear ? null : (window._tileFilter === key ? null : key);
+  window.renderTrousses();
+};
+
+// Tri par clic sur les en-têtes de colonnes, au sein de chaque groupe emplacement/site.
+window._sortField = null; // 'contenu' | 'peremption' | 'controle'
+window._sortDir = 1;
+window.setSort = function(field){
+  if(window._sortField === field){ window._sortDir = -window._sortDir; }
+  else { window._sortField = field; window._sortDir = 1; }
+  window.renderTrousses();
+};
+function sortArrow(field){
+  if(window._sortField !== field) return '';
+  return window._sortDir === 1 ? ' ▲' : ' ▼';
+}
+function sortItems(list){
+  if(!window._sortField) return list;
+  const field = window._sortField, dir = window._sortDir;
+  const copy = list.slice();
+  copy.sort(function(a,b){
     if(field === 'contenu'){
       return (a.contenu||'').toLowerCase().localeCompare((b.contenu||'').toLowerCase(),'fr') * dir;
     }
-    const av = field === 'peremption' ? (a.datePeremption||'') : (a.dateDernierControle||'');
-    const bv = field === 'peremption' ? (b.datePeremption||'') : (b.dateDernierControle||'');
+    const av = field === 'peremption' ? (a.datePeremption || '') : (computeNextControl(a) || '');
+    const bv = field === 'peremption' ? (b.datePeremption || '') : (computeNextControl(b) || '');
     if(!av && !bv) return 0;
-    if(!av) return 1;
+    if(!av) return 1; // les dates non renseignées restent en fin de liste
     if(!bv) return -1;
     if(av < bv) return -1 * dir;
     if(av > bv) return 1 * dir;
     return 0;
   });
-  return idxs;
+  return copy;
 }
-function sortArrow(group, field){
-  if(group.sortField !== field) return '';
-  return group.sortDir === 1 ? ' ▲' : ' ▼';
+
+// ---- Recherche texte + filtre catégorie (combinés avec les tuiles) ----
+window._searchText = '';
+window._categoryFilter = null;
+
+function passesFilters(it){
+  if(window._tileFilter && !tileMatch(it, window._tileFilter)) return false;
+  if(window._categoryFilter){
+    const cats = Array.isArray(it.categories) ? it.categories : [];
+    // un article sans catégorie reste visible dans toutes les recherches par besoin
+    if(cats.length && cats.indexOf(window._categoryFilter) === -1) return false;
+  }
+  if(window._searchText){
+    const q = window._searchText.toLowerCase();
+    if((it.contenu||'').toLowerCase().indexOf(q) === -1) return false;
+  }
+  return true;
 }
-window.setGroupSort = function(gIdx, field){
-  const group = groups[gIdx];
-  if(group.sortField === field){ group.sortDir = -group.sortDir; }
-  else { group.sortField = field; group.sortDir = 1; }
-  renderGroups();
+
+function renderCategoryChips(){
+  const row = document.getElementById('categoryChipsRow');
+  row.innerHTML = CATEGORIES.map(function(c){
+    const active = window._categoryFilter === c;
+    return '<div class="cat-chip' + (active?' active':'') + '" onclick="setCategoryFilter(\'' + esc(c).replace(/'/g,"\\'") + '\')">' + esc(c) + '</div>';
+  }).join('');
+}
+window.setCategoryFilter = function(cat){
+  window._categoryFilter = (window._categoryFilter === cat) ? null : cat;
+  renderCategoryChips();
+  window.renderTrousses();
 };
 
-function addRowToGroup(gIdx){
-  groups[gIdx].rows.push(emptyRow());
-  renderGroups();
-  const card = document.querySelector('.group-card[data-gidx="' + gIdx + '"]');
-  if(card){
-    const lastIdx = groups[gIdx].rows.length - 1;
-    const lastInput = card.querySelector('tr[data-idx="' + lastIdx + '"] input[data-field="contenu"]');
-    if(lastInput) lastInput.focus();
+document.getElementById('articleSearchInput').addEventListener('input', function(e){
+  window._searchText = e.target.value.trim();
+  window.renderTrousses();
+});
+
+// ---- Repli / dépli des groupes emplacement ----
+window._collapsedGroups = new Set();
+function emplacementKey(site, emp){ return site + '||' + emp; }
+window.toggleEmplacementGroup = function(key){
+  if(window._collapsedGroups.has(key)) window._collapsedGroups.delete(key);
+  else window._collapsedGroups.add(key);
+  window.renderTrousses();
+};
+
+// ---- Mode contrôle en masse ----
+window._controlMode = false;
+window._controlChecked = new Set();
+window._controlQtyEdits = {};
+
+window.toggleControlMode = function(){
+  window._controlMode = !window._controlMode;
+  if(!window._controlMode){
+    window._controlChecked = new Set();
+    window._controlQtyEdits = {};
   }
-}
-function removeRowFromGroup(gIdx, idx){
-  const group = groups[gIdx];
-  const row = group.rows[idx];
-  if(row._id && !confirm('Cette ligne correspond à un article déjà enregistré. La retirer de la grille ne le supprime pas de la base — seul un enregistrement met à jour la base. Continuer ?')) return;
-  group.rows.splice(idx, 1);
-  if(!group.rows.length) group.rows.push(emptyRow());
-  renderGroups();
+  window.renderTrousses();
+};
+window.toggleControlCheck = function(id){
+  if(window._controlChecked.has(id)) window._controlChecked.delete(id);
+  else window._controlChecked.add(id);
+  window.renderTrousses();
+};
+window.setControlQty = function(id, value){
+  window._controlQtyEdits[id] = value;
+};
+window.cancelControlMode = function(){
+  window._controlMode = false;
+  window._controlChecked = new Set();
+  window._controlQtyEdits = {};
+  window.renderTrousses();
+};
+window.validateControlMode = async function(){
+  const dateVal = document.getElementById('controlDateInput').value;
+  if(!dateVal){ showToast('Choisis une date de contrôle.'); return; }
+  if(!window._controlChecked.size){ showToast('Coche au moins un article contrôlé.'); return; }
+  const entries = Array.from(window._controlChecked).map(function(id){
+    const fields = { dateDernierControle: dateVal };
+    if(window._controlQtyEdits.hasOwnProperty(id) && window._controlQtyEdits[id] !== '' && window._controlQtyEdits[id] !== null){
+      fields.quantiteReelle = Number(window._controlQtyEdits[id]);
+    }
+    return { id: id, fields: fields };
+  });
+  try{
+    await window.TROUSSES_FIREBASE.batchUpdate(entries);
+    showToast('Contrôle enregistré pour ' + entries.length + ' article(s) ✓');
+    window.cancelControlMode();
+  }catch(err){ showToast('Erreur : ' + err.message); }
+};
+
+function renderControlBar(){
+  const bar = document.getElementById('controlBar');
+  if(!window._controlMode){ bar.classList.remove('show'); bar.innerHTML=''; return; }
+  bar.classList.add('show');
+  const count = window._controlChecked.size;
+  const today = new Date().toISOString().slice(0,10);
+  bar.innerHTML =
+    '<span>🛠️ Mode contrôle</span>' +
+    '<label>Date de contrôle <input type="date" id="controlDateInput" value="' + today + '"></label>' +
+    '<span class="cb-count">' + count + ' article(s) sélectionné(s)</span>' +
+    '<div class="cb-actions">' +
+      '<button class="cb-cancel" onclick="cancelControlMode()">Annuler</button>' +
+      '<button class="cb-validate" onclick="validateControlMode()">Valider le contrôle</button>' +
+    '</div>';
 }
 
-function renderGroups(){
-  const container = document.getElementById('groupsContainer');
-  const saveBtn = document.getElementById('saveGridBtn');
+// ---- Zoom photo ----
+window.openPhotoZoom = function(id){
+  const it = (window._items||[]).find(function(x){ return x.id === id; });
+  if(!it || !it.photoBase64) return;
+  document.getElementById('photoZoomImg').src = it.photoBase64;
+  document.getElementById('photoZoomModal').classList.add('show');
+};
+document.getElementById('closePhotoZoom').addEventListener('click', function(){ document.getElementById('photoZoomModal').classList.remove('show'); });
+document.getElementById('photoZoomModal').addEventListener('click', function(e){ if(e.target.id==='photoZoomModal') e.currentTarget.classList.remove('show'); });
 
-  if(!groups.length){
-    container.innerHTML = '<p class="empty-groups-hint">Choisis un site puis clique sur « Charger tous les emplacements de ce site », ou ajoute directement un nouvel emplacement ci-dessous.</p>';
-    saveBtn.style.display = 'none';
+document.getElementById('controlModeBtn').addEventListener('click', function(){ window.toggleControlMode(); });
+
+renderCategoryChips();
+
+window.renderTrousses = function(){
+  const allItems = window._items || [];
+  updateFilterBanner();
+  renderControlBar();
+  const controlBtn = document.getElementById('controlModeBtn');
+  controlBtn.textContent = window._controlMode ? '✕ Quitter le mode contrôle' : '🛠️ Faire le contrôle';
+  controlBtn.classList.toggle('active', window._controlMode);
+  const items = allItems.filter(passesFilters);
+  const bySite = {};
+  items.forEach(function(it){
+    const s = it.site || 'Non renseigné';
+    if(!bySite[s]) bySite[s] = [];
+    bySite[s].push(it);
+  });
+  const sites = Object.keys(bySite).sort(function(a,b){ return a.localeCompare(b,'fr'); });
+
+  // Résumé global — compté sur la totalité des articles (pas seulement ceux affichés), pour que les tuiles restent stables
+  let cTraiter = 0, cSurveiller = 0, cReappro = 0, cControle = 0;
+  allItems.forEach(function(it){
+    if(tileMatch(it,'traiter')) cTraiter++;
+    if(tileMatch(it,'surveiller')) cSurveiller++;
+    if(tileMatch(it,'reappro')) cReappro++;
+    if(tileMatch(it,'controle')) cControle++;
+  });
+  function tileClass(key){ return 'summary-tile clickable' + (window._tileFilter === key ? ' active' : ''); }
+  document.getElementById('summaryRow').innerHTML =
+    '<div class="summary-tile"><div class="num">' + allItems.length + '</div><div class="lbl">Articles suivis</div></div>' +
+    '<div class="' + tileClass('traiter') + '" onclick="setTileFilter(\'traiter\')"><div class="num" style="color:var(--bad);">' + cTraiter + '</div><div class="lbl">A traiter (dépassé)</div></div>' +
+    '<div class="' + tileClass('surveiller') + '" onclick="setTileFilter(\'surveiller\')"><div class="num" style="color:var(--warn);">' + cSurveiller + '</div><div class="lbl">A surveiller (&lt; 30j)</div></div>' +
+    '<div class="' + tileClass('reappro') + '" onclick="setTileFilter(\'reappro\')"><div class="num" style="color:var(--bad);">' + cReappro + '</div><div class="lbl">A réapprovisionner</div></div>' +
+    '<div class="' + tileClass('controle') + '" onclick="setTileFilter(\'controle\')"><div class="num" style="color:var(--warn);">' + cControle + '</div><div class="lbl">A contrôler</div></div>';
+
+  const anyFilterActive = !!(window._tileFilter || window._categoryFilter || window._searchText);
+
+  const container = document.getElementById('sitesContainer');
+  if(!sites.length){
+    container.innerHTML = anyFilterActive
+      ? '<div style="font-size:13px;color:var(--ink-soft);">Aucun article ne correspond à cette recherche/ce filtre.</div>'
+      : '<div style="font-size:13px;color:var(--ink-soft);">Aucun article enregistré. Clique sur "Ajouter un article" pour commencer.</div>' +
+        '<button class="add-item-btn" onclick="openItemModal(null, \'\')" style="margin-top:12px;">+ Ajouter un article</button>';
     return;
   }
-  saveBtn.style.display = 'inline-block';
 
-  container.innerHTML = groups.map(function(group, gIdx){
-    const rowsHtml = sortedRowIndices(group).map(function(idx){
-      const r = group.rows[idx];
-      return '<tr class="' + (r._id ? 'existing-row' : '') + '" data-idx="' + idx + '">' +
-        '<td class="col-article"><input type="text" data-field="contenu" value="' + esc(r.contenu) + '" placeholder="Ex : Compresses stériles"></td>' +
-        '<td class="col-qty"><input type="number" min="0" data-field="quantiteTheorique" value="' + esc(r.quantiteTheorique) + '"></td>' +
-        '<td class="col-qty"><input type="number" min="0" data-field="quantiteReelle" value="' + esc(r.quantiteReelle) + '"></td>' +
-        '<td class="col-date"><input type="date" data-field="datePeremption" value="' + esc(r.datePeremption) + '"></td>' +
-        '<td class="col-date"><input type="date" data-field="dateDernierControle" value="' + esc(r.dateDernierControle) + '"></td>' +
-        '<td class="col-periodicite"><input type="number" min="1" data-field="periodiciteControleMois" value="' + esc(r.periodiciteControleMois) + '"></td>' +
-        '<td class="col-del"><button type="button" class="row-del-btn" title="Supprimer cette ligne">🗑️</button></td>' +
-      '</tr>';
+  const theadHtml = '<thead><tr>' +
+    (window._controlMode ? '<th style="width:30px;"></th>' : '') +
+    '<th class="sortable" onclick="setSort(\'contenu\')">Article' + sortArrow('contenu') + '</th>' +
+    '<th>Qté (réelle/théo.)</th>' +
+    '<th class="sortable" onclick="setSort(\'peremption\')">Péremption' + sortArrow('peremption') + '</th>' +
+    '<th class="sortable" onclick="setSort(\'controle\')">Prochain contrôle' + sortArrow('controle') + '</th>' +
+  '</tr></thead>';
+
+  container.innerHTML = sites.map(function(site, idx){
+    const siteItems = bySite[site];
+    let siteBad = 0, siteWarn = 0;
+    siteItems.forEach(function(it){ const st = itemStatus(it); if(st.worst==='bad') siteBad++; else if(st.worst==='warn') siteWarn++; });
+    const badges = (siteBad ? '<span class="badge badge-bad">' + siteBad + ' à traiter</span>' : '') +
+      (siteWarn ? '<span class="badge badge-warn">' + siteWarn + ' à surveiller</span>' : '') +
+      (!siteBad && !siteWarn ? '<span class="badge badge-ok">OK</span>' : '');
+
+    // Sous-regroupement par emplacement au sein du site
+    const byEmplacement = {};
+    siteItems.forEach(function(it){
+      const emp = emplacementOf(it);
+      if(!byEmplacement[emp]) byEmplacement[emp] = [];
+      byEmplacement[emp].push(it);
+    });
+    const emplacements = Object.keys(byEmplacement).sort(function(a,b){
+      if(a === SANS_EMPLACEMENT) return 1;
+      if(b === SANS_EMPLACEMENT) return -1;
+      return a.localeCompare(b,'fr');
+    });
+
+    const groupsHtml = emplacements.map(function(emp){
+      const empItems = byEmplacement[emp];
+      let empBad = 0, empWarn = 0;
+      empItems.forEach(function(it){ const st = itemStatus(it); if(st.worst==='bad') empBad++; else if(st.worst==='warn') empWarn++; });
+      const empBadges =
+        (empBad ? '<span class="badge badge-bad">' + empBad + '</span>' : '') +
+        (empWarn ? '<span class="badge badge-warn">' + empWarn + '</span>' : '') +
+        (!empBad && !empWarn ? '<span class="badge badge-ok">OK</span>' : '');
+
+      const groupKey = emplacementKey(site, emp);
+      const collapsed = window._collapsedGroups.has(groupKey);
+
+      const rows = sortItems(empItems).map(function(it){
+        const st = itemStatus(it);
+        const dotClass = 'dot-' + (st.worst === 'none' ? 'ok' : st.worst);
+        const peremptionTxt = it.datePeremption ? it.datePeremption.split('-').reverse().join('/') : '—';
+        const controleTxt = computeNextControl(it) ? computeNextControl(it).split('-').reverse().join('/') : '—';
+        const checked = window._controlChecked.has(it.id);
+        const rowClick = window._controlMode ? ("toggleControlCheck('" + it.id + "')") : ("openItemModal('" + it.id + "')");
+        const checkboxCell = window._controlMode
+          ? '<td onclick="event.stopPropagation();"><input type="checkbox" class="control-check" ' + (checked ? 'checked' : '') + ' onchange="toggleControlCheck(\'' + it.id + '\')"></td>'
+          : '';
+        const thumb = it.photoBase64
+          ? '<img class="item-thumb" src="' + it.photoBase64 + '" onclick="event.stopPropagation();openPhotoZoom(\'' + it.id + '\')" alt="">'
+          : '';
+        const catTags = (Array.isArray(it.categories) && it.categories.length)
+          ? '<div class="cat-tags">' + it.categories.map(function(c){ return '<span class="cat-tag">' + esc(c) + '</span>'; }).join('') + '</div>'
+          : '';
+        const qtyCell = (window._controlMode && checked)
+          ? '<td onclick="event.stopPropagation();"><input type="number" class="qty-edit-input" value="' + (it.quantiteReelle ?? '') + '" oninput="setControlQty(\'' + it.id + '\', this.value)"> / ' + (it.quantiteTheorique ?? '—') + '</td>'
+          : '<td class="' + (st.reapproNeeded ? 'qty-bad' : '') + '">' + (it.quantiteReelle ?? '—') + ' / ' + (it.quantiteTheorique ?? '—') + '</td>';
+        return '<tr class="item-row" onclick="' + rowClick + '">' +
+          checkboxCell +
+          '<td>' + thumb + '<span class="dot ' + dotClass + '"></span>' + esc(it.contenu) + catTags + '</td>' +
+          qtyCell +
+          '<td>' + peremptionTxt + '</td>' +
+          '<td>' + controleTxt + '</td>' +
+        '</tr>';
+      }).join('');
+
+      return '<div class="emplacement-group">' +
+        '<div class="emplacement-head">' +
+          '<h3><button class="emp-toggle' + (collapsed ? ' collapsed' : '') + '" onclick="event.stopPropagation();toggleEmplacementGroup(\'' + groupKey.replace(/'/g,"\\'") + '\')"><svg viewBox="0 0 20 20" fill="none"><path d="M5 7l5 6 5-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>📍 ' + esc(emp) + ' <span class="emp-count">(' + empItems.length + ')</span></h3><div class="emplacement-badges">' + empBadges + '</div></div>' +
+        (collapsed ? '' : '<table>' + theadHtml + '<tbody>' + rows + '</tbody></table>') +
+      '</div>';
     }).join('');
 
-    const count = group.rows.filter(function(r){ return r.contenu && String(r.contenu).trim(); }).length;
-
-    return '<div class="group-card" data-gidx="' + gIdx + '">' +
-      '<div class="group-head">' +
-        '<div class="field"><label>Entité <span style="font-weight:400;color:var(--ink-soft);">(facultatif)</span></label>' +
-          '<div class="ac-wrap"><input type="text" class="group-entite-input" value="' + esc(group.entite) + '" placeholder="Ex : SMAG / AS" autocomplete="off"><div class="ac-suggestions group-entite-ac"></div></div>' +
-        '</div>' +
-        '<div class="field"><label>Emplacement</label>' +
-          '<div class="ac-wrap"><input type="text" class="group-emplacement-input" value="' + esc(group.emplacement) + '" placeholder="Ex : Meuble bas, derrière l\'accueil" autocomplete="off"><div class="ac-suggestions group-emplacement-ac"></div></div>' +
-        '</div>' +
-        '<span class="group-count">' + count + ' article(s)</span>' +
-        '<button type="button" class="group-del-btn" title="Retirer ce tableau de l’écran">🗑️ Retirer ce tableau</button>' +
+    return '<div class="site-card' + ((anyFilterActive || idx===0)?' open':'') + '" data-site-idx="' + idx + '">' +
+      '<div class="site-head" onclick="this.closest(\'.site-card\').classList.toggle(\'open\')">' +
+        '<h2>' + esc(site) + ' <span style="font-size:11px;color:var(--ink-soft);font-weight:400;">(' + siteItems.length + ')</span></h2>' +
+        '<div style="display:flex;align-items:center;gap:10px;"><div class="site-badges">' + badges + '</div>' +
+        '<svg class="chevron" viewBox="0 0 20 20" fill="none"><path d="M5 7l5 6 5-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>' +
       '</div>' +
-      '<div style="overflow-x:auto;">' +
-        '<table class="grid">' +
-          '<thead><tr>' +
-            '<th class="col-article sortable" data-sort="contenu">Article' + sortArrow(group,'contenu') + '</th>' +
-            '<th class="col-qty">Qté théo.</th>' +
-            '<th class="col-qty">Qté réelle</th>' +
-            '<th class="col-date sortable" data-sort="peremption">Péremption' + sortArrow(group,'peremption') + '</th>' +
-            '<th class="col-date sortable" data-sort="controle">Dernier contrôle' + sortArrow(group,'controle') + '</th>' +
-            '<th class="col-periodicite">Périod. (mois)</th>' +
-            '<th class="col-del"></th>' +
-          '</tr></thead>' +
-          '<tbody>' + rowsHtml + '</tbody>' +
-        '</table>' +
-      '</div>' +
-      '<div style="margin-top:10px;"><button type="button" class="btn-ghost add-row-btn">+ Ajouter une ligne</button></div>' +
+      '<div class="site-body"><div class="site-body-inner">' +
+        groupsHtml +
+        '<button class="add-item-btn" onclick="event.stopPropagation();openItemModal(null,\'' + esc(site).replace(/'/g,"\\'") + '\')">+ Ajouter un article sur ce site</button>' +
+      '</div></div>' +
     '</div>';
   }).join('');
+};
 
-  container.querySelectorAll('.group-card').forEach(function(card){
-    const gIdx = Number(card.dataset.gidx);
-    const group = groups[gIdx];
+// ---- Catégories dans la fiche article (créées une seule fois) ----
+(function initItemCategoryChecks(){
+  const wrap = document.getElementById('itemCategories');
+  wrap.innerHTML = CATEGORIES.map(function(c){
+    return '<label><input type="checkbox" class="item-cat-check" value="' + esc(c) + '"> ' + esc(c) + '</label>';
+  }).join('');
+})();
 
-    const entiteInput = card.querySelector('.group-entite-input');
-    const entiteBox = card.querySelector('.group-entite-ac');
-    bindAutocompleteEl(entiteInput, entiteBox, getEntiteSuggestions);
-    entiteInput.addEventListener('input', function(){ group.entite = entiteInput.value; });
-
-    const empInput = card.querySelector('.group-emplacement-input');
-    const empBox = card.querySelector('.group-emplacement-ac');
-    bindAutocompleteEl(empInput, empBox, function(){ return getEmplacementSuggestions(document.getElementById('ctxSite').value); });
-    empInput.addEventListener('input', function(){ group.emplacement = empInput.value; });
-
-    card.querySelector('.group-del-btn').addEventListener('click', function(){
-      const hasExisting = group.rows.some(function(r){ return r._id; });
-      if(hasExisting && !confirm('Ce tableau contient des articles déjà enregistrés. Le retirer de l’écran ne les supprime pas de la base. Continuer ?')) return;
-      groups.splice(gIdx, 1);
-      renderGroups();
-    });
-
-    card.querySelectorAll('th.sortable').forEach(function(th){
-      th.addEventListener('click', function(){ window.setGroupSort(gIdx, th.dataset.sort); });
-    });
-
-    card.querySelectorAll('tbody tr').forEach(function(tr){
-      const idx = Number(tr.dataset.idx);
-      tr.querySelectorAll('input').forEach(function(inp){
-        inp.addEventListener('input', function(){
-          group.rows[idx][inp.dataset.field] = inp.value;
-          if(inp.dataset.field === 'contenu'){
-            const countEl = card.querySelector('.group-count');
-            if(countEl) countEl.textContent = group.rows.filter(function(r){ return r.contenu && String(r.contenu).trim(); }).length + ' article(s)';
-          }
-        });
-        inp.addEventListener('keydown', function(e){
-          if(e.key === 'Enter'){
-            e.preventDefault();
-            const trEl = inp.closest('tr');
-            const nextTr = trEl.nextElementSibling;
-            if(nextTr){
-              const nextInput = nextTr.querySelector('input[data-field="contenu"]');
-              if(nextInput) nextInput.focus();
-            } else {
-              addRowToGroup(gIdx);
-            }
-          }
-        });
-      });
-      tr.querySelector('.row-del-btn').addEventListener('click', function(){
-        removeRowFromGroup(gIdx, idx);
-      });
-    });
-
-    card.querySelector('.add-row-btn').addEventListener('click', function(){ addRowToGroup(gIdx); });
-  });
+// ---- Photo dans la fiche article ----
+let itemPhotoDataUrl = null;
+function renderItemPhotoPreview(){
+  const box = document.getElementById('itemPhotoPreview');
+  box.innerHTML = itemPhotoDataUrl
+    ? '<div style="display:flex;align-items:center;gap:10px;margin-top:8px;"><img class="photo-preview-sm" src="' + itemPhotoDataUrl + '" alt=""><button type="button" id="removeItemPhotoBtn" style="background:none;border:1px solid var(--line);border-radius:14px;padding:5px 12px;font-size:11.5px;cursor:pointer;">Retirer la photo</button></div>'
+    : '';
+  const removeBtn = document.getElementById('removeItemPhotoBtn');
+  if(removeBtn) removeBtn.addEventListener('click', function(){ itemPhotoDataUrl = null; renderItemPhotoPreview(); });
 }
-
-document.getElementById('addGroupBtn').addEventListener('click', function(){
-  const site = document.getElementById('ctxSite').value;
-  if(!site){ showToast('Choisis d’abord un site.'); return; }
-  groups.push(emptyGroup('', ''));
-  renderGroups();
-  const gIdx = groups.length - 1;
-  const card = document.querySelector('.group-card[data-gidx="' + gIdx + '"]');
-  if(card){
-    const empInput = card.querySelector('.group-emplacement-input');
-    if(empInput) empInput.focus();
-  }
-});
-
-document.getElementById('loadExistingBtn').addEventListener('click', function(){
-  const site = document.getElementById('ctxSite').value;
-  const entiteFilter = document.getElementById('ctxEntite').value.trim();
-  const msg = document.getElementById('loadExistingMsg');
-  if(!site){ msg.style.color = 'var(--danger)'; msg.textContent = 'Choisis d’abord un site.'; return; }
-  const matches = (window._allItems||[]).filter(function(it){
-    if(it.site !== site) return false;
-    if(entiteFilter && (it.entite||'') !== entiteFilter) return false;
-    return true;
-  });
-  if(!matches.length){
-    msg.style.color = 'var(--ink-soft)';
-    msg.textContent = 'Aucun article existant pour ce site' + (entiteFilter ? ' / cette entité' : '') + ' — utilise « + Nouvel emplacement » pour commencer une saisie.';
-    return;
-  }
-  const byKey = {};
-  matches.forEach(function(it){
-    const key = (it.entite||'') + '||' + (it.emplacement||'');
-    if(!byKey[key]) byKey[key] = { entite: it.entite||'', emplacement: it.emplacement||'', items: [] };
-    byKey[key].items.push(it);
-  });
-  const keys = Object.keys(byKey).sort(function(a,b){
-    return byKey[a].emplacement.localeCompare(byKey[b].emplacement,'fr') || byKey[a].entite.localeCompare(byKey[b].entite,'fr');
-  });
-  groups = keys.map(function(k){
-    const g = byKey[k];
-    const rows = g.items.map(function(it){
-      return {
-        _id: it.id,
-        contenu: it.contenu || '',
-        quantiteTheorique: it.quantiteTheorique ?? '',
-        quantiteReelle: it.quantiteReelle ?? '',
-        datePeremption: it.datePeremption || '',
-        dateDernierControle: it.dateDernierControle || '',
-        periodiciteControleMois: it.periodiciteControleMois || 12
-      };
-    });
-    rows.push(emptyRow());
-    return { entite: g.entite, emplacement: g.emplacement, rows: rows, sortField: null, sortDir: 1 };
-  });
-  renderGroups();
-  msg.style.color = 'var(--teal-dark)';
-  msg.textContent = matches.length + ' article(s) chargé(s) sur ' + groups.length + ' emplacement(s) — modifie-les puis enregistre.';
-});
-
-document.getElementById('saveGridBtn').addEventListener('click', async function(){
-  const site = document.getElementById('ctxSite').value;
-  if(!site){ showToast('Choisis un site avant d’enregistrer.'); return; }
-
-  const updates = [];
-  const creations = [];
-  let missingEmplacement = false;
-
-  groups.forEach(function(group){
-    const emplacement = (group.emplacement||'').trim();
-    const entite = (group.entite||'').trim();
-    group.rows.forEach(function(r){
-      if(!r.contenu || !String(r.contenu).trim()) return; // ligne vide, on ignore
-      if(!emplacement){ missingEmplacement = true; return; }
-      const fields = {
-        site: site,
-        entite: entite,
-        emplacement: emplacement,
-        contenu: String(r.contenu).trim(),
-        quantiteTheorique: r.quantiteTheorique === '' ? null : Number(r.quantiteTheorique),
-        quantiteReelle: r.quantiteReelle === '' ? null : Number(r.quantiteReelle),
-        datePeremption: r.datePeremption || null,
-        dateDernierControle: r.dateDernierControle || null,
-        periodiciteControleMois: Number(r.periodiciteControleMois) || 12
-      };
-      if(r._id) updates.push({ id: r._id, fields: fields });
-      else creations.push(fields);
-    });
-  });
-
-  if(missingEmplacement){ showToast('Renseigne l’emplacement de chaque tableau contenant des articles avant d’enregistrer.'); return; }
-  if(!updates.length && !creations.length){ showToast('Ajoute au moins un article avant d’enregistrer.'); return; }
-
-  const btn = this;
-  btn.disabled = true;
+document.getElementById('itemPhotoInput').addEventListener('change', async function(e){
+  const file = e.target.files && e.target.files[0];
+  if(!file) return;
   try{
-    await window.MASSE_FIREBASE.saveBatch(updates, creations);
-    showToast(creations.length + ' ajouté(s), ' + updates.length + ' mis à jour ✓');
-    await window.MASSE_FIREBASE.reloadAllItems();
-    document.getElementById('loadExistingBtn').click();
-  }catch(err){
-    showToast('Erreur : ' + err.message);
-  }finally{
-    btn.disabled = false;
+    let result = await compressImageFile(file, 900, 0.75);
+    // repasse en plus petit si le rendu reste volumineux (grosses photos)
+    if(result.dataUrl.length > 700000){
+      result = await compressImageFile(file, 600, 0.6);
+    }
+    itemPhotoDataUrl = result.dataUrl;
+    renderItemPhotoPreview();
+  }catch(err){ showToast('Erreur lecture de la photo : ' + err.message); }
+  e.target.value = '';
+});
+
+window.openItemModal = function(id, prefillSite){
+  const modal = document.getElementById('itemModal');
+  document.getElementById('deleteItemBtn').style.display = id ? 'inline-block' : 'none';
+  if(id){
+    const it = (window._items||[]).find(function(x){ return x.id === id; });
+    document.getElementById('itemModalTitle').textContent = 'Modifier l’article';
+    document.getElementById('itemId').value = id;
+    document.getElementById('itemSite').value = it.site || '';
+    document.getElementById('itemEntite').value = it.entite || '';
+    document.getElementById('itemEmplacement').value = it.emplacement || '';
+    document.getElementById('itemContenu').value = it.contenu || '';
+    document.getElementById('itemQteTheo').value = it.quantiteTheorique ?? '';
+    document.getElementById('itemQteReelle').value = it.quantiteReelle ?? '';
+    document.getElementById('itemPeremption').value = it.datePeremption || '';
+    document.getElementById('itemDernierControle').value = it.dateDernierControle || '';
+    document.getElementById('itemPeriodicite').value = it.periodiciteControleMois || 12;
+    const itCats = Array.isArray(it.categories) ? it.categories : [];
+    document.querySelectorAll('.item-cat-check').forEach(function(cb){ cb.checked = itCats.indexOf(cb.value) !== -1; });
+    itemPhotoDataUrl = it.photoBase64 || null;
+  } else {
+    document.getElementById('itemModalTitle').textContent = 'Ajouter un article';
+    document.getElementById('itemId').value = '';
+    document.getElementById('itemSite').value = prefillSite || '';
+    document.getElementById('itemEntite').value = '';
+    document.getElementById('itemEmplacement').value = '';
+    document.getElementById('itemContenu').value = '';
+    document.getElementById('itemQteTheo').value = '';
+    document.getElementById('itemQteReelle').value = '';
+    document.getElementById('itemPeremption').value = '';
+    document.getElementById('itemDernierControle').value = '';
+    document.getElementById('itemPeriodicite').value = 12;
+    document.querySelectorAll('.item-cat-check').forEach(function(cb){ cb.checked = false; });
+    itemPhotoDataUrl = null;
   }
+  renderItemPhotoPreview();
+  modal.classList.add('show');
+};
+
+document.getElementById('closeItemModal').addEventListener('click', function(){ document.getElementById('itemModal').classList.remove('show'); });
+document.getElementById('cancelItemBtn').addEventListener('click', function(){ document.getElementById('itemModal').classList.remove('show'); });
+document.getElementById('itemModal').addEventListener('click', function(e){ if(e.target.id==='itemModal') e.currentTarget.classList.remove('show'); });
+
+document.getElementById('saveItemBtn').addEventListener('click', async function(){
+  const id = document.getElementById('itemId').value;
+  const checkedCats = Array.from(document.querySelectorAll('.item-cat-check:checked')).map(function(cb){ return cb.value; });
+  const fields = {
+    site: document.getElementById('itemSite').value.trim(),
+    entite: document.getElementById('itemEntite').value.trim(),
+    emplacement: document.getElementById('itemEmplacement').value.trim(),
+    contenu: document.getElementById('itemContenu').value.trim(),
+    quantiteTheorique: document.getElementById('itemQteTheo').value === '' ? null : Number(document.getElementById('itemQteTheo').value),
+    quantiteReelle: document.getElementById('itemQteReelle').value === '' ? null : Number(document.getElementById('itemQteReelle').value),
+    datePeremption: document.getElementById('itemPeremption').value || null,
+    dateDernierControle: document.getElementById('itemDernierControle').value || null,
+    categories: checkedCats,
+    photoBase64: itemPhotoDataUrl || null,
+    periodiciteControleMois: Number(document.getElementById('itemPeriodicite').value) || 12
+  };
+  if(!fields.site || !fields.contenu){ showToast('Site et Contenu sont obligatoires.'); return; }
+  try{
+    if(id){ await window.TROUSSES_FIREBASE.update(id, fields); showToast('Article mis à jour'); }
+    else { await window.TROUSSES_FIREBASE.add(fields); showToast('Article ajouté'); }
+    document.getElementById('itemModal').classList.remove('show');
+  }catch(err){ showToast('Erreur : ' + err.message); }
+});
+
+document.getElementById('deleteItemBtn').addEventListener('click', async function(){
+  const id = document.getElementById('itemId').value;
+  if(!id) return;
+  if(!confirm('Supprimer cet article ?')) return;
+  try{
+    await window.TROUSSES_FIREBASE.remove(id);
+    showToast('Article supprimé');
+    document.getElementById('itemModal').classList.remove('show');
+  }catch(err){ showToast('Erreur : ' + err.message); }
 });
 
 let toastTimer;
 function showToast(msg){
   const t = document.getElementById('toast');
   t.textContent = msg; t.classList.add('show');
-  clearTimeout(toastTimer); toastTimer = setTimeout(function(){ t.classList.remove('show'); }, 4000);
+  clearTimeout(toastTimer); toastTimer = setTimeout(function(){ t.classList.remove('show'); }, 3200);
 }
-
-// Etat initial : aucun tableau tant qu'on n'a pas chargé ou ajouté un emplacement.
-renderGroups();
 </script>
 </body>
 </html>
