@@ -59,6 +59,8 @@
 
   table.grid{width:100%; border-collapse:collapse; font-size:12.5px;}
   table.grid th{text-align:left; padding:6px 8px; color:var(--ink-soft); font-weight:600; font-size:10.5px; text-transform:uppercase; letter-spacing:.03em;}
+  table.grid th.sortable{cursor:pointer; user-select:none;}
+  table.grid th.sortable:hover{color:var(--ink);}
   table.grid td{padding:4px; border-bottom:1px solid var(--line); vertical-align:middle;}
   table.grid td input{padding:7px 8px; font-size:12.5px;}
   table.grid td.col-article{min-width:180px;}
@@ -71,6 +73,14 @@
   tr.existing-row td.col-article::before{content:"✓ "; color:var(--teal); font-weight:700;}
 
   .grid-actions{display:flex; justify-content:space-between; align-items:center; margin-top:14px; flex-wrap:wrap; gap:10px;}
+
+  .group-card{border:1px solid var(--line); border-radius:8px; padding:14px 16px; margin-bottom:14px; background:#FBFAF7;}
+  .group-card:last-child{margin-bottom:0;}
+  .group-head{display:flex; flex-wrap:wrap; gap:10px; align-items:flex-end; margin-bottom:10px;}
+  .group-head .field{flex:1; min-width:160px;}
+  .group-count{font-size:11px; color:var(--ink-soft); white-space:nowrap; padding-bottom:9px;}
+  .group-del-btn{background:none; border:1px solid var(--line); color:var(--danger); border-radius:16px; font-size:11.5px; font-weight:600; padding:8px 14px; cursor:pointer; white-space:nowrap; align-self:flex-end;}
+  .empty-groups-hint{font-size:12.5px; color:var(--ink-soft); margin:0;}
 
   #toast{position:fixed; left:50%; bottom:24px; transform:translate(-50%,120%); background:var(--ink); color:#fff; padding:12px 20px; border-radius:12px; font-size:13.5px; transition:transform .3s ease; z-index:250; max-width:90vw;}
   #toast.show{transform:translate(-50%,0);}
@@ -127,54 +137,34 @@
   </header>
 
   <h1>Saisie en masse — Trousses de secours</h1>
-  <p class="subtitle">Sélectionne le site, l'entité et l'emplacement une seule fois, puis saisis tes articles ligne par ligne comme dans un tableur. Réutilise le même écran lors d'un contrôle : charge les articles déjà enregistrés pour les mettre à jour, et ajoute au passage de nouvelles lignes si besoin.</p>
+  <p class="subtitle">Choisis un site, charge tous ses emplacements d'un coup — chacun s'affiche dans son propre tableau éditable comme dans un tableur — puis complète ou corrige les articles. Ajoute un nouvel emplacement à tout moment avec le bouton dédié.</p>
 
   <div class="card">
-    <h2>1. Site / entité / emplacement</h2>
-    <div class="ctx-grid">
+    <h2>1. Site</h2>
+    <div class="ctx-grid" style="grid-template-columns:1fr 1fr;">
       <div class="field">
         <label>Site</label>
         <select id="ctxSite"></select>
       </div>
       <div class="field ac-wrap">
-        <label>Entité <span style="font-weight:400;color:var(--ink-soft);">(facultatif)</span></label>
+        <label>Entité <span style="font-weight:400;color:var(--ink-soft);">(facultatif — pour restreindre le chargement à une seule entité)</span></label>
         <input type="text" id="ctxEntite" placeholder="Ex : SMAG / AS" autocomplete="off">
         <div class="ac-suggestions" id="acEntite"></div>
       </div>
-      <div class="field ac-wrap">
-        <label>Emplacement de la trousse</label>
-        <input type="text" id="ctxEmplacement" placeholder="Ex : Meuble bas, derrière l'accueil" autocomplete="off">
-        <div class="ac-suggestions" id="acEmplacement"></div>
-      </div>
     </div>
     <div class="ctx-actions">
-      <button type="button" class="btn-ghost" id="loadExistingBtn">🔄 Charger les articles déjà enregistrés à cet emplacement</button>
+      <button type="button" class="btn-ghost" id="loadExistingBtn">🔄 Charger tous les emplacements de ce site</button>
       <span id="loadExistingMsg" style="font-size:12px;color:var(--ink-soft);"></span>
     </div>
-    <p class="ctx-note">Tu peux aussi ignorer ce bouton et directement ajouter de nouvelles lignes ci-dessous pour une première saisie. L'emplacement n'a pas besoin d'exister déjà : tape-le simplement, il sera créé au premier enregistrement.</p>
+    <p class="ctx-note">Chaque emplacement chargé s'affiche dans son propre tableau, ci-dessous. Pour démarrer une saisie sur un emplacement qui n'existe pas encore, utilise le bouton « + Nouvel emplacement ».</p>
   </div>
 
   <div class="card">
-    <h2>2. Articles</h2>
-    <div style="overflow-x:auto;">
-      <table class="grid">
-        <thead>
-          <tr>
-            <th class="col-article">Article</th>
-            <th class="col-qty">Qté théo.</th>
-            <th class="col-qty">Qté réelle</th>
-            <th class="col-date">Péremption</th>
-            <th class="col-date">Dernier contrôle</th>
-            <th class="col-periodicite">Périod. (mois)</th>
-            <th class="col-del"></th>
-          </tr>
-        </thead>
-        <tbody id="gridBody"></tbody>
-      </table>
-    </div>
+    <h2>2. Articles par emplacement</h2>
+    <div id="groupsContainer"></div>
     <div class="grid-actions">
-      <button type="button" class="btn-ghost" id="addRowBtn">+ Ajouter une ligne</button>
-      <button type="button" class="btn-primary" id="saveGridBtn">Enregistrer</button>
+      <button type="button" class="btn-ghost" id="addGroupBtn">+ Nouvel emplacement</button>
+      <button type="button" class="btn-primary" id="saveGridBtn" style="display:none;">Enregistrer</button>
     </div>
   </div>
 </div>
@@ -315,23 +305,17 @@ function getEntiteSuggestions(){
   (window._allItems||[]).forEach(function(it){ if(it.entite) set.add(it.entite); });
   return Array.from(set).sort(function(a,b){ return a.localeCompare(b,'fr'); });
 }
-function getEmplacementSuggestions(){
-  const site = document.getElementById('ctxSite').value;
-  const entite = document.getElementById('ctxEntite').value.trim();
+function getEmplacementSuggestions(site){
   const set = new Set();
   (window._allItems||[]).forEach(function(it){
     if(!it.emplacement) return;
     if(site && it.site !== site) return;
-    if(entite && (it.entite||'') !== entite) return;
     set.add(it.emplacement);
   });
   return Array.from(set).sort(function(a,b){ return a.localeCompare(b,'fr'); });
 }
 
-function bindAutocomplete(inputId, suggestionsBoxId, getSuggestionsFn){
-  const input = document.getElementById(inputId);
-  const box = document.getElementById(suggestionsBoxId);
-
+function bindAutocompleteEl(input, box, getSuggestionsFn){
   function renderList(){
     const q = input.value.toLowerCase().trim();
     const all = getSuggestionsFn();
@@ -344,6 +328,7 @@ function bindAutocomplete(inputId, suggestionsBoxId, getSuggestionsFn){
         e.preventDefault();
         input.value = matches[i];
         box.classList.remove('show');
+        input.dispatchEvent(new Event('input'));
       });
     });
   }
@@ -352,131 +337,279 @@ function bindAutocomplete(inputId, suggestionsBoxId, getSuggestionsFn){
   input.addEventListener('blur', function(){ setTimeout(function(){ box.classList.remove('show'); }, 120); });
 }
 
-bindAutocomplete('ctxEntite', 'acEntite', getEntiteSuggestions);
-bindAutocomplete('ctxEmplacement', 'acEmplacement', getEmplacementSuggestions);
+bindAutocompleteEl(document.getElementById('ctxEntite'), document.getElementById('acEntite'), getEntiteSuggestions);
 
-// --- Grille ---
-let gridRows = []; // { _id: string|null, contenu, quantiteTheorique, quantiteReelle, datePeremption, dateDernierControle, periodiciteControleMois }
+// --- Groupes : un tableau éditable par couple (entité, emplacement) ---
+let groups = []; // { entite, emplacement, rows:[{ _id, contenu, quantiteTheorique, quantiteReelle, datePeremption, dateDernierControle, periodiciteControleMois }], sortField, sortDir }
 
 function emptyRow(){
   return { _id: null, contenu:'', quantiteTheorique:'', quantiteReelle:'', datePeremption:'', dateDernierControle:'', periodiciteControleMois: 12 };
 }
+function emptyGroup(entite, emplacement){
+  return { entite: entite || '', emplacement: emplacement || '', rows: [emptyRow()], sortField: null, sortDir: 1 };
+}
 
-function renderGrid(){
-  const tbody = document.getElementById('gridBody');
-  tbody.innerHTML = gridRows.map(function(r, idx){
-    return '<tr class="' + (r._id ? 'existing-row' : '') + '" data-idx="' + idx + '">' +
-      '<td class="col-article"><input type="text" data-field="contenu" value="' + esc(r.contenu) + '" placeholder="Ex : Compresses stériles"></td>' +
-      '<td class="col-qty"><input type="number" min="0" data-field="quantiteTheorique" value="' + esc(r.quantiteTheorique) + '"></td>' +
-      '<td class="col-qty"><input type="number" min="0" data-field="quantiteReelle" value="' + esc(r.quantiteReelle) + '"></td>' +
-      '<td class="col-date"><input type="date" data-field="datePeremption" value="' + esc(r.datePeremption) + '"></td>' +
-      '<td class="col-date"><input type="date" data-field="dateDernierControle" value="' + esc(r.dateDernierControle) + '"></td>' +
-      '<td class="col-periodicite"><input type="number" min="1" data-field="periodiciteControleMois" value="' + esc(r.periodiciteControleMois) + '"></td>' +
-      '<td class="col-del"><button type="button" class="row-del-btn" title="Supprimer cette ligne">🗑️</button></td>' +
-    '</tr>';
+function sortedRowIndices(group){
+  const idxs = group.rows.map(function(_, i){ return i; });
+  if(!group.sortField) return idxs;
+  const field = group.sortField, dir = group.sortDir;
+  idxs.sort(function(ia, ib){
+    const a = group.rows[ia], b = group.rows[ib];
+    if(field === 'contenu'){
+      return (a.contenu||'').toLowerCase().localeCompare((b.contenu||'').toLowerCase(),'fr') * dir;
+    }
+    const av = field === 'peremption' ? (a.datePeremption||'') : (a.dateDernierControle||'');
+    const bv = field === 'peremption' ? (b.datePeremption||'') : (b.dateDernierControle||'');
+    if(!av && !bv) return 0;
+    if(!av) return 1;
+    if(!bv) return -1;
+    if(av < bv) return -1 * dir;
+    if(av > bv) return 1 * dir;
+    return 0;
+  });
+  return idxs;
+}
+function sortArrow(group, field){
+  if(group.sortField !== field) return '';
+  return group.sortDir === 1 ? ' ▲' : ' ▼';
+}
+window.setGroupSort = function(gIdx, field){
+  const group = groups[gIdx];
+  if(group.sortField === field){ group.sortDir = -group.sortDir; }
+  else { group.sortField = field; group.sortDir = 1; }
+  renderGroups();
+};
+
+function addRowToGroup(gIdx){
+  groups[gIdx].rows.push(emptyRow());
+  renderGroups();
+  const card = document.querySelector('.group-card[data-gidx="' + gIdx + '"]');
+  if(card){
+    const lastIdx = groups[gIdx].rows.length - 1;
+    const lastInput = card.querySelector('tr[data-idx="' + lastIdx + '"] input[data-field="contenu"]');
+    if(lastInput) lastInput.focus();
+  }
+}
+function removeRowFromGroup(gIdx, idx){
+  const group = groups[gIdx];
+  const row = group.rows[idx];
+  if(row._id && !confirm('Cette ligne correspond à un article déjà enregistré. La retirer de la grille ne le supprime pas de la base — seul un enregistrement met à jour la base. Continuer ?')) return;
+  group.rows.splice(idx, 1);
+  if(!group.rows.length) group.rows.push(emptyRow());
+  renderGroups();
+}
+
+function renderGroups(){
+  const container = document.getElementById('groupsContainer');
+  const saveBtn = document.getElementById('saveGridBtn');
+
+  if(!groups.length){
+    container.innerHTML = '<p class="empty-groups-hint">Choisis un site puis clique sur « Charger tous les emplacements de ce site », ou ajoute directement un nouvel emplacement ci-dessous.</p>';
+    saveBtn.style.display = 'none';
+    return;
+  }
+  saveBtn.style.display = 'inline-block';
+
+  container.innerHTML = groups.map(function(group, gIdx){
+    const rowsHtml = sortedRowIndices(group).map(function(idx){
+      const r = group.rows[idx];
+      return '<tr class="' + (r._id ? 'existing-row' : '') + '" data-idx="' + idx + '">' +
+        '<td class="col-article"><input type="text" data-field="contenu" value="' + esc(r.contenu) + '" placeholder="Ex : Compresses stériles"></td>' +
+        '<td class="col-qty"><input type="number" min="0" data-field="quantiteTheorique" value="' + esc(r.quantiteTheorique) + '"></td>' +
+        '<td class="col-qty"><input type="number" min="0" data-field="quantiteReelle" value="' + esc(r.quantiteReelle) + '"></td>' +
+        '<td class="col-date"><input type="date" data-field="datePeremption" value="' + esc(r.datePeremption) + '"></td>' +
+        '<td class="col-date"><input type="date" data-field="dateDernierControle" value="' + esc(r.dateDernierControle) + '"></td>' +
+        '<td class="col-periodicite"><input type="number" min="1" data-field="periodiciteControleMois" value="' + esc(r.periodiciteControleMois) + '"></td>' +
+        '<td class="col-del"><button type="button" class="row-del-btn" title="Supprimer cette ligne">🗑️</button></td>' +
+      '</tr>';
+    }).join('');
+
+    const count = group.rows.filter(function(r){ return r.contenu && String(r.contenu).trim(); }).length;
+
+    return '<div class="group-card" data-gidx="' + gIdx + '">' +
+      '<div class="group-head">' +
+        '<div class="field"><label>Entité <span style="font-weight:400;color:var(--ink-soft);">(facultatif)</span></label>' +
+          '<div class="ac-wrap"><input type="text" class="group-entite-input" value="' + esc(group.entite) + '" placeholder="Ex : SMAG / AS" autocomplete="off"><div class="ac-suggestions group-entite-ac"></div></div>' +
+        '</div>' +
+        '<div class="field"><label>Emplacement</label>' +
+          '<div class="ac-wrap"><input type="text" class="group-emplacement-input" value="' + esc(group.emplacement) + '" placeholder="Ex : Meuble bas, derrière l\'accueil" autocomplete="off"><div class="ac-suggestions group-emplacement-ac"></div></div>' +
+        '</div>' +
+        '<span class="group-count">' + count + ' article(s)</span>' +
+        '<button type="button" class="group-del-btn" title="Retirer ce tableau de l’écran">🗑️ Retirer ce tableau</button>' +
+      '</div>' +
+      '<div style="overflow-x:auto;">' +
+        '<table class="grid">' +
+          '<thead><tr>' +
+            '<th class="col-article sortable" data-sort="contenu">Article' + sortArrow(group,'contenu') + '</th>' +
+            '<th class="col-qty">Qté théo.</th>' +
+            '<th class="col-qty">Qté réelle</th>' +
+            '<th class="col-date sortable" data-sort="peremption">Péremption' + sortArrow(group,'peremption') + '</th>' +
+            '<th class="col-date sortable" data-sort="controle">Dernier contrôle' + sortArrow(group,'controle') + '</th>' +
+            '<th class="col-periodicite">Périod. (mois)</th>' +
+            '<th class="col-del"></th>' +
+          '</tr></thead>' +
+          '<tbody>' + rowsHtml + '</tbody>' +
+        '</table>' +
+      '</div>' +
+      '<div style="margin-top:10px;"><button type="button" class="btn-ghost add-row-btn">+ Ajouter une ligne</button></div>' +
+    '</div>';
   }).join('');
 
-  tbody.querySelectorAll('tr').forEach(function(tr){
-    const idx = Number(tr.dataset.idx);
-    tr.querySelectorAll('input').forEach(function(inp){
-      inp.addEventListener('input', function(){
-        gridRows[idx][inp.dataset.field] = inp.value;
+  container.querySelectorAll('.group-card').forEach(function(card){
+    const gIdx = Number(card.dataset.gidx);
+    const group = groups[gIdx];
+
+    const entiteInput = card.querySelector('.group-entite-input');
+    const entiteBox = card.querySelector('.group-entite-ac');
+    bindAutocompleteEl(entiteInput, entiteBox, getEntiteSuggestions);
+    entiteInput.addEventListener('input', function(){ group.entite = entiteInput.value; });
+
+    const empInput = card.querySelector('.group-emplacement-input');
+    const empBox = card.querySelector('.group-emplacement-ac');
+    bindAutocompleteEl(empInput, empBox, function(){ return getEmplacementSuggestions(document.getElementById('ctxSite').value); });
+    empInput.addEventListener('input', function(){ group.emplacement = empInput.value; });
+
+    card.querySelector('.group-del-btn').addEventListener('click', function(){
+      const hasExisting = group.rows.some(function(r){ return r._id; });
+      if(hasExisting && !confirm('Ce tableau contient des articles déjà enregistrés. Le retirer de l’écran ne les supprime pas de la base. Continuer ?')) return;
+      groups.splice(gIdx, 1);
+      renderGroups();
+    });
+
+    card.querySelectorAll('th.sortable').forEach(function(th){
+      th.addEventListener('click', function(){ window.setGroupSort(gIdx, th.dataset.sort); });
+    });
+
+    card.querySelectorAll('tbody tr').forEach(function(tr){
+      const idx = Number(tr.dataset.idx);
+      tr.querySelectorAll('input').forEach(function(inp){
+        inp.addEventListener('input', function(){
+          group.rows[idx][inp.dataset.field] = inp.value;
+          if(inp.dataset.field === 'contenu'){
+            const countEl = card.querySelector('.group-count');
+            if(countEl) countEl.textContent = group.rows.filter(function(r){ return r.contenu && String(r.contenu).trim(); }).length + ' article(s)';
+          }
+        });
+        inp.addEventListener('keydown', function(e){
+          if(e.key === 'Enter'){
+            e.preventDefault();
+            const trEl = inp.closest('tr');
+            const nextTr = trEl.nextElementSibling;
+            if(nextTr){
+              const nextInput = nextTr.querySelector('input[data-field="contenu"]');
+              if(nextInput) nextInput.focus();
+            } else {
+              addRowToGroup(gIdx);
+            }
+          }
+        });
       });
-      inp.addEventListener('keydown', function(e){
-        if(e.key === 'Enter'){
-          e.preventDefault();
-          const isLastRow = idx === gridRows.length - 1;
-          if(isLastRow) addRow();
-          const nextRow = tbody.querySelector('tr[data-idx="' + (idx+1) + '"]');
-          if(nextRow){ const first = nextRow.querySelector('input[data-field="contenu"]'); if(first) first.focus(); }
-        }
+      tr.querySelector('.row-del-btn').addEventListener('click', function(){
+        removeRowFromGroup(gIdx, idx);
       });
     });
-    tr.querySelector('.row-del-btn').addEventListener('click', function(){
-      removeRow(idx);
-    });
+
+    card.querySelector('.add-row-btn').addEventListener('click', function(){ addRowToGroup(gIdx); });
   });
 }
 
-function addRow(){
-  gridRows.push(emptyRow());
-  renderGrid();
-  const tbody = document.getElementById('gridBody');
-  const lastInput = tbody.querySelector('tr[data-idx="' + (gridRows.length-1) + '"] input[data-field="contenu"]');
-  if(lastInput) lastInput.focus();
-}
-
-function removeRow(idx){
-  const row = gridRows[idx];
-  if(row._id && !confirm('Cette ligne correspond à un article déjà enregistré. La retirer de la grille ne le supprime pas de la base — seul un enregistrement met à jour la base. Continuer ?')) return;
-  gridRows.splice(idx, 1);
-  if(!gridRows.length) gridRows.push(emptyRow());
-  renderGrid();
-}
-
-document.getElementById('addRowBtn').addEventListener('click', addRow);
+document.getElementById('addGroupBtn').addEventListener('click', function(){
+  const site = document.getElementById('ctxSite').value;
+  if(!site){ showToast('Choisis d’abord un site.'); return; }
+  groups.push(emptyGroup('', ''));
+  renderGroups();
+  const gIdx = groups.length - 1;
+  const card = document.querySelector('.group-card[data-gidx="' + gIdx + '"]');
+  if(card){
+    const empInput = card.querySelector('.group-emplacement-input');
+    if(empInput) empInput.focus();
+  }
+});
 
 document.getElementById('loadExistingBtn').addEventListener('click', function(){
   const site = document.getElementById('ctxSite').value;
-  const entite = document.getElementById('ctxEntite').value.trim();
-  const emplacement = document.getElementById('ctxEmplacement').value.trim();
+  const entiteFilter = document.getElementById('ctxEntite').value.trim();
   const msg = document.getElementById('loadExistingMsg');
-  if(!site || !emplacement){ msg.style.color = 'var(--danger)'; msg.textContent = 'Renseigne au moins le site et l’emplacement avant de charger.'; return; }
+  if(!site){ msg.style.color = 'var(--danger)'; msg.textContent = 'Choisis d’abord un site.'; return; }
   const matches = (window._allItems||[]).filter(function(it){
-    return it.site === site && (it.entite||'') === entite && it.emplacement === emplacement;
+    if(it.site !== site) return false;
+    if(entiteFilter && (it.entite||'') !== entiteFilter) return false;
+    return true;
   });
-  if(!matches.length){ msg.style.color = 'var(--ink-soft)'; msg.textContent = 'Aucun article existant pour cet emplacement — tu peux en ajouter de nouveaux ci-dessous.'; return; }
-  gridRows = matches.map(function(it){
-    return {
-      _id: it.id,
-      contenu: it.contenu || '',
-      quantiteTheorique: it.quantiteTheorique ?? '',
-      quantiteReelle: it.quantiteReelle ?? '',
-      datePeremption: it.datePeremption || '',
-      dateDernierControle: it.dateDernierControle || '',
-      periodiciteControleMois: it.periodiciteControleMois || 12
-    };
+  if(!matches.length){
+    msg.style.color = 'var(--ink-soft)';
+    msg.textContent = 'Aucun article existant pour ce site' + (entiteFilter ? ' / cette entité' : '') + ' — utilise « + Nouvel emplacement » pour commencer une saisie.';
+    return;
+  }
+  const byKey = {};
+  matches.forEach(function(it){
+    const key = (it.entite||'') + '||' + (it.emplacement||'');
+    if(!byKey[key]) byKey[key] = { entite: it.entite||'', emplacement: it.emplacement||'', items: [] };
+    byKey[key].items.push(it);
   });
-  gridRows.push(emptyRow());
-  renderGrid();
+  const keys = Object.keys(byKey).sort(function(a,b){
+    return byKey[a].emplacement.localeCompare(byKey[b].emplacement,'fr') || byKey[a].entite.localeCompare(byKey[b].entite,'fr');
+  });
+  groups = keys.map(function(k){
+    const g = byKey[k];
+    const rows = g.items.map(function(it){
+      return {
+        _id: it.id,
+        contenu: it.contenu || '',
+        quantiteTheorique: it.quantiteTheorique ?? '',
+        quantiteReelle: it.quantiteReelle ?? '',
+        datePeremption: it.datePeremption || '',
+        dateDernierControle: it.dateDernierControle || '',
+        periodiciteControleMois: it.periodiciteControleMois || 12
+      };
+    });
+    rows.push(emptyRow());
+    return { entite: g.entite, emplacement: g.emplacement, rows: rows, sortField: null, sortDir: 1 };
+  });
+  renderGroups();
   msg.style.color = 'var(--teal-dark)';
-  msg.textContent = matches.length + ' article(s) chargé(s) — modifie-les puis enregistre.';
+  msg.textContent = matches.length + ' article(s) chargé(s) sur ' + groups.length + ' emplacement(s) — modifie-les puis enregistre.';
 });
 
 document.getElementById('saveGridBtn').addEventListener('click', async function(){
   const site = document.getElementById('ctxSite').value;
-  const entite = document.getElementById('ctxEntite').value.trim();
-  const emplacement = document.getElementById('ctxEmplacement').value.trim();
-  if(!site || !emplacement){ showToast('Site et emplacement sont obligatoires.'); return; }
+  if(!site){ showToast('Choisis un site avant d’enregistrer.'); return; }
 
   const updates = [];
   const creations = [];
-  gridRows.forEach(function(r){
-    if(!r.contenu || !String(r.contenu).trim()) return; // ligne vide, on ignore
-    const fields = {
-      site: site,
-      entite: entite,
-      emplacement: emplacement,
-      contenu: String(r.contenu).trim(),
-      quantiteTheorique: r.quantiteTheorique === '' ? null : Number(r.quantiteTheorique),
-      quantiteReelle: r.quantiteReelle === '' ? null : Number(r.quantiteReelle),
-      datePeremption: r.datePeremption || null,
-      dateDernierControle: r.dateDernierControle || null,
-      periodiciteControleMois: Number(r.periodiciteControleMois) || 12
-    };
-    if(r._id) updates.push({ id: r._id, fields: fields });
-    else creations.push(fields);
+  let missingEmplacement = false;
+
+  groups.forEach(function(group){
+    const emplacement = (group.emplacement||'').trim();
+    const entite = (group.entite||'').trim();
+    group.rows.forEach(function(r){
+      if(!r.contenu || !String(r.contenu).trim()) return; // ligne vide, on ignore
+      if(!emplacement){ missingEmplacement = true; return; }
+      const fields = {
+        site: site,
+        entite: entite,
+        emplacement: emplacement,
+        contenu: String(r.contenu).trim(),
+        quantiteTheorique: r.quantiteTheorique === '' ? null : Number(r.quantiteTheorique),
+        quantiteReelle: r.quantiteReelle === '' ? null : Number(r.quantiteReelle),
+        datePeremption: r.datePeremption || null,
+        dateDernierControle: r.dateDernierControle || null,
+        periodiciteControleMois: Number(r.periodiciteControleMois) || 12
+      };
+      if(r._id) updates.push({ id: r._id, fields: fields });
+      else creations.push(fields);
+    });
   });
 
+  if(missingEmplacement){ showToast('Renseigne l’emplacement de chaque tableau contenant des articles avant d’enregistrer.'); return; }
   if(!updates.length && !creations.length){ showToast('Ajoute au moins un article avant d’enregistrer.'); return; }
 
   const btn = this;
   btn.disabled = true;
   try{
-    const newRefs = await window.MASSE_FIREBASE.saveBatch(updates, creations);
+    await window.MASSE_FIREBASE.saveBatch(updates, creations);
     showToast(creations.length + ' ajouté(s), ' + updates.length + ' mis à jour ✓');
     await window.MASSE_FIREBASE.reloadAllItems();
-    // Recharge la grille depuis la base pour repartir sur un etat propre (les nouvelles lignes deviennent "existantes").
     document.getElementById('loadExistingBtn').click();
   }catch(err){
     showToast('Erreur : ' + err.message);
@@ -492,9 +625,8 @@ function showToast(msg){
   clearTimeout(toastTimer); toastTimer = setTimeout(function(){ t.classList.remove('show'); }, 4000);
 }
 
-// Etat initial : une ligne vide.
-gridRows.push(emptyRow());
-renderGrid();
+// Etat initial : aucun tableau tant qu'on n'a pas chargé ou ajouté un emplacement.
+renderGroups();
 </script>
 </body>
 </html>
