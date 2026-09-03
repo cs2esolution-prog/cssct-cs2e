@@ -22,7 +22,7 @@
   }
   *{box-sizing:border-box;}
   body{margin:0; background:var(--paper); color:var(--ink); font-family:'Inter',system-ui,sans-serif; line-height:1.5;}
-  .wrap{max-width:1180px; margin:0 auto; padding:32px 24px 80px;}
+  .wrap{max-width:1180px; margin:0 auto; padding:32px 24px 96px;}
   header.top{
     display:flex; align-items:center; justify-content:space-between;
     padding-bottom:20px; border-bottom:2px solid var(--ink); margin-bottom:20px;
@@ -32,8 +32,21 @@
     background:conic-gradient(var(--teal) 0deg 120deg, var(--gold) 120deg 240deg, var(--purple) 240deg 360deg); flex:none;}
   .brand-text{font-family:'Source Serif 4', serif; font-weight:700; font-size:19px;}
   .brand-text span{color:var(--teal);}
-  .new-btn{background:var(--ink); color:#fff; border:none; padding:11px 20px; border-radius:24px; font-weight:600; font-size:13.5px; cursor:pointer;}
-  .new-btn:hover{background:#000;}
+  .tabbar{
+    position:fixed; left:0; right:0; bottom:0; z-index:140;
+    display:flex; background:#fff; border-top:1px solid var(--line);
+    padding:6px 4px calc(6px + env(safe-area-inset-bottom));
+    box-shadow:0 -2px 10px rgba(0,0,0,.05);
+  }
+  .tab-item{
+    flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px;
+    text-decoration:none; color:var(--ink-soft); font-size:9.5px; font-weight:600; padding:5px 2px; border-radius:10px;
+    min-width:0;
+  }
+  .tab-item .tab-icon{font-size:18px; line-height:1;}
+  .tab-item .tab-lbl{white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:100%;}
+  .tab-item.active{color:var(--teal-dark);}
+  .tab-item:active{background:#F2FBF9;}
 
   .toolbar{display:flex; flex-wrap:wrap; gap:10px; margin-bottom:18px; align-items:center;}
   .search{
@@ -53,21 +66,37 @@
     font-weight:600; font-size:13px; border-radius:var(--radius);
   }
   .row{
-    display:grid; grid-template-columns: 54px 1fr 140px 120px 110px;
-    align-items:center; gap:14px; position:relative; touch-action:pan-y;
+    display:grid; grid-template-columns: 50px minmax(190px,1fr) 128px 132px 158px 78px;
+    align-items:center; gap:12px; position:relative; touch-action:pan-y;
     background:#fff; border:1px solid var(--line); border-left:4px solid var(--nature-color, var(--teal));
     border-radius:var(--radius); padding:13px 16px; cursor:pointer; transition:box-shadow .15s, transform .1s;
   }
   .row:hover{box-shadow:0 4px 14px rgba(0,0,0,.06); transform:translateY(-1px);}
+  @media (max-width:980px){
+    .row{grid-template-columns: 40px minmax(160px,1fr) 108px 118px; row-gap:8px;}
+    .col-status{grid-column:2 / 4; margin-top:2px;}
+    .col-actions{grid-column:4 / 5; margin-top:2px;}
+  }
   @media (max-width:760px){
     .row{grid-template-columns:1fr; gap:6px;}
     .row .col-num{font-size:11px; color:var(--ink-soft);}
+    .col-status, .col-actions{grid-column:1 / 2; justify-self:start;}
+    .col-actions{justify-content:flex-start;}
   }
   .col-num{font-family:'IBM Plex Mono',monospace; font-weight:600; color:var(--ink-soft); font-size:13px;}
-  .col-main .objet{font-weight:600; font-size:14px;}
+  .col-main{min-width:0;}
+  .col-main .objet{font-weight:600; font-size:14px; overflow-wrap:break-word;}
   .col-main .meta{font-size:12px; color:var(--ink-soft); margin-top:2px;}
   .col-nature{font-size:11.5px; font-weight:600;}
   .col-site{font-size:12.5px; color:var(--ink-soft);}
+  .col-status{min-width:0;}
+  .col-actions{display:flex; gap:6px; justify-content:flex-end; align-items:center;}
+  .row-action-btn{
+    width:32px; height:32px; border-radius:50%; border:1px solid var(--line); background:#fff;
+    font-size:14px; line-height:1; cursor:pointer; display:flex; align-items:center; justify-content:center; flex:none;
+    transition:border-color .15s, background .15s; padding:0;
+  }
+  .row-action-btn:hover{border-color:var(--teal); background:#F2FBF9;}
   .status-chip{
     display:inline-block; font-size:11px; font-weight:600; padding:4px 10px; border-radius:20px; color:#fff; text-align:center;
   }
@@ -249,13 +278,7 @@
     </div>
     <a href="changelog.html" id="changelogLink" title="Notes de mise à jour" style="font-size:16px;text-decoration:none;margin-left:6px;">🆕</a>
     <div style="display:flex; gap:10px; align-items:center; margin-left:auto;">
-      <a href="inspections.html" style="text-decoration:none;display:inline-flex;align-items:center;font-size:12.5px;font-weight:600;color:#6B6873;border:1px solid #E4E0D8;padding:9px 16px;border-radius:20px;">🔍 Inspections</a>
-      <a href="exercices_evacuation.html" style="text-decoration:none;display:inline-flex;align-items:center;font-size:12.5px;font-weight:600;color:#6B6873;border:1px solid #E4E0D8;padding:9px 16px;border-radius:20px;">🚪 Évacuations</a>
-      <a href="comptes_rendus_reunion.html" style="text-decoration:none;display:inline-flex;align-items:center;font-size:12.5px;font-weight:600;color:#6B6873;border:1px solid #E4E0D8;padding:9px 16px;border-radius:20px;">📋 CR de réunion</a>
-      <a href="trousses_secours.html" style="text-decoration:none;display:inline-flex;align-items:center;font-size:12.5px;font-weight:600;color:#6B6873;border:1px solid #E4E0D8;padding:9px 16px;border-radius:20px;">🩹 Trousses de secours</a>
-      <a href="administration.html" style="text-decoration:none;display:inline-flex;align-items:center;font-size:12.5px;font-weight:600;color:#6B6873;border:1px solid #E4E0D8;padding:9px 16px;border-radius:20px;">⚙️ Administration</a>
       <button class="admin-btn" onclick="openFieldsAdminModal()" style="background:#fff;border:1px solid #E4E0D8;color:#6B6873;padding:9px 16px;border-radius:20px;font-weight:600;font-size:12.5px;cursor:pointer;">⚙️ Champs personnalisés</button>
-      <a class="new-btn" href="nouveau_signalement.html" style="text-decoration:none;display:inline-block;">+ Nouveau signalement</a>
       <button id="logoutBtn" title="Se déconnecter" style="background:#fff;border:1px solid #E4E0D8;color:#A85D45;width:34px;height:34px;border-radius:50%;font-weight:700;cursor:pointer;font-size:14px;">✕</button>
     </div>
   </header>
@@ -337,6 +360,17 @@
       <button id="btnDownloadPdf">⬇️ Télécharger en Word (.docx)</button>
       <button class="maction-primary" id="btnMailReport">✉️ Envoyer par mail</button>
     </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="quickSuiviModal">
+  <div class="modal" style="max-width:480px;">
+    <div class="modal-head">
+      <h3 id="quickSuiviTitle">Ajouter un suivi rapide</h3>
+      <button class="modal-close" id="closeQuickSuiviModal">×</button>
+    </div>
+    <div class="modal-body" id="quickSuiviBody"></div>
+    <div class="modal-actions" id="quickSuiviActions"></div>
   </div>
 </div>
 
@@ -618,7 +652,11 @@ function render(){
       '<div class="col-main"><div class="objet">' + (d.origineCollaborateur ? '<span style="background:#5A4570;color:#fff;font-size:9.5px;font-weight:700;padding:2px 7px;border-radius:10px;margin-right:6px;vertical-align:middle;">📥 COLLABORATEUR</span>' : '') + d.objet + '</div><div class="meta">' + (d.rapporteur || '-') + '</div></div>' +
       '<div class="col-nature" style="color:' + (NATURE_COLORS[d.natureIncident]||'#019682') + '">' + d.natureIncident + '</div>' +
       '<div class="col-site">' + d.site + (d.lieu ? ' - '+d.lieu : '') + '<br><span style="font-size:11px;">' + d.date + '</span></div>' +
-      '<div><span class="status-chip ' + statusClass(d.statut) + '">' + d.statut + '</span>' + lastSuiviInfoHtml(d) + '</div>';
+      '<div class="col-status"><span class="status-chip ' + statusClass(d.statut) + '">' + d.statut + '</span>' + lastSuiviInfoHtml(d) + '</div>' +
+      '<div class="col-actions">' +
+        '<button type="button" class="row-action-btn" data-action="quick-suivi" title="Ajouter un suivi rapide sans ouvrir la fiche">🛃</button>' +
+        '<button type="button" class="row-action-btn" data-action="relance" title="Mail de relance (journalise aussi un suivi automatique)">📨</button>' +
+      '</div>';
     row.addEventListener('click', function(){
       if(row.dataset.swiping === 'true') return;
       openDrawer(d.id);
@@ -629,6 +667,20 @@ function render(){
         e.stopPropagation();
         const last = d.suivi[d.suivi.length-1];
         showSuiviPopover(suiviBadge, last);
+      });
+    }
+    const quickSuiviBtn = row.querySelector('[data-action="quick-suivi"]');
+    if(quickSuiviBtn){
+      quickSuiviBtn.addEventListener('click', function(e){
+        e.stopPropagation();
+        openQuickSuiviModal(d.id);
+      });
+    }
+    const relanceBtn = row.querySelector('[data-action="relance"]');
+    if(relanceBtn){
+      relanceBtn.addEventListener('click', function(e){
+        e.stopPropagation();
+        openMailRelance(d.id);
       });
     }
     wrap.appendChild(row);
@@ -1181,6 +1233,79 @@ function openMailRelance(dossierId){
     '&subject=' + encodeURIComponent(subject) +
     '&body=' + encodeURIComponent(body);
   window.location.href = mailto;
+
+  // Journalise automatiquement un suivi "mail de relance genere ce jour" (utilise le suivi capture
+  // ci-dessus dans le mail, donc cette nouvelle entree n'influence pas le contenu qui vient d'etre envoye).
+  const logEntry = {date: new Date().toISOString().slice(0,10), text: 'mail de relance généré ce jour'};
+  window.CSSCT_FIREBASE.addSuiviEntry(d.id, logEntry).then(function(){
+    d.suivi = (d.suivi||[]).concat([logEntry]);
+  }).catch(function(err){
+    showToast('Erreur lors de la journalisation du suivi : ' + err.message);
+  });
+}
+
+function openQuickSuiviModal(dossierId){
+  const d = findDossier(dossierId);
+  if(!d) return;
+  const today = new Date().toISOString().slice(0,10);
+  document.getElementById('quickSuiviTitle').textContent = 'Ajouter un suivi rapide';
+  document.getElementById('quickSuiviBody').innerHTML =
+    '<div style="font-size:12px;color:var(--ink-soft);margin:0 0 12px;">Dossier N' + String.fromCharCode(176) + (isBadNumero(d.numero) ? '?' : d.numero) + ' — ' + esc(d.objet) + '</div>' +
+    '<div style="margin-bottom:10px;">' +
+      '<label style="font-size:12px;font-weight:600;display:block;margin-bottom:5px;">Date</label>' +
+      '<input type="date" id="quickSuiviDate" value="' + today + '" style="width:100%;padding:9px 11px;border:1px solid var(--line);border-radius:8px;font-size:13.5px;">' +
+    '</div>' +
+    '<div>' +
+      '<label style="font-size:12px;font-weight:600;display:block;margin-bottom:5px;">Contenu du suivi</label>' +
+      '<textarea id="quickSuiviText" placeholder="Ex : Appel du responsable de site, travaux prevus la semaine prochaine." style="width:100%;min-height:100px;padding:10px 12px;border:1px solid var(--line);border-radius:8px;font-family:\'Inter\',sans-serif;font-size:13.5px;"></textarea>' +
+    '</div>';
+  document.getElementById('quickSuiviActions').innerHTML =
+    '<button id="cancelQuickSuivi">Annuler</button>' +
+    '<button class="maction-primary" id="saveQuickSuivi">Enregistrer le suivi</button>';
+  document.getElementById('cancelQuickSuivi').addEventListener('click', closeQuickSuiviModal);
+  document.getElementById('saveQuickSuivi').addEventListener('click', function(){ saveQuickSuivi(dossierId); });
+  document.getElementById('quickSuiviModal').classList.add('show');
+}
+
+function closeQuickSuiviModal(){
+  document.getElementById('quickSuiviModal').classList.remove('show');
+}
+document.getElementById('closeQuickSuiviModal').addEventListener('click', closeQuickSuiviModal);
+document.getElementById('quickSuiviModal').addEventListener('click', function(e){ if(e.target.id==='quickSuiviModal') closeQuickSuiviModal(); });
+
+function saveQuickSuivi(dossierId){
+  const d = findDossier(dossierId);
+  if(!d) return;
+  const date = document.getElementById('quickSuiviDate').value;
+  const text = document.getElementById('quickSuiviText').value.trim();
+  if(!text){ showToast("Ecris un texte avant d'enregistrer le suivi."); return; }
+  const entry = {date: date, text: text};
+  window.CSSCT_FIREBASE.addSuiviEntry(d.id, entry).then(function(){
+    d.suivi = (d.suivi||[]).concat([entry]);
+    showToast('Suivi ajoute');
+    offerQuickSuiviChaining(dossierId);
+  }).catch(function(err){
+    showToast('Erreur : ' + err.message);
+  });
+}
+
+function offerQuickSuiviChaining(dossierId){
+  document.getElementById('quickSuiviTitle').textContent = 'Suivi enregistré';
+  document.getElementById('quickSuiviBody').innerHTML =
+    '<p style="font-size:13px;margin:0;">Le suivi a bien ete ajoute au dossier. Que veux-tu faire maintenant ?</p>';
+  document.getElementById('quickSuiviActions').innerHTML =
+    '<button id="cancelQuickSuivi">Fermer</button>' +
+    '<button id="chainPreview">🔍 Prévisualiser le rapport</button>' +
+    '<button class="maction-primary" id="chainMail">✉️ Envoyer le mail de relance</button>';
+  document.getElementById('cancelQuickSuivi').addEventListener('click', closeQuickSuiviModal);
+  document.getElementById('chainPreview').addEventListener('click', function(){
+    closeQuickSuiviModal();
+    previewReport(dossierId);
+  });
+  document.getElementById('chainMail').addEventListener('click', function(){
+    closeQuickSuiviModal();
+    openMailRelance(dossierId);
+  });
 }
 
 let currentReportDossier = null;
@@ -1474,5 +1599,14 @@ function showToast(msg){
   clearTimeout(toastTimer); toastTimer=setTimeout(function(){ t.classList.remove('show'); }, 3200);
 }
 </script>
+
+<nav class="tabbar" aria-label="Navigation principale">
+  <a href="signalement_liste.html" class="tab-item active"><span class="tab-icon">🗃️</span><span class="tab-lbl">Dossiers</span></a>
+  <a href="inspections.html" class="tab-item"><span class="tab-icon">🔍</span><span class="tab-lbl">Inspections</span></a>
+  <a href="exercices_evacuation.html" class="tab-item"><span class="tab-icon">🚪</span><span class="tab-lbl">Évacuation</span></a>
+  <a href="comptes_rendus_reunion.html" class="tab-item"><span class="tab-icon">📋</span><span class="tab-lbl">CR réunion</span></a>
+  <a href="trousses_secours.html" class="tab-item"><span class="tab-icon">🩹</span><span class="tab-lbl">Trousses</span></a>
+  <a href="administration.html" class="tab-item"><span class="tab-icon">⚙️</span><span class="tab-lbl">Admin</span></a>
+</nav>
 </body>
 </html>
