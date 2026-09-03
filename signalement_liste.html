@@ -1241,7 +1241,7 @@ function openMailRelance(dossierId){
     'Peux tu nous dire ou on en est ?\n' +
     'Merci de ton retour.';
 
-  const cc = (cfg.elusCSSCT || '').split(/[;,]/).map(function(e){ return e.trim(); }).filter(Boolean).join(',');
+  const cc = (cfg.elusCSSCT || '').split(/[;,]/).map(function(e){ return e.trim(); }).filter(Boolean).join(';');
   const mailto = 'mailto:' + (cfg.presidentCSE || '') +
     '?cc=' + encodeURIComponent(cc) +
     '&subject=' + encodeURIComponent(subject) +

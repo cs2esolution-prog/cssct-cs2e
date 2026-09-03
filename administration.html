@@ -459,16 +459,28 @@ const firebaseConfig = {
     box.querySelectorAll('.mini-del-btn').forEach(function(btn){
       btn.addEventListener('click', function(){
         if(!confirm('Retirer ' + btn.dataset.email + ' de la liste des administrateurs ?')) return;
+        btn.disabled = true;
         const newList = admins.filter(function(e){ return e !== btn.dataset.email; });
-        setDoc(adminsConfigRef, { emails: newList }, { merge: true }).then(loadAccessManagement);
+        setDoc(adminsConfigRef, { emails: newList }, { merge: true })
+          .then(loadAccessManagement)
+          .catch(function(err){ btn.disabled = false; alert('Erreur : ' + err.message); });
       });
     });
     document.getElementById('addAdminBtn').addEventListener('click', function(){
       const input = document.getElementById('newAdminEmail');
+      const btn = document.getElementById('addAdminBtn');
       const email = input.value.trim().toLowerCase();
       if(!email) return;
       const newList = admins.indexOf(email) === -1 ? admins.concat([email]) : admins;
-      setDoc(adminsConfigRef, { emails: newList }, { merge: true }).then(loadAccessManagement);
+      btn.disabled = true;
+      btn.textContent = 'Ajout…';
+      setDoc(adminsConfigRef, { emails: newList }, { merge: true })
+        .then(loadAccessManagement)
+        .catch(function(err){
+          btn.disabled = false;
+          btn.textContent = 'Ajouter';
+          alert('Erreur lors de l’ajout de l’administrateur : ' + err.message);
+        });
     });
   }
 
