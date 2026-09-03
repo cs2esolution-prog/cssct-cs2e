@@ -45,6 +45,7 @@
     z-index:20; display:none; margin-top:4px;
   }
   .ac-suggestions.show{display:block;}
+  .global-ac{position:fixed !important; right:auto !important; z-index:300;}
   .ac-item{padding:8px 12px; font-size:13px; cursor:pointer;}
   .ac-item:hover{background:#FBFAF7;}
   input, select{width:100%; padding:9px 11px; border:1px solid var(--line); border-radius:7px; font-size:13.5px; font-family:'Inter',sans-serif;}
@@ -320,26 +321,42 @@ function getContenuSuggestions(){
   return Array.from(set).sort(function(a,b){ return a.localeCompare(b,'fr'); });
 }
 
+// Un seul menu de suggestions, réutilisé pour tous les champs et positionné en "fixed" par rapport
+// à la fenêtre (pas au champ) : ça évite qu'il soit coupé par le défilement horizontal du tableau
+// d'articles (nécessaire sur mobile), qui coupait sinon tout menu positionné en absolute dans une cellule.
+const globalAcBox = document.createElement('div');
+globalAcBox.className = 'ac-suggestions global-ac';
+document.body.appendChild(globalAcBox);
+function positionGlobalAcBox(input){
+  const r = input.getBoundingClientRect();
+  globalAcBox.style.left = r.left + 'px';
+  globalAcBox.style.top = (r.bottom + 4) + 'px';
+  globalAcBox.style.width = r.width + 'px';
+}
+window.addEventListener('scroll', function(){ globalAcBox.classList.remove('show'); }, true);
+window.addEventListener('resize', function(){ globalAcBox.classList.remove('show'); });
+
 function bindAutocompleteEl(input, box, getSuggestionsFn){
   function renderList(){
     const q = input.value.toLowerCase().trim();
     const all = getSuggestionsFn();
     const matches = q ? all.filter(function(v){ return v.toLowerCase().includes(q); }) : all;
-    if(!matches.length){ box.classList.remove('show'); box.innerHTML=''; return; }
-    box.innerHTML = matches.slice(0,8).map(function(v){ return '<div class="ac-item">' + esc(v) + '</div>'; }).join('');
-    box.classList.add('show');
-    box.querySelectorAll('.ac-item').forEach(function(el, i){
+    if(!matches.length){ globalAcBox.classList.remove('show'); globalAcBox.innerHTML=''; return; }
+    positionGlobalAcBox(input);
+    globalAcBox.innerHTML = matches.slice(0,8).map(function(v){ return '<div class="ac-item">' + esc(v) + '</div>'; }).join('');
+    globalAcBox.classList.add('show');
+    globalAcBox.querySelectorAll('.ac-item').forEach(function(el, i){
       el.addEventListener('mousedown', function(e){
         e.preventDefault();
         input.value = matches[i];
         input.dispatchEvent(new Event('input'));
-        box.classList.remove('show');
+        globalAcBox.classList.remove('show');
       });
     });
   }
   input.addEventListener('input', renderList);
   input.addEventListener('focus', renderList);
-  input.addEventListener('blur', function(){ setTimeout(function(){ box.classList.remove('show'); }, 120); });
+  input.addEventListener('blur', function(){ setTimeout(function(){ globalAcBox.classList.remove('show'); }, 120); });
 }
 
 bindAutocompleteEl(document.getElementById('ctxEntite'), document.getElementById('acEntite'), getEntiteSuggestions);
