@@ -102,7 +102,7 @@
     <button id="logoutBtn" title="Se déconnecter" style="background:#fff;border:1px solid #E4E0D8;color:#A85D45;width:34px;height:34px;border-radius:50%;font-weight:700;cursor:pointer;font-size:14px;">✕</button>
   </div>
   <div class="hero">
-    <div class="brand-mark"></div>
+    <div class="brand-mark" id="brandMark"></div>
     <h1>CS<span>2E</span> · CSSCT</h1>
     <p>Tableau de bord de mandat</p>
   </div>
@@ -128,7 +128,7 @@
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js";
   import { getAuth, sendSignInLinkToEmail, isSignInWithEmailLink, signInWithEmailLink, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js";
-  import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
+  import { getFirestore, collection, getDocs, doc, getDoc } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyACY8fyy8Rd9NyLJ855xsDyknuUMV-pAag",
@@ -156,6 +156,7 @@ const firebaseConfig = {
     if (user) {
       document.getElementById('authGate').style.display = 'none';
       loadHighlights();
+      applyBrandingLogo();
     } else {
       document.getElementById('authGate').style.display = 'flex';
       document.getElementById('authForm').style.display = 'block';
@@ -182,6 +183,17 @@ const firebaseConfig = {
       .then(() => { msg.style.color = '#019682'; msg.textContent = "Lien envoyé, vérifie ta boîte mail et tes spams."; })
       .catch(err => { msg.textContent = "Erreur : " + err.message; });
   });
+
+  function applyBrandingLogo(){
+    getDoc(doc(db, 'config', 'branding')).then((snap) => {
+      const data = snap.exists() ? snap.data() : {};
+      if(!data.logoBase64) return;
+      document.querySelectorAll('.brand-mark').forEach(function(el){
+        el.style.background = 'none';
+        el.innerHTML = '<img src="data:image/png;base64,' + data.logoBase64 + '" alt="Logo" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">';
+      });
+    }).catch(() => {});
+  }
 
   function parseISO(s){ if(!s) return null; const m = String(s).match(/^(\d{4})-(\d{2})-(\d{2})/); if(!m) return null; return new Date(+m[1], +m[2]-1, +m[3]); }
   function daysUntil(iso){ if(!iso) return null; const d = new Date(iso+'T00:00:00'); if(isNaN(d.getTime())) return null; return Math.round((d-new Date())/(1000*60*60*24)); }
@@ -213,12 +225,12 @@ const firebaseConfig = {
         return a && Math.round((today-a)/(1000*60*60*24)) > 30;
       }).length;
 
-      let trousseAlerte = 0;
+      let peremptionAlerte = 0, controleAlerte = 0;
       items.forEach(function(it){
         const perDays = daysUntil(it.datePeremption);
         const ctrlDays = daysUntil(nextControl(it));
-        const reappro = (it.quantiteReelle !== undefined && it.quantiteTheorique !== undefined) && Number(it.quantiteReelle) < Number(it.quantiteTheorique);
-        if((perDays !== null && perDays < 0) || (ctrlDays !== null && ctrlDays < 0) || reappro) trousseAlerte++;
+        if(perDays !== null && perDays < 0) peremptionAlerte++;
+        if(ctrlDays !== null && ctrlDays < 0) controleAlerte++;
       });
 
       let html = '';
@@ -226,10 +238,18 @@ const firebaseConfig = {
         '<div class="a-num">' + enCours + '</div><div><div class="a-title">Dossiers en cours</div><div class="a-text">Signalements actifs à traiter</div></div></a>';
       html += '<a class="alert-card' + (enSouffrance ? '' : ' ok') + '" href="signalement_liste.html?vue=souffrance">' +
         '<div class="a-num">' + enSouffrance + '</div><div><div class="a-title">Dossiers en souffrance</div><div class="a-text">Ouverts depuis plus de 30 jours</div></div></a>';
-      html += '<a class="alert-card' + (trousseAlerte ? '' : ' ok') + '" href="trousses_secours.html">' +
-        '<div class="a-num">' + trousseAlerte + '</div><div><div class="a-title">Trousses à traiter</div><div class="a-text">Péremption, contrôle ou réappro</div></div></a>';
+      html += '<a class="alert-card' + (peremptionAlerte ? '' : ' ok') + '" href="trousses_secours.html?alerte=peremption">' +
+        '<div class="a-num">' + peremptionAlerte + '</div><div><div class="a-title">Trousses périmées</div><div class="a-text">Date de péremption dépassée</div></div></a>';
+      html += '<a class="alert-card' + (controleAlerte ? '' : ' ok') + '" href="trousses_secours.html?alerte=controle">' +
+        '<div class="a-num">' + controleAlerte + '</div><div><div class="a-title">Trousses à contrôler</div><div class="a-text">Date de contrôle dépassée</div></div></a>';
 
       stack.innerHTML = html;
+
+      if('setAppBadge' in navigator){
+        const total = enCours + peremptionAlerte + controleAlerte;
+        if(total > 0) navigator.setAppBadge(total).catch(function(){});
+        else if('clearAppBadge' in navigator) navigator.clearAppBadge().catch(function(){});
+      }
     }catch(err){
       stack.innerHTML = '<div style="text-align:center;font-size:12px;color:var(--danger);">Impossible de charger les indicateurs.</div>';
     }
@@ -237,6 +257,7 @@ const firebaseConfig = {
 
   document.getElementById('logoutBtn').addEventListener('click', () => {
     if(confirm('Se déconnecter ?')){
+      if('clearAppBadge' in navigator) navigator.clearAppBadge().catch(function(){});
       signOut(auth).then(() => { window.location.reload(); });
     }
   });

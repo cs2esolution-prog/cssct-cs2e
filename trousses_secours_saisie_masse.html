@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Saisie en masse — Trousses de secours . CSSCT</title>
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-title" content="Mon appli CSSCT">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#2B2A2E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,500;8..60,600;8..60,700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --teal:#019682; --teal-dark:#017162; --purple:#5A4570; --gold:#C6AB76;
+    --paper:#F7F5F1; --paper-raised:#fff; --ink:#2B2A2E; --ink-soft:#6B6873; --line:#E4E0D8; --danger:#A85D45; --radius:10px;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0; background:var(--paper); color:var(--ink); font-family:'Inter',system-ui,sans-serif; line-height:1.5;}
+  .wrap{max-width:1180px; margin:0 auto; padding:32px 24px 106px;}
+  header.top{display:flex; align-items:center; justify-content:space-between; padding-bottom:20px; border-bottom:2px solid var(--ink); margin-bottom:20px; flex-wrap:wrap; gap:10px;}
+  .brand{display:flex; align-items:center; gap:12px; cursor:pointer;}
+  .brand-mark{width:38px; height:38px; border-radius:50%;
+    background:conic-gradient(var(--teal) 0deg 120deg, var(--gold) 120deg 240deg, var(--purple) 240deg 360deg); flex:none;}
+  .brand-text{font-family:'Source Serif 4', serif; font-weight:700; font-size:19px;}
+  .brand-text span{color:var(--teal);}
+  .back-link{font-size:12.5px; font-weight:600; color:var(--ink-soft); text-decoration:none; border:1px solid var(--line); padding:6px 14px; border-radius:20px;}
+
+  h1{font-family:'Source Serif 4',serif; font-size:20px; margin:0 0 4px;}
+  .subtitle{font-size:12.5px; color:var(--ink-soft); margin:0 0 20px; max-width:640px;}
+
+  .card{background:#fff; border:1px solid var(--line); border-radius:var(--radius); padding:20px 22px; margin-bottom:16px;}
+  .card h2{font-family:'Source Serif 4',serif; font-size:15px; margin:0 0 14px;}
+  .ctx-grid{display:grid; grid-template-columns:1fr 1fr 1fr; gap:14px;}
+  @media (max-width:760px){ .ctx-grid{grid-template-columns:1fr;} }
+  .field{display:flex; flex-direction:column; gap:5px;}
+  .field label{font-size:12px; font-weight:600;}
+  .ac-wrap{position:relative;}
+  .ac-suggestions{
+    position:absolute; top:100%; left:0; right:0; background:#fff; border:1px solid var(--line);
+    border-radius:8px; box-shadow:0 8px 20px rgba(0,0,0,.1); max-height:170px; overflow-y:auto;
+    z-index:20; display:none; margin-top:4px;
+  }
+  .ac-suggestions.show{display:block;}
+  .ac-item{padding:8px 12px; font-size:13px; cursor:pointer;}
+  .ac-item:hover{background:#FBFAF7;}
+  input, select{width:100%; padding:9px 11px; border:1px solid var(--line); border-radius:7px; font-size:13.5px; font-family:'Inter',sans-serif;}
+
+  .ctx-actions{display:flex; gap:10px; margin-top:14px; flex-wrap:wrap; align-items:center;}
+  .ctx-note{font-size:11.5px; color:var(--ink-soft); margin-top:10px;}
+
+  button{font-family:'Inter',sans-serif; font-weight:600; font-size:13px; padding:10px 18px; border-radius:20px; border:none; cursor:pointer;}
+  .btn-primary{background:var(--ink); color:#fff;}
+  .btn-ghost{background:#fff; border:1px solid var(--line); color:var(--ink);}
+  .btn-ghost:hover{border-color:var(--teal); color:var(--teal-dark);}
+
+  table.grid{width:100%; border-collapse:collapse; font-size:12.5px;}
+  table.grid th{text-align:left; padding:6px 8px; color:var(--ink-soft); font-weight:600; font-size:10.5px; text-transform:uppercase; letter-spacing:.03em;}
+  table.grid td{padding:4px; border-bottom:1px solid var(--line); vertical-align:middle;}
+  table.grid td input{padding:7px 8px; font-size:12.5px;}
+  table.grid td.col-article{min-width:180px;}
+  table.grid td.col-qty{width:80px;}
+  table.grid td.col-date{width:130px;}
+  table.grid td.col-periodicite{width:80px;}
+  table.grid td.col-del{width:36px; text-align:center;}
+  .row-del-btn{background:none; border:none; color:var(--danger); font-size:16px; cursor:pointer; padding:4px;}
+  tr.existing-row td input{background:#FBFAF7;}
+  tr.existing-row td.col-article::before{content:"✓ "; color:var(--teal); font-weight:700;}
+
+  .grid-actions{display:flex; justify-content:space-between; align-items:center; margin-top:14px; flex-wrap:wrap; gap:10px;}
+
+  #toast{position:fixed; left:50%; bottom:24px; transform:translate(-50%,120%); background:var(--ink); color:#fff; padding:12px 20px; border-radius:12px; font-size:13.5px; transition:transform .3s ease; z-index:250; max-width:90vw;}
+  #toast.show{transform:translate(-50%,0);}
+
+  #authGate{position:fixed;inset:0;background:#2B2A2E;display:flex;align-items:center;justify-content:center;z-index:200;padding:20px;}
+  #authForm{display:none;background:#fff;border-radius:14px;padding:32px;max-width:360px;width:100%;text-align:center;}
+
+  .tabbar{
+    position:fixed; left:0; right:0; bottom:0; z-index:140;
+    display:flex; background:#fff; border-top:1px solid var(--line);
+    padding:6px 4px calc(6px + env(safe-area-inset-bottom));
+    box-shadow:0 -2px 10px rgba(0,0,0,.05);
+  }
+  .tab-item{
+    flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px;
+    text-decoration:none; color:var(--ink-soft); font-size:9.5px; font-weight:600; padding:5px 2px; border-radius:10px;
+    min-width:0;
+  }
+  .tab-item .tab-icon{font-size:18px; line-height:1;}
+  .tab-item .tab-lbl{white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:100%;}
+  .tab-item.active{color:var(--teal-dark);}
+  .tab-item:active{background:#F2FBF9;}
+</style>
+</head>
+<body>
+
+<div id="authGate">
+  <div id="authChecking" style="color:#ffffffaa;font-size:13.5px;">Vérification de la connexion…</div>
+  <div id="authForm">
+    <div style="font-family:'Source Serif 4',serif;font-weight:700;font-size:18px;margin-bottom:6px;">CS<span style="color:#019682;">2E</span> · CSSCT</div>
+    <p style="font-size:13px;color:#6B6873;margin:0 0 18px;">Connecte-toi avec ton email professionnel.</p>
+    <input type="email" id="authEmail" placeholder="prenom.nom@entreprise.com" style="width:100%;padding:10px 12px;border:1px solid #E4E0D8;border-radius:8px;font-size:13.5px;margin-bottom:10px;">
+    <button id="authSendLink" style="width:100%;background:#2B2A2E;color:#fff;border:none;padding:11px;border-radius:20px;font-weight:600;cursor:pointer;">Recevoir un lien de connexion</button>
+    <div id="authMsg" style="font-size:12px;color:#A85D45;margin-top:10px;min-height:14px;"></div>
+    <div style="margin-top:16px;padding-top:14px;border-top:1px solid #E4E0D8;text-align:left;">
+      <p style="font-size:11px;color:#6B6873;margin:0 0 8px;">Le lien s'ouvre dans un autre navigateur au lieu de cette appli épinglée ? Copie-le depuis ton email et colle-le ici :</p>
+      <input type="text" id="pastedLinkInput" placeholder="Colle le lien reçu par email" style="width:100%;padding:9px 11px;border:1px solid #E4E0D8;border-radius:8px;font-size:12.5px;margin-bottom:8px;">
+      <button id="pastedLinkBtn" style="width:100%;background:#fff;color:#2B2A2E;border:1px solid #E4E0D8;padding:10px;border-radius:20px;font-weight:600;font-size:12.5px;cursor:pointer;">Se connecter avec ce lien</button>
+      <div id="pastedLinkMsg" style="font-size:11.5px;color:#A85D45;margin-top:8px;min-height:14px;"></div>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+  <header class="top">
+    <div class="brand" style="cursor:pointer;" onclick="window.location.href='index.html'">
+      <div class="brand-mark" id="brandMark"></div>
+      <div class="brand-text">CS<span>2E</span> · CSSCT</div>
+    </div>
+    <div style="display:flex; align-items:center; gap:10px; margin-left:auto;">
+      <a class="back-link" href="trousses_secours.html">Retour aux trousses</a>
+      <button id="logoutBtn" title="Se déconnecter" style="background:#fff;border:1px solid #E4E0D8;color:#A85D45;width:34px;height:34px;border-radius:50%;font-weight:700;cursor:pointer;font-size:14px;">✕</button>
+    </div>
+  </header>
+
+  <h1>Saisie en masse — Trousses de secours</h1>
+  <p class="subtitle">Sélectionne le site, l'entité et l'emplacement une seule fois, puis saisis tes articles ligne par ligne comme dans un tableur. Réutilise le même écran lors d'un contrôle : charge les articles déjà enregistrés pour les mettre à jour, et ajoute au passage de nouvelles lignes si besoin.</p>
+
+  <div class="card">
+    <h2>1. Site / entité / emplacement</h2>
+    <div class="ctx-grid">
+      <div class="field">
+        <label>Site</label>
+        <select id="ctxSite"></select>
+      </div>
+      <div class="field ac-wrap">
+        <label>Entité <span style="font-weight:400;color:var(--ink-soft);">(facultatif)</span></label>
+        <input type="text" id="ctxEntite" placeholder="Ex : SMAG / AS" autocomplete="off">
+        <div class="ac-suggestions" id="acEntite"></div>
+      </div>
+      <div class="field ac-wrap">
+        <label>Emplacement de la trousse</label>
+        <input type="text" id="ctxEmplacement" placeholder="Ex : Meuble bas, derrière l'accueil" autocomplete="off">
+        <div class="ac-suggestions" id="acEmplacement"></div>
+      </div>
+    </div>
+    <div class="ctx-actions">
+      <button type="button" class="btn-ghost" id="loadExistingBtn">🔄 Charger les articles déjà enregistrés à cet emplacement</button>
+      <span id="loadExistingMsg" style="font-size:12px;color:var(--ink-soft);"></span>
+    </div>
+    <p class="ctx-note">Tu peux aussi ignorer ce bouton et directement ajouter de nouvelles lignes ci-dessous pour une première saisie. L'emplacement n'a pas besoin d'exister déjà : tape-le simplement, il sera créé au premier enregistrement.</p>
+  </div>
+
+  <div class="card">
+    <h2>2. Articles</h2>
+    <div style="overflow-x:auto;">
+      <table class="grid">
+        <thead>
+          <tr>
+            <th class="col-article">Article</th>
+            <th class="col-qty">Qté théo.</th>
+            <th class="col-qty">Qté réelle</th>
+            <th class="col-date">Péremption</th>
+            <th class="col-date">Dernier contrôle</th>
+            <th class="col-periodicite">Périod. (mois)</th>
+            <th class="col-del"></th>
+          </tr>
+        </thead>
+        <tbody id="gridBody"></tbody>
+      </table>
+    </div>
+    <div class="grid-actions">
+      <button type="button" class="btn-ghost" id="addRowBtn">+ Ajouter une ligne</button>
+      <button type="button" class="btn-primary" id="saveGridBtn">Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<nav class="tabbar" aria-label="Navigation principale">
+  <a href="signalement_liste.html" class="tab-item"><span class="tab-icon">🗃️</span><span class="tab-lbl">Dossiers</span></a>
+  <a href="inspections.html" class="tab-item"><span class="tab-icon">🔍</span><span class="tab-lbl">Inspections</span></a>
+  <a href="exercices_evacuation.html" class="tab-item"><span class="tab-icon">🚪</span><span class="tab-lbl">Évacuation</span></a>
+  <a href="comptes_rendus_reunion.html" class="tab-item"><span class="tab-icon">📋</span><span class="tab-lbl">CR réunion</span></a>
+  <a href="trousses_secours.html" class="tab-item active"><span class="tab-icon">🩹</span><span class="tab-lbl">Trousses</span></a>
+  <a href="administration.html" class="tab-item"><span class="tab-icon">⚙️</span><span class="tab-lbl">Admin</span></a>
+</nav>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js";
+  import { getAuth, sendSignInLinkToEmail, isSignInWithEmailLink, signInWithEmailLink, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js";
+  import { getFirestore, collection, getDocs, doc, getDoc, writeBatch } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyACY8fyy8Rd9NyLJ855xsDyknuUMV-pAag",
+  authDomain: "cssct-cs2e-c655b.firebaseapp.com",
+  projectId: "cssct-cs2e-c655b",
+  storageBucket: "cssct-cs2e-c655b.firebasestorage.app",
+  messagingSenderId: "277603883255",
+  appId: "1:277603883255:web:b3b7a5c3097a60caac1bf2"
+};
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+  const col = collection(db, "trousses_secours");
+
+  const actionCodeSettings = { url: window.location.origin + window.location.pathname, handleCodeInApp: true };
+
+  if (isSignInWithEmailLink(auth, window.location.href)) {
+    let email = window.prompt("Confirme ton adresse email pour terminer la connexion :");
+    signInWithEmailLink(auth, email, window.location.href)
+      .then(() => window.history.replaceState({}, document.title, window.location.pathname))
+      .catch(err => alert("Connexion impossible : " + err.message));
+  }
+
+  function applyBrandingLogo(){
+    getDoc(doc(db, 'config', 'branding')).then((snap) => {
+      const data = snap.exists() ? snap.data() : {};
+      if(!data.logoBase64) return;
+      document.querySelectorAll('.brand-mark').forEach(function(el){
+        el.style.background = 'none';
+        el.innerHTML = '<img src="data:image/png;base64,' + data.logoBase64 + '" alt="Logo" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">';
+      });
+    }).catch(() => {});
+  }
+
+  onAuthStateChanged(auth, (user) => {
+    document.getElementById('authChecking').style.display = 'none';
+    if (user) {
+      document.getElementById('authGate').style.display = 'none';
+      applyBrandingLogo();
+      window.MASSE_FIREBASE.reloadAllItems();
+    } else {
+      document.getElementById('authGate').style.display = 'flex';
+      document.getElementById('authForm').style.display = 'block';
+    }
+  });
+
+  document.getElementById('pastedLinkBtn').addEventListener('click', () => {
+    const link = document.getElementById('pastedLinkInput').value.trim();
+    const msg = document.getElementById('pastedLinkMsg');
+    if (!link) { msg.textContent = "Colle d'abord le lien recu par email."; return; }
+    if (!isSignInWithEmailLink(auth, link)) { msg.textContent = "Ce lien ne semble pas valide."; return; }
+    let email = window.prompt("Confirme ton adresse email pour terminer la connexion :");
+    if (!email) return;
+    signInWithEmailLink(auth, email, link)
+      .then(() => { msg.style.color = '#019682'; msg.textContent = "Connexion reussie !"; })
+      .catch(err => { msg.textContent = "Erreur : " + err.message; });
+  });
+
+  document.getElementById('authSendLink').addEventListener('click', () => {
+    const email = document.getElementById('authEmail').value.trim();
+    const msg = document.getElementById('authMsg');
+    if (!email) { msg.textContent = "Merci de saisir ton email."; return; }
+    sendSignInLinkToEmail(auth, email, actionCodeSettings)
+      .then(() => { msg.style.color = '#019682'; msg.textContent = "Lien envoyé, vérifie ta boîte mail."; })
+      .catch(err => { msg.textContent = "Erreur : " + err.message; });
+  });
+
+  window.MASSE_FIREBASE = {
+    async reloadAllItems(){
+      const snap = await getDocs(col);
+      window._allItems = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      if(window.onAllItemsLoaded) window.onAllItemsLoaded();
+    },
+    async saveBatch(updates, creations){
+      const batch = writeBatch(db);
+      updates.forEach(function(u){ batch.update(doc(db,'trousses_secours', u.id), u.fields); });
+      const newRefs = creations.map(function(fields){
+        const ref = doc(col);
+        batch.set(ref, fields);
+        return { id: ref.id, fields: fields };
+      });
+      await batch.commit();
+      return newRefs;
+    }
+  };
+
+  document.getElementById('logoutBtn').addEventListener('click', () => {
+    if(confirm('Se déconnecter ?')){
+      signOut(auth).then(() => { window.location.href = 'index.html'; });
+    }
+  });
+</script>
+
+<script>
+function esc(s){ return (s==null?'':String(s)).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+
+const SITES = ["Bezannes","Chalons-en-Champagne","Evreux","Milly-la-Forêt","Montpellier","Nancy","Paris","Poitiers","Reims","Télétravail","Wavre"].sort((a,b)=>a.localeCompare(b,'fr'));
+(function populateSiteSelect(){
+  const sel = document.getElementById('ctxSite');
+  sel.innerHTML = '<option value="">Choisir…</option>' + SITES.map(function(s){ return '<option>' + s + '</option>'; }).join('');
+})();
+
+function getEntiteSuggestions(){
+  const set = new Set();
+  (window._allItems||[]).forEach(function(it){ if(it.entite) set.add(it.entite); });
+  return Array.from(set).sort(function(a,b){ return a.localeCompare(b,'fr'); });
+}
+function getEmplacementSuggestions(){
+  const site = document.getElementById('ctxSite').value;
+  const entite = document.getElementById('ctxEntite').value.trim();
+  const set = new Set();
+  (window._allItems||[]).forEach(function(it){
+    if(!it.emplacement) return;
+    if(site && it.site !== site) return;
+    if(entite && (it.entite||'') !== entite) return;
+    set.add(it.emplacement);
+  });
+  return Array.from(set).sort(function(a,b){ return a.localeCompare(b,'fr'); });
+}
+
+function bindAutocomplete(inputId, suggestionsBoxId, getSuggestionsFn){
+  const input = document.getElementById(inputId);
+  const box = document.getElementById(suggestionsBoxId);
+
+  function renderList(){
+    const q = input.value.toLowerCase().trim();
+    const all = getSuggestionsFn();
+    const matches = q ? all.filter(function(v){ return v.toLowerCase().includes(q); }) : all;
+    if(!matches.length){ box.classList.remove('show'); box.innerHTML=''; return; }
+    box.innerHTML = matches.slice(0,8).map(function(v){ return '<div class="ac-item">' + esc(v) + '</div>'; }).join('');
+    box.classList.add('show');
+    box.querySelectorAll('.ac-item').forEach(function(el, i){
+      el.addEventListener('mousedown', function(e){
+        e.preventDefault();
+        input.value = matches[i];
+        box.classList.remove('show');
+      });
+    });
+  }
+  input.addEventListener('input', renderList);
+  input.addEventListener('focus', renderList);
+  input.addEventListener('blur', function(){ setTimeout(function(){ box.classList.remove('show'); }, 120); });
+}
+
+bindAutocomplete('ctxEntite', 'acEntite', getEntiteSuggestions);
+bindAutocomplete('ctxEmplacement', 'acEmplacement', getEmplacementSuggestions);
+
+// --- Grille ---
+let gridRows = []; // { _id: string|null, contenu, quantiteTheorique, quantiteReelle, datePeremption, dateDernierControle, periodiciteControleMois }
+
+function emptyRow(){
+  return { _id: null, contenu:'', quantiteTheorique:'', quantiteReelle:'', datePeremption:'', dateDernierControle:'', periodiciteControleMois: 12 };
+}
+
+function renderGrid(){
+  const tbody = document.getElementById('gridBody');
+  tbody.innerHTML = gridRows.map(function(r, idx){
+    return '<tr class="' + (r._id ? 'existing-row' : '') + '" data-idx="' + idx + '">' +
+      '<td class="col-article"><input type="text" data-field="contenu" value="' + esc(r.contenu) + '" placeholder="Ex : Compresses stériles"></td>' +
+      '<td class="col-qty"><input type="number" min="0" data-field="quantiteTheorique" value="' + esc(r.quantiteTheorique) + '"></td>' +
+      '<td class="col-qty"><input type="number" min="0" data-field="quantiteReelle" value="' + esc(r.quantiteReelle) + '"></td>' +
+      '<td class="col-date"><input type="date" data-field="datePeremption" value="' + esc(r.datePeremption) + '"></td>' +
+      '<td class="col-date"><input type="date" data-field="dateDernierControle" value="' + esc(r.dateDernierControle) + '"></td>' +
+      '<td class="col-periodicite"><input type="number" min="1" data-field="periodiciteControleMois" value="' + esc(r.periodiciteControleMois) + '"></td>' +
+      '<td class="col-del"><button type="button" class="row-del-btn" title="Supprimer cette ligne">🗑️</button></td>' +
+    '</tr>';
+  }).join('');
+
+  tbody.querySelectorAll('tr').forEach(function(tr){
+    const idx = Number(tr.dataset.idx);
+    tr.querySelectorAll('input').forEach(function(inp){
+      inp.addEventListener('input', function(){
+        gridRows[idx][inp.dataset.field] = inp.value;
+      });
+      inp.addEventListener('keydown', function(e){
+        if(e.key === 'Enter'){
+          e.preventDefault();
+          const isLastRow = idx === gridRows.length - 1;
+          if(isLastRow) addRow();
+          const nextRow = tbody.querySelector('tr[data-idx="' + (idx+1) + '"]');
+          if(nextRow){ const first = nextRow.querySelector('input[data-field="contenu"]'); if(first) first.focus(); }
+        }
+      });
+    });
+    tr.querySelector('.row-del-btn').addEventListener('click', function(){
+      removeRow(idx);
+    });
+  });
+}
+
+function addRow(){
+  gridRows.push(emptyRow());
+  renderGrid();
+  const tbody = document.getElementById('gridBody');
+  const lastInput = tbody.querySelector('tr[data-idx="' + (gridRows.length-1) + '"] input[data-field="contenu"]');
+  if(lastInput) lastInput.focus();
+}
+
+function removeRow(idx){
+  const row = gridRows[idx];
+  if(row._id && !confirm('Cette ligne correspond à un article déjà enregistré. La retirer de la grille ne le supprime pas de la base — seul un enregistrement met à jour la base. Continuer ?')) return;
+  gridRows.splice(idx, 1);
+  if(!gridRows.length) gridRows.push(emptyRow());
+  renderGrid();
+}
+
+document.getElementById('addRowBtn').addEventListener('click', addRow);
+
+document.getElementById('loadExistingBtn').addEventListener('click', function(){
+  const site = document.getElementById('ctxSite').value;
+  const entite = document.getElementById('ctxEntite').value.trim();
+  const emplacement = document.getElementById('ctxEmplacement').value.trim();
+  const msg = document.getElementById('loadExistingMsg');
+  if(!site || !emplacement){ msg.style.color = 'var(--danger)'; msg.textContent = 'Renseigne au moins le site et l’emplacement avant de charger.'; return; }
+  const matches = (window._allItems||[]).filter(function(it){
+    return it.site === site && (it.entite||'') === entite && it.emplacement === emplacement;
+  });
+  if(!matches.length){ msg.style.color = 'var(--ink-soft)'; msg.textContent = 'Aucun article existant pour cet emplacement — tu peux en ajouter de nouveaux ci-dessous.'; return; }
+  gridRows = matches.map(function(it){
+    return {
+      _id: it.id,
+      contenu: it.contenu || '',
+      quantiteTheorique: it.quantiteTheorique ?? '',
+      quantiteReelle: it.quantiteReelle ?? '',
+      datePeremption: it.datePeremption || '',
+      dateDernierControle: it.dateDernierControle || '',
+      periodiciteControleMois: it.periodiciteControleMois || 12
+    };
+  });
+  gridRows.push(emptyRow());
+  renderGrid();
+  msg.style.color = 'var(--teal-dark)';
+  msg.textContent = matches.length + ' article(s) chargé(s) — modifie-les puis enregistre.';
+});
+
+document.getElementById('saveGridBtn').addEventListener('click', async function(){
+  const site = document.getElementById('ctxSite').value;
+  const entite = document.getElementById('ctxEntite').value.trim();
+  const emplacement = document.getElementById('ctxEmplacement').value.trim();
+  if(!site || !emplacement){ showToast('Site et emplacement sont obligatoires.'); return; }
+
+  const updates = [];
+  const creations = [];
+  gridRows.forEach(function(r){
+    if(!r.contenu || !String(r.contenu).trim()) return; // ligne vide, on ignore
+    const fields = {
+      site: site,
+      entite: entite,
+      emplacement: emplacement,
+      contenu: String(r.contenu).trim(),
+      quantiteTheorique: r.quantiteTheorique === '' ? null : Number(r.quantiteTheorique),
+      quantiteReelle: r.quantiteReelle === '' ? null : Number(r.quantiteReelle),
+      datePeremption: r.datePeremption || null,
+      dateDernierControle: r.dateDernierControle || null,
+      periodiciteControleMois: Number(r.periodiciteControleMois) || 12
+    };
+    if(r._id) updates.push({ id: r._id, fields: fields });
+    else creations.push(fields);
+  });
+
+  if(!updates.length && !creations.length){ showToast('Ajoute au moins un article avant d’enregistrer.'); return; }
+
+  const btn = this;
+  btn.disabled = true;
+  try{
+    const newRefs = await window.MASSE_FIREBASE.saveBatch(updates, creations);
+    showToast(creations.length + ' ajouté(s), ' + updates.length + ' mis à jour ✓');
+    await window.MASSE_FIREBASE.reloadAllItems();
+    // Recharge la grille depuis la base pour repartir sur un etat propre (les nouvelles lignes deviennent "existantes").
+    document.getElementById('loadExistingBtn').click();
+  }catch(err){
+    showToast('Erreur : ' + err.message);
+  }finally{
+    btn.disabled = false;
+  }
+});
+
+let toastTimer;
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  clearTimeout(toastTimer); toastTimer = setTimeout(function(){ t.classList.remove('show'); }, 4000);
+}
+
+// Etat initial : une ligne vide.
+gridRows.push(emptyRow());
+renderGrid();
+</script>
+</body>
+</html>

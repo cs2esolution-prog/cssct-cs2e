@@ -62,6 +62,7 @@
   }
   .settings-save-btn{background:var(--ink); color:#fff; border:none; padding:9px 18px; border-radius:20px; font-weight:600; font-size:12.5px; cursor:pointer;}
   .settings-msg{font-size:11.5px; margin-top:8px; min-height:14px;}
+  .mini-del-btn{background:none; border:none; color:var(--danger); font-size:11.5px; font-weight:600; cursor:pointer; padding:4px 0;}
 
   .modal-overlay{position:fixed; inset:0; background:rgba(30,28,32,.55); display:none; align-items:center; justify-content:center; z-index:150; padding:20px;}
   .modal-overlay.show{display:flex;}
@@ -118,7 +119,7 @@
 <div class="wrap">
   <header class="top">
     <div class="brand" onclick="window.location.href='index.html'">
-      <div class="brand-mark"></div>
+      <div class="brand-mark" id="brandMark"></div>
       <div class="brand-text">CS<span>2E</span> · CSSCT</div>
     </div>
     <a class="back-link" href="index.html">Retour à l'accueil</a>
@@ -140,6 +141,16 @@
     <div><div class="a-title">Tableau de bord</div><div class="a-desc">Indicateurs, comparaison annuelle, bilan téléchargeable</div></div>
     <div class="a-arrow">›</div>
   </a>
+
+  <div class="section-lbl">Identité visuelle</div>
+  <div class="settings-card">
+    <p class="s-help" style="margin-top:0;">Remplace le rond de couleur par défaut (entête de toutes les pages) et les logos des rapports générés par ton propre logo.</p>
+    <div id="logoPreview" style="margin-bottom:10px;"></div>
+    <label class="s-label" for="logoFileInput">Choisir une image (PNG/JPG, ~900 Ko max)</label>
+    <input type="file" id="logoFileInput" accept="image/png,image/jpeg" style="margin-bottom:10px;">
+    <button type="button" class="settings-save-btn" id="logoRemoveBtn" style="background:#fff;color:var(--danger);border:1px solid var(--line);">Retirer le logo personnalisé</button>
+    <div class="settings-msg" id="logoMsg"></div>
+  </div>
 
   <div class="section-lbl">Accès et données (Firebase)</div>
   <button type="button" class="admin-card" onclick="document.getElementById('comptesTutoModal').classList.add('show')">
@@ -199,6 +210,7 @@
     <a class="sitemap-link" href="exercices_evacuation.html">Exercices d'évacuation</a>
     <a class="sitemap-link" href="comptes_rendus_reunion.html">CR de réunion</a>
     <a class="sitemap-link" href="trousses_secours.html">Trousses de secours</a>
+    <a class="sitemap-link" href="trousses_secours_saisie_masse.html">Trousses — saisie en masse</a>
     <a class="sitemap-link" href="dashboard.html">Tableau de bord</a>
     <a class="sitemap-link" href="import_excel.html">Import historique Excel</a>
     <a class="sitemap-link" href="changelog.html">Notes de mise à jour</a>
@@ -230,7 +242,15 @@
       <button class="modal-close" onclick="document.getElementById('comptesTutoModal').classList.remove('show')">×</button>
     </div>
     <div class="modal-body">
-      <p style="font-size:12.5px;color:var(--ink-soft);margin:0 0 16px;">Deux étapes, dans cet ordre, pour donner l'accès à l'application à une nouvelle personne.</p>
+      <div class="tuto-note" style="margin-bottom:16px;">⚠️ Cet écran gère l'affichage seulement. La vraie barrière de sécurité, ce sont les règles Firestore côté console : tant qu'elles n'ont pas été mises à jour pour vérifier la liste des administrateurs, quelqu'un qui connaît l'API pourrait techniquement modifier ces listes sans passer par ici. Demande-moi la règle à ajouter si besoin.</div>
+
+      <h4 style="font-size:13px;font-family:'Source Serif 4',serif;margin:0 0 8px;">Administrateurs (gèrent les comptes autorisés ci-dessous)</h4>
+      <div id="adminsPanel" style="margin-bottom:18px;font-size:13px;color:var(--ink-soft);">Chargement…</div>
+
+      <h4 style="font-size:13px;font-family:'Source Serif 4',serif;margin:0 0 8px;">Comptes autorisés (accès à l'application)</h4>
+      <div id="authorizedPanel" style="margin-bottom:20px;font-size:13px;color:var(--ink-soft);">Chargement…</div>
+
+      <p style="font-size:12.5px;color:var(--ink-soft);margin:0 0 16px;">Pour référence, voici comment ça fonctionne sous le capot (utile si tu dois intervenir directement dans Firestore) :</p>
 
       <div class="tuto-step">
         <h4>Étape 1 — Autoriser l'email dans Firestore (donne l'accès)</h4>
@@ -261,7 +281,7 @@
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js";
   import { getAuth, sendSignInLinkToEmail, isSignInWithEmailLink, signInWithEmailLink, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js";
-  import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
+  import { getFirestore, doc, getDoc, setDoc, collection, getDocs, deleteDoc } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyACY8fyy8Rd9NyLJ855xsDyknuUMV-pAag",
@@ -275,11 +295,16 @@ const firebaseConfig = {
   const auth = getAuth(app);
   const db = getFirestore(app);
   const mailRelanceConfigRef = doc(db, "config", "mail_relance");
+  const brandingConfigRef = doc(db, "config", "branding");
+  const adminsConfigRef = doc(db, "config", "admins");
   const MAIL_RELANCE_DEFAULTS = {
     presidentCSE: "alhermitte@smag.tech",
     elusCSSCT: "cdizien@agrosolutions.com;imariotti@smag.tech;choudayer@smag.tech"
   };
   const actionCodeSettings = { url: window.location.origin + window.location.pathname, handleCodeInApp: true };
+  let currentUserEmail = null;
+
+  function esc(s){ return (s==null?'':String(s)).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
 
   if (isSignInWithEmailLink(auth, window.location.href)) {
     let email = window.prompt("Confirme ton adresse email pour terminer la connexion :");
@@ -292,8 +317,11 @@ const firebaseConfig = {
     document.getElementById('authChecking').style.display = 'none';
     if (user) {
       document.getElementById('authGate').style.display = 'none';
+      currentUserEmail = (user.email || '').toLowerCase();
       window.renderQR();
       loadMailRelanceConfig();
+      loadBranding();
+      loadAccessManagement();
     } else {
       document.getElementById('authGate').style.display = 'flex';
       document.getElementById('authForm').style.display = 'block';
@@ -341,6 +369,148 @@ const firebaseConfig = {
       .then(() => { msg.style.color = '#019682'; msg.textContent = "Enregistré ✓"; })
       .catch((err) => { msg.style.color = '#A85D45'; msg.textContent = "Erreur : " + err.message; });
   });
+
+  // --- Logo (identité visuelle) ---
+  function applyBrandingLogoImg(logoBase64){
+    document.querySelectorAll('.brand-mark').forEach(function(el){
+      el.style.background = 'none';
+      el.innerHTML = '<img src="data:image/png;base64,' + logoBase64 + '" alt="Logo" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">';
+    });
+  }
+
+  function loadBranding(){
+    getDoc(brandingConfigRef).then((snap) => {
+      const data = snap.exists() ? snap.data() : {};
+      const preview = document.getElementById('logoPreview');
+      const msg = document.getElementById('logoMsg');
+      if(data.logoBase64){
+        applyBrandingLogoImg(data.logoBase64);
+        preview.innerHTML = '<img src="data:image/png;base64,' + data.logoBase64 + '" style="max-width:120px;max-height:120px;border-radius:10px;border:1px solid var(--line);">';
+        msg.style.color = 'var(--ink-soft)';
+        msg.textContent = 'Logo actuel ci-dessus, utilisé dans l’entête et les rapports générés.';
+      } else {
+        preview.innerHTML = '';
+        msg.style.color = 'var(--ink-soft)';
+        msg.textContent = "Aucun logo personnalisé pour l'instant — l'appli affiche le rond de couleur par défaut.";
+      }
+    }).catch(() => {});
+  }
+
+  document.getElementById('logoFileInput').addEventListener('change', function(e){
+    const file = e.target.files[0];
+    if(!file) return;
+    const msg = document.getElementById('logoMsg');
+    if(file.size > 900*1024){ msg.style.color = 'var(--danger)'; msg.textContent = 'Image trop volumineuse (max ~900 Ko) — compresse-la avant de l’importer.'; return; }
+    const reader = new FileReader();
+    reader.onload = function(){
+      const base64 = String(reader.result).split(',')[1] || '';
+      setDoc(brandingConfigRef, { logoBase64: base64 }, { merge: true })
+        .then(() => { msg.style.color = 'var(--teal-dark)'; msg.textContent = 'Logo enregistré ✓'; loadBranding(); })
+        .catch((err) => { msg.style.color = 'var(--danger)'; msg.textContent = 'Erreur : ' + err.message; });
+    };
+    reader.readAsDataURL(file);
+  });
+
+  document.getElementById('logoRemoveBtn').addEventListener('click', function(){
+    if(!confirm('Revenir au rond de couleur par défaut (sans logo personnalisé) ?')) return;
+    setDoc(brandingConfigRef, { logoBase64: null }, { merge: true }).then(() => {
+      document.querySelectorAll('.brand-mark').forEach(function(el){ el.style.background = ''; el.innerHTML = ''; });
+      loadBranding();
+    });
+  });
+
+  // --- Comptes autorisés et administrateurs ---
+  function loadAccessManagement(){
+    getDoc(adminsConfigRef).then((snap) => {
+      const data = snap.exists() ? snap.data() : {};
+      const admins = Array.isArray(data.emails) ? data.emails.map(function(e){ return e.toLowerCase(); }) : [];
+      const bootstrapMode = admins.length === 0;
+      renderAdminsPanel(admins, bootstrapMode);
+      renderAuthorizedPanel(bootstrapMode || admins.indexOf(currentUserEmail) !== -1);
+    }).catch(() => {
+      renderAdminsPanel([], true);
+      renderAuthorizedPanel(true);
+    });
+  }
+
+  function renderAdminsPanel(admins, bootstrapMode){
+    const box = document.getElementById('adminsPanel');
+    const canManage = bootstrapMode || admins.indexOf(currentUserEmail) !== -1;
+    if(!canManage){
+      box.innerHTML = '<p style="margin:0;">Géré par : ' + (admins.length ? esc(admins.join(', ')) : '—') + '. Seuls ces comptes peuvent modifier cette liste.</p>';
+      return;
+    }
+    let html = '';
+    if(bootstrapMode){
+      html += '<div class="tuto-note" style="margin-bottom:10px;">Aucun administrateur défini pour l’instant : n’importe quel compte autorisé peut voir et modifier ces listes. Ajoute-toi ci-dessous pour sécuriser la gestion des comptes.</div>';
+    }
+    html += '<ul style="list-style:none;padding:0;margin:0 0 10px;">' +
+      admins.map(function(e){
+        return '<li style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--line);">' +
+          esc(e) + '<button type="button" class="mini-del-btn" data-email="' + esc(e) + '">Retirer</button></li>';
+      }).join('') +
+      (admins.length ? '' : '<li style="padding:6px 0;color:var(--ink-soft);">Aucun administrateur pour l’instant.</li>') +
+    '</ul>' +
+    '<div style="display:flex;gap:8px;">' +
+      '<input type="email" id="newAdminEmail" placeholder="email@entreprise.com" style="flex:1;">' +
+      '<button type="button" class="settings-save-btn" id="addAdminBtn">Ajouter</button>' +
+    '</div>';
+    box.innerHTML = html;
+    box.querySelectorAll('.mini-del-btn').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        if(!confirm('Retirer ' + btn.dataset.email + ' de la liste des administrateurs ?')) return;
+        const newList = admins.filter(function(e){ return e !== btn.dataset.email; });
+        setDoc(adminsConfigRef, { emails: newList }, { merge: true }).then(loadAccessManagement);
+      });
+    });
+    document.getElementById('addAdminBtn').addEventListener('click', function(){
+      const input = document.getElementById('newAdminEmail');
+      const email = input.value.trim().toLowerCase();
+      if(!email) return;
+      const newList = admins.indexOf(email) === -1 ? admins.concat([email]) : admins;
+      setDoc(adminsConfigRef, { emails: newList }, { merge: true }).then(loadAccessManagement);
+    });
+  }
+
+  function renderAuthorizedPanel(isAdmin){
+    const box = document.getElementById('authorizedPanel');
+    if(!isAdmin){
+      box.innerHTML = '<p style="margin:0;">Réservé aux administrateurs. Demande à l’un d’eux d’ajouter ou retirer un accès.</p>';
+      return;
+    }
+    box.innerHTML = 'Chargement…';
+    getDocs(collection(db, 'authorized_emails')).then((snap) => {
+      const emails = snap.docs.map(function(d){ return d.id; }).sort();
+      let html = '<ul style="list-style:none;padding:0;margin:0 0 10px;">' +
+        emails.map(function(e){
+          return '<li style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--line);">' +
+            esc(e) + '<button type="button" class="mini-del-btn" data-email="' + esc(e) + '">Retirer l’accès</button></li>';
+        }).join('') +
+        (emails.length ? '' : '<li style="padding:6px 0;color:var(--ink-soft);">Aucun compte autorisé pour l’instant.</li>') +
+      '</ul>' +
+      '<div style="display:flex;gap:8px;">' +
+        '<input type="email" id="newAuthorizedEmail" placeholder="email@entreprise.com" style="flex:1;">' +
+        '<button type="button" class="settings-save-btn" id="addAuthorizedBtn">Autoriser</button>' +
+      '</div>';
+      box.innerHTML = html;
+      box.querySelectorAll('.mini-del-btn').forEach(function(btn){
+        btn.addEventListener('click', function(){
+          if(!confirm("Retirer l'accès de " + btn.dataset.email + ' ? Cette personne ne pourra plus se connecter à l’application.')) return;
+          deleteDoc(doc(db, 'authorized_emails', btn.dataset.email))
+            .then(function(){ renderAuthorizedPanel(true); })
+            .catch(function(err){ alert('Erreur : ' + err.message); });
+        });
+      });
+      document.getElementById('addAuthorizedBtn').addEventListener('click', function(){
+        const input = document.getElementById('newAuthorizedEmail');
+        const email = input.value.trim().toLowerCase();
+        if(!email) return;
+        setDoc(doc(db, 'authorized_emails', email), { email: email, ajouteLe: new Date().toISOString() })
+          .then(function(){ renderAuthorizedPanel(true); })
+          .catch(function(err){ alert('Erreur : ' + err.message); });
+      });
+    }).catch((err) => { box.innerHTML = '<p style="color:var(--danger);margin:0;">Erreur de chargement : ' + esc(err.message) + '</p>'; });
+  }
 </script>
 
 <script>

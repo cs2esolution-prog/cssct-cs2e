@@ -33,6 +33,13 @@
   h1{font-family:'Source Serif 4',serif; font-size:20px; margin:0 0 4px;}
   .subtitle{font-size:12.5px; color:var(--ink-soft); margin:0 0 20px;}
 
+  .incoming-filter-banner{
+    display:flex; align-items:center; justify-content:space-between; gap:10px; background:#fff;
+    border:1px solid var(--teal); border-left:4px solid var(--teal); border-radius:var(--radius);
+    padding:10px 16px; margin-bottom:14px; font-size:12.5px; color:var(--ink);
+  }
+  .incoming-filter-banner a{color:var(--teal-dark); font-weight:600; text-decoration:none; white-space:nowrap;}
+
   .summary-row{display:flex; gap:14px; margin-bottom:24px; flex-wrap:wrap;}
   .summary-tile{background:#fff; border:1px solid var(--line); border-radius:var(--radius); padding:14px 18px; flex:1; min-width:140px;}
   .summary-tile .num{font-family:'IBM Plex Mono',monospace; font-size:22px; font-weight:700;}
@@ -134,10 +141,11 @@
 <div class="wrap">
   <header class="top">
     <div class="brand" style="cursor:pointer;" onclick="window.location.href='index.html'">
-      <div class="brand-mark"></div>
+      <div class="brand-mark" id="brandMark"></div>
       <div class="brand-text">CS<span>2E</span> · CSSCT</div>
     </div>
     <div style="display:flex; align-items:center; gap:10px; margin-left:auto;">
+      <a class="back-link" href="trousses_secours_saisie_masse.html">📊 Saisie en masse</a>
       <a class="back-link" href="signalement_liste.html">Retour aux dossiers</a>
       <button id="logoutBtn" title="Se déconnecter" style="background:#fff;border:1px solid #E4E0D8;color:#A85D45;width:34px;height:34px;border-radius:50%;font-weight:700;cursor:pointer;font-size:14px;">✕</button>
     </div>
@@ -146,6 +154,7 @@
   <h1>Trousses de secours</h1>
   <p class="subtitle">Inventaire par site, contrôles et dates de péremption.</p>
 
+  <div class="incoming-filter-banner" id="incomingFilterBanner" style="display:none;"></div>
   <div class="summary-row" id="summaryRow"></div>
   <div id="sitesContainer"><div style="font-size:13px;color:var(--ink-soft);">Chargement…</div></div>
 </div>
@@ -211,7 +220,7 @@
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js";
   import { getAuth, sendSignInLinkToEmail, isSignInWithEmailLink, signInWithEmailLink, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js";
-  import { getFirestore, collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
+  import { getFirestore, collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc, getDoc } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyACY8fyy8Rd9NyLJ855xsDyknuUMV-pAag",
@@ -236,10 +245,22 @@ const firebaseConfig = {
   }
 
   let unsubscribe = null;
+  function applyBrandingLogo(){
+    getDoc(doc(db, 'config', 'branding')).then((snap) => {
+      const data = snap.exists() ? snap.data() : {};
+      if(!data.logoBase64) return;
+      document.querySelectorAll('.brand-mark').forEach(function(el){
+        el.style.background = 'none';
+        el.innerHTML = '<img src="data:image/png;base64,' + data.logoBase64 + '" alt="Logo" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">';
+      });
+    }).catch(() => {});
+  }
+
   onAuthStateChanged(auth, (user) => {
     document.getElementById('authChecking').style.display = 'none';
     if (user) {
       document.getElementById('authGate').style.display = 'none';
+      applyBrandingLogo();
       if(!unsubscribe){
         unsubscribe = onSnapshot(col, (snap) => {
           window._items = snap.docs.map(d => ({ id: d.id, ...d.data() }));
@@ -288,6 +309,15 @@ const firebaseConfig = {
 
 <script>
 function esc(s){ return (s==null?'':String(s)).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+
+const alertFilter = new URLSearchParams(window.location.search).get('alerte'); // 'peremption' | 'controle' | null
+(function showIncomingFilterBanner(){
+  if(!alertFilter) return;
+  const banner = document.getElementById('incomingFilterBanner');
+  const label = alertFilter === 'peremption' ? 'articles périmés' : 'articles à contrôler';
+  banner.style.display = 'flex';
+  banner.innerHTML = '<span>⏳ Filtré depuis l\'accueil : ' + label + '</span><a href="trousses_secours.html">Voir toutes les trousses</a>';
+})();
 
 const SITES = ["Bezannes","Chalons-en-Champagne","Evreux","Milly-la-Forêt","Montpellier","Nancy","Paris","Poitiers","Reims","Télétravail","Wavre"].sort((a,b)=>a.localeCompare(b,'fr'));
 (function populateSiteSelect(){
@@ -375,7 +405,13 @@ function itemStatus(item){
 }
 
 window.renderTrousses = function(){
-  const items = window._items || [];
+  const allItems = window._items || [];
+  const items = alertFilter ? allItems.filter(function(it){
+    const st = itemStatus(it);
+    if(alertFilter === 'peremption') return st.peremptionDays !== null && st.peremptionDays < 0;
+    if(alertFilter === 'controle') return st.controleDays !== null && st.controleDays < 0;
+    return true;
+  }) : allItems;
   const bySite = {};
   items.forEach(function(it){
     const s = it.site || 'Non renseigné';
@@ -400,8 +436,10 @@ window.renderTrousses = function(){
 
   const container = document.getElementById('sitesContainer');
   if(!sites.length){
-    container.innerHTML = '<div style="font-size:13px;color:var(--ink-soft);">Aucun article enregistré. Clique sur "Ajouter un article" pour commencer.</div>' +
-      '<button class="add-item-btn" onclick="openItemModal(null, \'\')" style="margin-top:12px;">+ Ajouter un article</button>';
+    container.innerHTML = alertFilter
+      ? '<div style="font-size:13px;color:var(--ink-soft);">Aucun article ne correspond à ce filtre.</div>'
+      : '<div style="font-size:13px;color:var(--ink-soft);">Aucun article enregistré. Clique sur "Ajouter un article" pour commencer.</div>' +
+        '<button class="add-item-btn" onclick="openItemModal(null, \'\')" style="margin-top:12px;">+ Ajouter un article</button>';
     return;
   }
 
@@ -427,7 +465,7 @@ window.renderTrousses = function(){
       '</tr>';
     }).join('');
 
-    return '<div class="site-card' + (idx===0?' open':'') + '" data-site-idx="' + idx + '">' +
+    return '<div class="site-card' + ((alertFilter || idx===0)?' open':'') + '" data-site-idx="' + idx + '">' +
       '<div class="site-head" onclick="this.closest(\'.site-card\').classList.toggle(\'open\')">' +
         '<h2>' + esc(site) + ' <span style="font-size:11px;color:var(--ink-soft);font-weight:400;">(' + siteItems.length + ')</span></h2>' +
         '<div style="display:flex;align-items:center;gap:10px;"><div class="site-badges">' + badges + '</div>' +
