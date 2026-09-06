@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Guide de vigilance . CSSCT</title>
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" href="icon-192.png">
+<meta name="theme-color" content="#2B2A2E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,500;8..60,600;8..60,700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --teal:#019682; --teal-dark:#017162; --purple:#5A4570; --gold:#C6AB76;
+    --paper:#F7F5F1; --paper-raised:#fff; --ink:#2B2A2E; --ink-soft:#6B6873; --line:#E4E0D8; --danger:#A85D45; --radius:12px;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0; background:var(--paper); color:var(--ink); font-family:'Inter',system-ui,sans-serif; line-height:1.6;}
+  .wrap{max-width:720px; margin:0 auto; padding:32px 20px 90px;}
+  header.top{display:flex; align-items:center; justify-content:space-between; padding-bottom:20px; border-bottom:2px solid var(--ink); margin-bottom:24px; flex-wrap:wrap; gap:10px;}
+  .brand{display:flex; align-items:center; gap:12px; cursor:pointer;}
+  .brand-mark{width:38px; height:38px; border-radius:50%;
+    background:conic-gradient(var(--teal) 0deg 120deg, var(--gold) 120deg 240deg, var(--purple) 240deg 360deg); flex:none;}
+  .brand-text{font-family:'Source Serif 4', serif; font-weight:700; font-size:19px;}
+  .brand-text span{color:var(--teal);}
+  .back-link{font-size:12.5px; font-weight:600; color:var(--ink-soft); text-decoration:none; border:1px solid var(--line); padding:6px 14px; border-radius:20px;}
+
+  h1{font-family:'Source Serif 4',serif; font-size:22px; margin:0 0 6px;}
+  .subtitle{font-size:13.5px; color:var(--ink-soft); margin:0 0 20px; max-width:560px;}
+
+  .disclaimer{background:var(--paper-raised); border-left:3px solid var(--gold); padding:13px 16px; font-size:12px; color:var(--ink-soft); border-radius:0 8px 8px 0; margin-bottom:22px;}
+
+  .toc{display:flex; flex-wrap:wrap; gap:8px; margin-bottom:26px;}
+  .toc a{font-size:12px; font-weight:600; color:var(--ink); background:#fff; border:1px solid var(--line); padding:7px 13px; border-radius:16px; text-decoration:none;}
+  .toc a:hover{border-color:var(--teal);}
+
+  details.situation-card{background:var(--paper-raised); border:1px solid var(--line); border-radius:var(--radius); margin-bottom:12px; scroll-margin-top:16px;}
+  details.situation-card summary{cursor:pointer; padding:16px 18px; font-family:'Source Serif 4',serif; font-weight:600; font-size:15px; display:flex; align-items:center; gap:10px; list-style:none;}
+  details.situation-card summary::-webkit-details-marker{display:none;}
+  details.situation-card summary::after{content:'+'; margin-left:auto; font-size:18px; color:var(--ink-soft); font-family:'Inter',sans-serif;}
+  details.situation-card[open] summary::after{content:'\2212';}
+  details.situation-card summary .s-icon{font-size:18px;}
+  .situation-body{padding:2px 18px 18px;}
+
+  .volet{margin-top:16px;}
+  .volet h4{font-size:11.5px; text-transform:uppercase; letter-spacing:.05em; color:var(--teal-dark); margin:0 0 8px; font-weight:700;}
+  .volet ul{margin:0; padding-left:18px; font-size:13px; line-height:1.55;}
+  .volet li{margin-bottom:6px;}
+
+  .law-link{color:var(--purple); text-decoration:none; border-bottom:1px dotted var(--purple); font-weight:600; white-space:nowrap;}
+  .law-link:hover{border-bottom-style:solid;}
+
+  ol.timeline{list-style:none; margin:0; padding:0;}
+  ol.timeline li{position:relative; padding:0 0 16px 22px; font-size:12.5px; line-height:1.5; color:var(--ink);}
+  ol.timeline li::before{content:''; position:absolute; left:4px; top:4px; width:8px; height:8px; border-radius:50%; background:var(--teal); z-index:1;}
+  ol.timeline li::after{content:''; position:absolute; left:7.25px; top:12px; bottom:0; width:1.5px; background:var(--line);}
+  ol.timeline li:last-child::after{display:none;}
+  ol.timeline li:last-child{padding-bottom:0;}
+  ol.timeline li strong{display:block; color:var(--ink); font-size:12.5px; margin-bottom:1px;}
+
+  .no-timeline-note{font-size:12.5px; color:var(--ink-soft); font-style:italic; margin:0;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="brand" onclick="window.location.href='index.html'">
+      <div class="brand-mark"></div>
+      <div class="brand-text">CS<span>2E</span> · CSSCT</div>
+    </div>
+    <a class="back-link" href="index.html">Retour à l'accueil</a>
+  </header>
+
+  <h1>Guide de vigilance CSE / CSSCT</h1>
+  <p class="subtitle">Points de vigilance, questions à poser et échéances clés pour les principales situations rencontrées dans le mandat.</p>
+
+  <div class="disclaimer">Ce guide donne des repères pratiques et des questions à poser, pas des avis juridiques engageants. Sur les points sensibles, fais-toi confirmer par un avocat en droit social ou un expert-comptable du CSE. Les références citées renvoient au Code du travail en vigueur ; vérifie leur actualité en cas de doute.</div>
+
+  <nav class="toc" aria-label="Sommaire">
+    <a href="#inspections">Inspections</a>
+    <a href="#pse">PSE</a>
+    <a href="#reorganisation">Réorganisation</a>
+    <a href="#scission">Scission</a>
+    <a href="#fusion">Regroupement / fusion</a>
+    <a href="#licenciement-collectif">Licenciement collectif hors PSE</a>
+    <a href="#transfert">Transfert d'entreprise</a>
+    <a href="#rcc">RCC</a>
+  </nav>
+
+  <details class="situation-card" id="inspections">
+    <summary><span class="s-icon">🔍</span>Réalisation d'inspections (CSSCT)</summary>
+    <div class="situation-body">
+      <div class="volet">
+        <h4>Cadre légal et obligations de l'employeur</h4>
+        <ul>
+          <li>Le CSE doit consacrer au moins 4 réunions par an, en tout ou partie, à la santé, sécurité et conditions de travail (<a class="law-link" href="https://www.legifrance.gouv.fr/codes/article_lc/LEGIARTI000035609536" target="_blank" rel="noopener">art. L2312-9</a>)</li>
+          <li>Pas de fréquence légale imposée pour les inspections elles-mêmes, mais c'est une mission explicite du CSE/CSSCT (<a class="law-link" href="https://www.legifrance.gouv.fr/codes/article_lc/LEGIARTI000035609774" target="_blank" rel="noopener">art. L2312-13</a>) — la périodicité se fixe en pratique (trimestrielle est courante)</li>
+          <li>L'employeur doit faciliter l'accès aux locaux et donner le temps nécessaire à la délégation</li>
+          <li>Un compte-rendu doit être rédigé et transmis à l'employeur</li>
+        </ul>
+      </div>
+      <div class="volet">
+        <h4>Rôle et prérogatives du CSE/CSSCT</h4>
+        <ul>
+          <li>Visiter les postes de travail pour repérer les risques réels (pas seulement documentaires)</li>
+          <li>Contribuer à l'analyse des risques professionnels et proposer des actions de prévention</li>
+          <li>Faire le lien entre le terrain et le document unique d'évaluation des risques (DUERP)</li>
+        </ul>
+      </div>
+      <div class="volet">
+        <h4>Points de vigilance</h4>
+        <ul>
+          <li>Accès à toutes les zones, y compris celles moins « présentables » (pas seulement les postes montrés en priorité)</li>
+          <li>Écart entre ce que dit le DUERP et ce qui est observé sur place</li>
+          <li>Suivi réel des actions correctives promises lors des inspections précédentes</li>
+          <li>Panel de salariés interrogés représentatif (pas seulement l'encadrement)</li>
+        </ul>
+      </div>
+      <div class="volet">
+        <h4>Questions à poser</h4>
+        <ul>
+          <li>Quelles actions ont été engagées suite à la dernière inspection, et dans quel délai ?</li>
+          <li>Le DUERP a-t-il été mis à jour depuis la dernière visite ?</li>
+          <li>Y a-t-il eu des accidents du travail ou des presqu'accidents depuis la dernière inspection ?</li>
+          <li>Les salariés concernés ont-ils été formés ou informés des risques identifiés ?</li>
+        </ul>
+      </div>
+      <div class="volet">
+        <h4>Recours et moyens d'action</h4>
+        <ul>
+          <li>Droit d'alerte en cas de danger grave et imminent (<a class="law-link" href="https://www.legifrance.gouv.fr/codes/article_lc/LEGIARTI000006903155" target="_blank" rel="noopener">art. L4131-1</a> et suivants)</li>
+          <li>Demande d'expertise en cas de risque grave constaté (<a class="law-link" href="https://www.legifrance.gouv.fr/codes/article_lc/LEGIARTI000043975185" target="_blank" rel="noopener">art. L2315-94</a>)</li>
+          <li>Signalement à l'inspection du travail si l'employeur reste inactif</li>
+        </ul>
+      </div>
+      <div class="volet">
+        <h4>Échéances clés</h4>
+        <ol class="timeline">
+          <li><strong>Pas de délai légal fixe</strong> pour la fréquence des inspections elles-mêmes</li>
+          <li><strong>Repère pratique</strong> : au moins 4 réunions SSCT par an (une par trimestre), inspection avant chaque réunion, compte-rendu transmis avant la réunion suivante</li>
+          <li><strong>Suivi</strong> des actions correctives à faire systématiquement à l'inspection suivante</li>
+        </ol>
+      </div>
+    </div>
+  </details>
+
+  <details class="situation-card" id="pse">
+    <summary><span class="s-icon">📉</span>PSE (Plan de Sauvegarde de l'Emploi)</summary>
+    <div class="situation-body">
+      <div class="volet">
+        <h4>Cadre légal et obligations de l'employeur</h4>
+        <ul>
+          <li>Obligatoire pour tout licenciement collectif d'au moins 10 salariés sur 30 jours dans une entreprise d'au moins 50 salariés (<a class="law-link" href="https://www.legifrance.gouv.fr/codes/article_lc/LEGIARTI000036261733" target="_blank" rel="noopener">art. L1233-61</a>)</li>
+          <li>L'employeur doit consulter le CSE sur le projet de réorganisation ET sur le contenu du PSE (mesures de reclassement, indemnités, etc.)</li>
+          <li>Information simultanée de la DREETS, qui peut faire des observations à tout moment de la procédure</li>
+        </ul>
+      </div>
+      <div class="volet">
+        <h4>Rôle et prérogatives du CSE/CSSCT</h4>
+        <ul>
+          <li>Rendre un avis sur l'opération projetée et sur le PSE — deux avis distincts (<a class="law-link" href="https://www.legifrance.gouv.fr/codes/article_lc/LEGIARTI000035643899" target="_blank" rel="noopener">art. L1233-30</a>)</li>
+          <li>Droit de recourir à un expert-comptable pour analyser le projet</li>
+          <li>Formuler des propositions alternatives (réduction du temps de travail, mesures de reclassement renforcées)</li>
+        </ul>
+      </div>
+      <div class="volet">
+        <h4>Points de vigilance</h4>
+        <ul>
+          <li>Confusion fréquente entre le motif économique invoqué et la réalité de la situation financière du groupe (pas seulement de la filiale)</li>
+          <li>Qualité réelle des mesures de reclassement (interne et externe), pas seulement leur existence sur le papier</li>
+          <li>Critères d'ordre des licenciements : sont-ils objectifs et non discriminants ?</li>
+          <li>Silence de l'employeur sur le périmètre du groupe pris en compte pour les recherches de reclassement</li>
+        </ul>
+      </div>
+      <div class="volet">
+        <h4>Questions à poser</h4>
+        <ul>
+          <li>Quel est le périmètre exact retenu pour les recherches de reclassement (entité, groupe, à l'étranger si les contrats le permettent) ?</li>
+          <li>Quels critères d'ordre des licenciements sont retenus, et comment sont-ils pondérés ?</li>
+          <li>Quelles mesures d'accompagnement concrètes (formation, cellule de reclassement, indemnités supra-légales) ?</li>
+          <li>Le projet a-t-il été anticipé (accords de GPEC, plans précédents) ou est-il présenté comme une urgence ?</li>
+        </ul>
+      </div>
+      <div class="volet">
+        <h4>Recours et moyens d'action</h4>
+        <ul>
+          <li>Désignation d'un expert-comptable (délai de 10 jours après la 1ʳᵉ réunion pour le désigner)</li>
+          <li>Recours devant le tribunal administratif contre la décision de validation/homologation de la DREETS (délai de 2 mois)</li>
+          <li>Alerte de l'inspection du travail en cas de procédure irrégulière</li>
+        </ul>
+      </div>
+      <div class="volet">
+        <h4>Échéances clés</h4>
+        <ol class="timeline">
+          <li><strong>Jour 0</strong> — 1ʳᵉ réunion du CSE (point de départ du délai de consultation)</li>
+          <li><strong>+ 10 jours</strong> — délai pour désigner un expert-comptable</li>
+          <li><strong>Délai global de consultation</strong> (à partir de la 1ʳᵉ réunion) : 2 mois si moins de 100 licenciements / 3 mois si 100 à 249 / 4 mois si 250 et plus</li>
+          <li><strong>Au moins 2 réunions du CSE</strong>, espacées d'au moins 15 jours</li>
+          <li><strong>Si expert désigné</strong> : rapport remis au plus tard 15 jours avant la fin du délai de consultation</li>
+          <li><strong>Avis du CSE</strong> rendu avant la fin du délai (à défaut, il est réputé consulté)</li>
+          <li><strong>Validation DREETS</strong> (accord collectif majoritaire) : 15 jours après réception du dossier complet</li>
+          <li><strong>Homologation DREETS</strong> (document unilatéral employeur) : 21 jours après réception du dossier complet</li>
+          <li><strong>Notification des licenciements</strong> : possible seulement après validation/homologation</li>
+        </ol>
+      </div>
+    </div>
+  </details>
+
+  <details class="situation-card" id="reorganisation">
+    <summary><span class="s-icon">🔄</span>Réorganisation de l'entreprise</summary>
+    <div class="situation-body">
+      <div class="volet">
+        <h4>Cadre légal et obligations de l'employeur</h4>
+        <ul>
+          <li>Toute réorganisation touchant l'organisation, la gestion ou la marche générale de l'entreprise nécessite une consultation du CSE (<a class="law-link" href="https://www.legifrance.gouv.fr/codes/article_lc/LEGIARTI000043975196" target="_blank" rel="noopener">art. L2312-8</a>)</li>
+          <li>Si elle entraîne au moins 10 licenciements sur 30 jours, elle bascule vers un PSE (voir fiche PSE)</li>
+          <li>Sans licenciement ou en dessous de ce seuil : consultation simple, délai fixé par accord d'entreprise ou, à défaut, délai de droit commun</li>
+        </ul>
+      </div>
+      <div class="volet">
+        <h4>Rôle et prérogatives du CSE/CSSCT</h4>
+        <ul>
+          <li>Rendre un avis motivé sur le projet et proposer des alternatives</li>
+          <li>Recourir à un expert si le projet impacte significativement les conditions de travail (<a class="law-link" href="https://www.legifrance.gouv.fr/codes/article_lc/LEGIARTI000036262604" target="_blank" rel="noopener">art. L2315-92</a>)</li>
+        </ul>
+      </div>
+      <div class="volet">
+        <h4>Points de vigilance</h4>
+        <ul>
+          <li>Projet présenté comme un fait accompli, sans réelle marge de négociation</li>
+          <li>Impact sur la charge de travail et les risques psychosociaux minimisé</li>
+          <li>DUERP non mis à jour en cohérence avec le projet</li>
+          <li>Calendrier de mise en œuvre plus rapide que le délai légal de consultation</li>
+        </ul>
+      </div>
+      <div class="volet">
+        <h4>Questions à poser</h4>
+        <ul>
+          <li>Quel est l'objectif réel de la réorganisation (économique, stratégique, RH) ?</li>
+          <li>Quels postes et services sont concernés, avec quels impacts (charge, horaires, lieu) ?</li>
+          <li>Y a-t-il un risque de suppressions de postes à terme ?</li>
+          <li>Une étude d'impact sur les conditions de travail et les RPS a-t-elle été réalisée ?</li>
+        </ul>
+      </div>
+      <div class="volet">
+        <h4>Recours et moyens d'action</h4>
+        <ul>
+          <li>Demande d'expertise (<a class="law-link" href="https://www.legifrance.gouv.fr/codes/article_lc/LEGIARTI000036262604" target="_blank" rel="noopener">art. L2315-92</a> et <a class="law-link" href="https://www.legifrance.gouv.fr/codes/article_lc/LEGIARTI000043975185" target="_blank" rel="noopener">L2315-94</a>)</li>
+          <li>Signalement à l'inspection du travail en cas d'absence de consultation</li>
+          <li>Action en référé si la consultation est bâclée (délit d'entrave potentiel)</li>
+        </ul>
+      </div>
+      <div class="volet">
+        <h4>Échéances clés</h4>
+        <ol class="timeline">
+          <li><strong>Délai de consultation de droit commun</strong> : 1 mois</li>
+          <li><strong>Porté à 2 mois</strong> en cas de recours à un expert</li>
+          <li><strong>Porté à 3 mois</strong> en cas de consultations imbriquées (CSE central + CSE d'établissement)</li>
+          <li><strong>Passé ce délai</strong>, le CSE est réputé avoir rendu un avis négatif implicite</li>
+        </ol>
+      </div>
+    </div>
+  </details>
+
+  <details class="situation-card" id="scission">
+    <summary><span class="s-icon">✂️</span>Scission d'entreprise</summary>
+    <div class="situation-body">
+      <div class="volet">
+        <h4>Cadre légal et obligations de l'employeur</h4>
+        <ul>
+          <li>Consultation du CSE obligatoire avant toute décision définitive (<a class="law-link" href="https://www.legifrance.gouv.fr/codes/article_lc/LEGIARTI000043975196" target="_blank" rel="noopener">art. L2312-8</a>)</li>
+          <li>Les contrats de travail sont transférés de plein droit aux entités bénéficiaires si l'activité continue dans les mêmes conditions (<a class="law-link" href="https://www.legifrance.gouv.fr/codes/article_lc/LEGIARTI000006900875" target="_blank" rel="noopener">art. L1224-1</a>)</li>
+        </ul>
+      </div>
+      <div class="volet">
+        <h4>Rôle et prérogatives du CSE/CSSCT</h4>
+        <ul>
+          <li>Rendre un avis sur le projet de scission</li>
+          <li>Vérifier le respect du transfert automatique des contrats</li>
+          <li>Anticiper le sort des instances représentatives dans les nouvelles entités</li>
+        </ul>
+      </div>
+      <div class="volet">
+        <h4>Points de vigilance</h4>
+        <ul>
+          <li>Critères de répartition des salariés entre entités peu clairs ou arbitraires</li>
+          <li>Maintien des accords collectifs et avantages acquis non garanti</li>
+          <li>Sort des mandats en cours des élus CSE/CSSCT après la scission</li>
+          <li>Transfert des engagements sociaux (intéressement, participation, mutuelle)</li>
+        </ul>
+      </div>
+      <div class="volet">
+        <h4>Questions à poser</h4>
+        <ul>
+          <li>Quelles entités reprennent quelles activités et quels salariés ?</li>
+          <li>Les accords collectifs et usages sont-ils maintenus dans chaque nouvelle entité ?</li>
+          <li>Quel calendrier pour de nouvelles élections professionnelles ?</li>
+          <li>Qu'advient-il des mandats en cours des élus ?</li>
+        </ul>
+      </div>
+      <div class="volet">
+        <h4>Recours et moyens d'action</h4>
+        <ul>
+          <li>Demande d'expertise sur le projet</li>
+          <li>Contestation devant le tribunal judiciaire si le transfert automatique des contrats n'est pas respecté</li>
+          <li>Saisine de l'inspection du travail sur le respect des obligations d'information-consultation</li>
+        </ul>
+      </div>
+      <div class="volet">
+        <h4>Échéances clés</h4>
+        <p class="no-timeline-note">Pas de délai spécifique à la scission ; délai de consultation de droit commun applicable (1 mois, 2 mois avec expert).</p>
+      </div>
+    </div>
+  </details>
+
+  <details class="situation-card" id="fusion">
+    <summary><span class="s-icon">🤝</span>Regroupement / fusion d'entreprises</summary>
+    <div class="situation-body">
+      <div class="volet">
+        <h4>Cadre légal et obligations de l'employeur</h4>
+        <ul>
+          <li>Consultation du CSE obligatoire avant décision définitive, y compris sur les conséquences en emploi et conditions de travail (<a class="law-link" href="https://www.legifrance.gouv.fr/codes/article_lc/LEGIARTI000043975196" target="_blank" rel="noopener">art. L2312-8</a>)</li>
+          <li>Transfert automatique des contrats de travail (<a class="law-link" href="https://www.legifrance.gouv.fr/codes/article_lc/LEGIARTI000006900875" target="_blank" rel="noopener">art. L1224-1</a>)</li>
+          <li>Les accords collectifs des entités fusionnées sont mis en cause et survivent temporairement (<a class="law-link" href="https://www.legifrance.gouv.fr/codes/article_lc/LEGIARTI000036762210" target="_blank" rel="noopener">art. L2261-14</a>)</li>
+        </ul>
+      </div>
+      <div class="volet">
+        <h4>Rôle et prérogatives du CSE/CSSCT</h4>
+        <ul>
+          <li>Avis sur le projet et son impact sur l'emploi et l'organisation</li>
+          <li>Suivi de la négociation d'un accord de substitution entre les statuts collectifs</li>
+          <li>Vérification de l'harmonisation des systèmes de paie et avantages</li>
+        </ul>
+      </div>
+      <div class="volet">
+        <h4>Points de vigilance</h4>
+        <ul>
+          <li>Différences de conventions collectives entre entités fusionnées, sources de litiges</li>
+          <li>Doublons de postes créés par la fusion, signal d'une réorganisation/PSE à venir</li>
+          <li>Maintien ou renouvellement des mandats des élus</li>
+          <li>Harmonisation des statuts souvent défavorable aux salariés de l'entité « absorbée »</li>
+        </ul>
+      </div>
+      <div class="volet">
+        <h4>Questions à poser</h4>
+        <ul>
+          <li>Quel est le calendrier juridique de la fusion (date d'effet) ?</li>
+          <li>Quel sort pour les accords collectifs actuellement en vigueur dans chaque entité ?</li>
+          <li>Des doublons de postes sont-ils identifiés, avec quel traitement prévu ?</li>
+          <li>Comment seront organisées les nouvelles élections professionnelles ?</li>
+        </ul>
+      </div>
+      <div class="volet">
+        <h4>Recours et moyens d'action</h4>
+        <ul>
+          <li>Demande d'expertise</li>
+          <li>Négociation d'un accord de transition pour les statuts collectifs</li>
+          <li>Saisine du tribunal judiciaire en cas de non-respect des obligations d'information-consultation</li>
+        </ul>
+      </div>
+      <div class="volet">
+        <h4>Échéances clés</h4>
+        <ol class="timeline">
+          <li><strong>Délai de consultation de droit commun</strong> : 1 mois, 2 mois avec expert</li>
+          <li><strong>Survie des accords collectifs mis en cause</strong> : préavis de 3 mois + durée de survie de 12 mois (15 mois maximum avant qu'un accord de substitution doive aboutir)</li>
+          <li><strong>Élections professionnelles</strong> à organiser généralement sous 90 jours si un CSE unique devient nécessaire</li>
+        </ol>
+      </div>
+    </div>
+  </details>
+
+  <details class="situation-card" id="licenciement-collectif">
+    <summary><span class="s-icon">📋</span>Licenciement collectif hors PSE</summary>
+    <div class="situation-body">
+      <div class="volet">
+        <h4>Cadre légal et obligations de l'employeur</h4>
+        <ul>
+          <li>Concerne les licenciements de moins de 10 salariés sur 30 jours (même dans une entreprise de 50 salariés et plus), ou toute entreprise de moins de 50 salariés</li>
+          <li>Consultation du CSE obligatoire malgré l'absence de PSE (<a class="law-link" href="https://www.legifrance.gouv.fr/codes/article_lc/LEGIARTI000036261850" target="_blank" rel="noopener">art. L1233-8</a> et s.)</li>
+        </ul>
+      </div>
+      <div class="volet">
+        <h4>Rôle et prérogatives du CSE/CSSCT</h4>
+        <ul>
+          <li>Rendre un avis sur le projet et les critères d'ordre des licenciements</li>
+          <li>Vérifier les mesures de reclassement individuel proposées</li>
+        </ul>
+      </div>
+      <div class="volet">
+        <h4>Points de vigilance</h4>
+        <ul>
+          <li>Fractionnement suspect des licenciements dans le temps pour rester sous le seuil du PSE</li>
+          <li>Recherche de reclassement peu sérieuse ou non individualisée</li>
+          <li>Critères d'ordre des licenciements peu clairs ou discriminants</li>
+        </ul>
+      </div>
+      <div class="volet">
+        <h4>Questions à poser</h4>
+        <ul>
+          <li>Le nombre de licenciements risque-t-il d'augmenter dans les 30 jours (basculement possible vers un PSE) ?</li>
+          <li>Quelles recherches de reclassement ont été menées, individuellement, pour chaque salarié ?</li>
+          <li>Quels critères d'ordre ont été retenus, et comment sont-ils pondérés ?</li>
+        </ul>
+      </div>
+      <div class="volet">
+        <h4>Recours et moyens d'action</h4>
+        <ul>
+          <li>Signalement à l'inspection du travail en cas de suspicion de fractionnement</li>
+          <li>Contestation individuelle devant le conseil de prud'hommes</li>
+        </ul>
+      </div>
+      <div class="volet">
+        <h4>Échéances clés</h4>
+        <ol class="timeline">
+          <li><strong>Entre 2 et 9 licenciements</strong> (entreprise de 50 salariés et plus) : 2 réunions du CSE espacées d'au moins 3 jours</li>
+          <li><strong>Notification à la DREETS</strong> dans les 8 jours suivant l'envoi des lettres de licenciement</li>
+        </ol>
+      </div>
+    </div>
+  </details>
+
+  <details class="situation-card" id="transfert">
+    <summary><span class="s-icon">🔀</span>Transfert d'entreprise (<a class="law-link" href="https://www.legifrance.gouv.fr/codes/article_lc/LEGIARTI000006900875" target="_blank" rel="noopener" onclick="event.stopPropagation();">art. L1224-1</a>)</summary>
+    <div class="situation-body">
+      <div class="volet">
+        <h4>Cadre légal et obligations de l'employeur</h4>
+        <ul>
+          <li>S'applique en cas de modification de la situation juridique de l'employeur (fusion, cession, changement de prestataire avec reprise d'une entité économique autonome...)</li>
+          <li>Transfert automatique des contrats de travail en cours, aux conditions en vigueur au jour du transfert</li>
+          <li>Consultation du CSE obligatoire avant l'opération, côté cédant et côté cessionnaire s'il existe</li>
+        </ul>
+      </div>
+      <div class="volet">
+        <h4>Rôle et prérogatives du CSE/CSSCT</h4>
+        <ul>
+          <li>Vérifier que tous les contrats concernés sont bien transférés, sans sélection arbitraire</li>
+          <li>Suivi du sort des accords collectifs de l'entité cédante</li>
+          <li>Vérifier la reprise des mandats représentatifs si l'entité transférée a ses propres élus</li>
+        </ul>
+      </div>
+      <div class="volet">
+        <h4>Points de vigilance</h4>
+        <ul>
+          <li>Tri des salariés à transférer sur des critères non prévus par la loi</li>
+          <li>Continuité réelle des conditions de travail après le transfert</li>
+          <li>Différences de statut collectif entre repreneur et cédant non anticipées</li>
+        </ul>
+      </div>
+      <div class="volet">
+        <h4>Questions à poser</h4>
+        <ul>
+          <li>Quels contrats sont concernés par le transfert, et sur quels critères objectifs ?</li>
+          <li>Le repreneur reprend-il les accords collectifs, ou une négociation de substitution est-elle prévue ?</li>
+          <li>Les conditions de travail sont-elles garanties à l'identique au moment du transfert ?</li>
+        </ul>
+      </div>
+      <div class="volet">
+        <h4>Recours et moyens d'action</h4>
+        <ul>
+          <li>Contestation devant le conseil de prud'hommes en cas de non-respect du transfert automatique</li>
+          <li>Demande d'expertise sur le projet</li>
+        </ul>
+      </div>
+      <div class="volet">
+        <h4>Échéances clés</h4>
+        <ol class="timeline">
+          <li><strong>Délai de consultation de droit commun</strong> : 1 mois, 2 mois avec expert</li>
+          <li><strong>Survie des accords collectifs mis en cause</strong> : préavis de 3 mois + survie de 12 mois (15 mois maximum)</li>
+        </ol>
+      </div>
+    </div>
+  </details>
+
+  <details class="situation-card" id="rcc">
+    <summary><span class="s-icon">🤲</span>Rupture conventionnelle collective (RCC)</summary>
+    <div class="situation-body">
+      <div class="volet">
+        <h4>Cadre légal et obligations de l'employeur</h4>
+        <ul>
+          <li>Dispositif basé sur le volontariat exclusif des salariés, aucun licenciement contraint (<a class="law-link" href="https://www.legifrance.gouv.fr/codes/article_lc/LEGIARTI000035623969" target="_blank" rel="noopener">art. L1237-19</a> et s.)</li>
+          <li>Nécessite un accord collectif majoritaire négocié avec les organisations syndicales</li>
+          <li>Validation par la DREETS (contrôle de la régularité de la procédure, pas du motif économique)</li>
+        </ul>
+      </div>
+      <div class="volet">
+        <h4>Rôle et prérogatives du CSE/CSSCT</h4>
+        <ul>
+          <li>Informé du projet et de son contenu (nombre de départs, mesures d'accompagnement)</li>
+          <li>Pas de consultation formelle sur l'accord lui-même (négocié par les syndicats), mais information obligatoire</li>
+          <li>Peut alerter sur un risque de contournement (suppressions de postes déguisées)</li>
+        </ul>
+      </div>
+      <div class="volet">
+        <h4>Points de vigilance</h4>
+        <ul>
+          <li>Volontariat réel des candidats au départ, sans pression déguisée</li>
+          <li>Postes supprimés réellement non remplacés</li>
+          <li>Recrutements en parallèle sur des postes équivalents (signal d'alerte fort)</li>
+          <li>Mesures d'accompagnement au moins équivalentes à celles d'un PSE</li>
+        </ul>
+      </div>
+      <div class="volet">
+        <h4>Questions à poser</h4>
+        <ul>
+          <li>Combien de postes sont concernés, sur quels critères de candidature au départ ?</li>
+          <li>Y a-t-il des recrutements prévus en parallèle sur des postes équivalents ?</li>
+          <li>Quelles mesures d'accompagnement (indemnités, aide à la création d'entreprise, formation) ?</li>
+          <li>Quel calendrier de validation par la DREETS ?</li>
+        </ul>
+      </div>
+      <div class="volet">
+        <h4>Recours et moyens d'action</h4>
+        <ul>
+          <li>Signalement à la DREETS en cas de doute sur le volontariat réel</li>
+          <li>Recours devant le tribunal administratif contre la décision de validation (délai de 2 mois)</li>
+        </ul>
+      </div>
+      <div class="volet">
+        <h4>Échéances clés</h4>
+        <ol class="timeline">
+          <li><strong>Validation de l'accord par la DREETS</strong> : 15 jours à compter de la réception du dossier complet</li>
+          <li><strong>Recours contre la décision de validation</strong> : délai de 2 mois</li>
+        </ol>
+      </div>
+    </div>
+  </details>
+
+</div>
+</body>
+</html>
