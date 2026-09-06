@@ -1,5 +1,17 @@
 [
   {
+    "hash": "ce863c5",
+    "date": "06/09/2026",
+    "title": "Update index.html",
+    "description": ""
+  },
+  {
+    "hash": "bcd5200",
+    "date": "06/09/2026",
+    "title": "chore: mise a jour automatique du changelog [skip ci]",
+    "description": ""
+  },
+  {
     "hash": "8ffad42",
     "date": "06/09/2026",
     "title": "Create guide_vigilance.html",
