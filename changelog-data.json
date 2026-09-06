@@ -1,5 +1,17 @@
 [
   {
+    "hash": "8ffad42",
+    "date": "06/09/2026",
+    "title": "Create guide_vigilance.html",
+    "description": ""
+  },
+  {
+    "hash": "a1173a3",
+    "date": "06/09/2026",
+    "title": "chore: mise a jour automatique du changelog [skip ci]",
+    "description": ""
+  },
+  {
     "hash": "8a07590",
     "date": "06/09/2026",
     "title": "Update signalement_liste.html",
