@@ -24,6 +24,43 @@ const CORS_HEADERS = {
 
 const DEFAULT_CSSCT_EMAILS = ['choudayer@smag.tech'];
 
+// Modèles par défaut, utilisés tant que config/email_templates (éditable depuis Administration
+// > Dossiers de signalement / Expression de besoin > Modèles d'email) n'a pas été personnalisé
+// pour le champ correspondant. Le client transmet le contenu de ce document dans `data.templates`.
+const DEFAULT_TEMPLATES = {
+  signalementConfirmation: {
+    subject: 'Confirmation de votre signalement CSSCT - {{numero}}',
+    body: 'Bonjour,\n\nVous venez de réaliser une demande de suivi auprès du CSSCT. Merci pour votre message. Nous allons étudier votre demande qui porte le numéro "{{numero}}" qu\'il faudra systématiquement intégrer dans nos échanges.\n\nSi des photos doivent être transmises, vous pouvez les envoyer en réponse à ce mail.\n\nNous vous souhaitons une bonne journée.'
+  },
+  signalementNotifCSSCT: {
+    subject: 'Formulaire CSSCT - {{nature}} - {{numero}}',
+    body: 'Bonjour,\n\nUn nouveau signalement a été réalisé par {{rapporteur}} sur le site de {{site}} et concerne un {{nature}} : {{objet}}\nLe suivi se fera sous le numéro {{numero}}\n\n\nCe message a été envoyé automatiquement de l\'application CSSCT.'
+  },
+  besoinConfirmation: {
+    subject: 'Confirmation de votre demande CSSCT - {{codeSuivi}}',
+    body: 'Bonjour,\n\nNous avons bien reçu votre expression de besoin auprès du CSSCT. Merci pour votre message.\n\nVotre code de suivi est : {{codeSuivi}}\nConservez-le précieusement : il vous permettra de suivre l\'avancement de votre demande et d\'ajouter un complément si besoin, depuis la page "Suivre ma demande".\n\nNous vous souhaitons une bonne journée.'
+  },
+  besoinNotifCSSCT: {
+    subject: 'Formulaire CSSCT - Expression de besoin - {{theme}}',
+    body: 'Bonjour,\n\nUne nouvelle expression de besoin a été déposée ({{auteurLabel}}{{entrepriseLabel}}).\nThème : {{theme}}\nDescription : {{description}}\n\nLe suivi se fera sous le code {{codeSuivi}}\n\nCe message a été envoyé automatiquement de l\'application CSSCT.'
+  }
+};
+
+function fillTemplate(str, vars) {
+  return String(str || '').replace(/\{\{(\w+)\}\}/g, function (_, key) {
+    return (vars[key] !== undefined && vars[key] !== null) ? String(vars[key]) : '';
+  });
+}
+
+function pickTemplate(templates, key) {
+  const t = (templates && templates[key]) || {};
+  const d = DEFAULT_TEMPLATES[key];
+  return {
+    subject: t.subject || d.subject,
+    body: t.body || d.body
+  };
+}
+
 function resolveDestinataires(list) {
   if (Array.isArray(list)) {
     const cleaned = list.map(function (e) { return String(e || '').trim(); }).filter(Boolean);
@@ -90,23 +127,13 @@ async function handleCollaborateurSubmission(request, env, ctx) {
       return new Response(JSON.stringify({ error: 'Champs obligatoires manquants' }), { status: 400, headers: CORS_HEADERS });
     }
 
-    const collabBody =
-`Bonjour,
-
-Vous venez de réaliser une demande de suivi auprès du CSSCT. Merci pour votre message. Nous allons étudier votre demande qui porte le numéro "${numero}" qu'il faudra systématiquement intégrer dans nos échanges.
-
-Si des photos doivent être transmises, vous pouvez les envoyer en réponse à ce mail.
-
-Nous vous souhaitons une bonne journée.`;
-
-    const cssctBody =
-`Bonjour,
-
-Un nouveau signalement a été réalisé par ${rapporteur} sur le site de ${site} et concerne un ${nature} : ${objet}
-Le suivi se fera sous le numéro ${numero}
-
-
-Ce message a été envoyé automatiquement de l'application CSSCT.`;
+    const vars = { numero, rapporteur, site, nature, objet };
+    const tConfirm = pickTemplate(data.templates, 'signalementConfirmation');
+    const tNotif = pickTemplate(data.templates, 'signalementNotifCSSCT');
+    const collabSubject = fillTemplate(tConfirm.subject, vars);
+    const collabBody = fillTemplate(tConfirm.body, vars);
+    const cssctSubject = fillTemplate(tNotif.subject, vars);
+    const cssctBody = fillTemplate(tNotif.body, vars);
 
     const fromEmail = env.MAILJET_FROM_EMAIL || 'cs2esolution@gmail.com';
     const fromName = env.MAILJET_FROM_NAME || 'CSSCT';
@@ -116,7 +143,7 @@ Ce message a été envoyé automatiquement de l'application CSSCT.`;
       {
         From: { Email: fromEmail, Name: fromName },
         To: [{ Email: rapporteurEmail }],
-        Subject: `Confirmation de votre signalement CSSCT - ${numero}`,
+        Subject: collabSubject,
         TextPart: collabBody
       }
     ];
@@ -125,7 +152,7 @@ Ce message a été envoyé automatiquement de l'application CSSCT.`;
       messages.push({
         From: { Email: fromEmail, Name: fromName },
         To: cssctEmails.map(function(e){ return { Email: e }; }),
-        Subject: `Formulaire CSSCT - ${nature} - ${numero}`,
+        Subject: cssctSubject,
         TextPart: cssctBody,
         Headers: { 'X-Priority': '1', 'Importance': 'High' }
       });
@@ -171,44 +198,29 @@ async function handleBesoinSubmission(request, env, ctx) {
     const fromName = env.MAILJET_FROM_NAME || 'CSSCT';
     const cssctEmails = resolveDestinataires(data.destinataires);
 
+    const auteurLabel = nomPrenom || 'anonyme';
+    const entrepriseLabel = entreprise ? (', ' + entreprise) : '';
+    const vars = { codeSuivi, theme, description, auteurLabel, entrepriseLabel };
+
     const messages = [];
 
     if (emailContact) {
-      const contactBody =
-`Bonjour,
-
-Nous avons bien reçu votre expression de besoin auprès du CSSCT. Merci pour votre message.
-
-Votre code de suivi est : ${codeSuivi}
-Conservez-le précieusement : il vous permettra de suivre l'avancement de votre demande et d'ajouter un complément si besoin, depuis la page "Suivre ma demande".
-
-Nous vous souhaitons une bonne journée.`;
-
+      const tConfirm = pickTemplate(data.templates, 'besoinConfirmation');
       messages.push({
         From: { Email: fromEmail, Name: fromName },
         To: [{ Email: emailContact }],
-        Subject: `Confirmation de votre demande CSSCT - ${codeSuivi}`,
-        TextPart: contactBody
+        Subject: fillTemplate(tConfirm.subject, vars),
+        TextPart: fillTemplate(tConfirm.body, vars)
       });
     }
 
-    const cssctBody =
-`Bonjour,
-
-Une nouvelle expression de besoin a été déposée${nomPrenom ? ' par ' + nomPrenom : ' (anonyme)'}${entreprise ? ' (' + entreprise + ')' : ''}.
-Thème : ${theme}
-Description : ${description}
-
-Le suivi se fera sous le code ${codeSuivi}
-
-Ce message a été envoyé automatiquement de l'application CSSCT.`;
-
     if (cssctEmails.length) {
+      const tNotif = pickTemplate(data.templates, 'besoinNotifCSSCT');
       messages.push({
         From: { Email: fromEmail, Name: fromName },
         To: cssctEmails.map(function(e){ return { Email: e }; }),
-        Subject: `Formulaire CSSCT - Expression de besoin - ${theme}`,
-        TextPart: cssctBody,
+        Subject: fillTemplate(tNotif.subject, vars),
+        TextPart: fillTemplate(tNotif.body, vars),
         Headers: { 'X-Priority': '1', 'Importance': 'High' }
       });
     }
