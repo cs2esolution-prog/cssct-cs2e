@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Suivre ma demande . CSSCT</title>
+<link rel="icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,500;8..60,600;8..60,700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --teal:#019682; --teal-dark:#017162; --purple:#5A4570; --gold:#C6AB76;
+    --paper:#F7F5F1; --ink:#2B2A2E; --ink-soft:#6B6873; --line:#E4E0D8; --danger:#A85D45; --radius:12px;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0; background:var(--paper); color:var(--ink); font-family:'Inter',system-ui,sans-serif; line-height:1.5;}
+  .wrap{max-width:600px; margin:0 auto; padding:32px 20px 80px;}
+  .brand{display:flex; align-items:center; gap:12px; padding-bottom:20px; border-bottom:2px solid var(--ink); margin-bottom:24px;}
+  .brand-mark{width:38px; height:38px; border-radius:50%;
+    background:conic-gradient(var(--teal) 0deg 120deg, var(--gold) 120deg 240deg, var(--purple) 240deg 360deg); flex:none;}
+  .brand-text{font-family:'Source Serif 4', serif; font-weight:700; font-size:19px;}
+  .brand-text span{color:var(--teal);}
+
+  h1{font-family:'Source Serif 4',serif; font-size:19px; margin:0 0 6px;}
+  .subtitle{font-size:13px; color:var(--ink-soft); margin:0 0 24px;}
+
+  .field{margin-bottom:14px;}
+  .field label{display:block; font-size:12.5px; font-weight:600; margin-bottom:5px;}
+  input, textarea{width:100%; font-family:'Inter',sans-serif; font-size:14px; padding:10px 12px; border:1px solid var(--line); border-radius:8px; background:#fff;}
+  input#codeInput{font-family:'IBM Plex Mono',monospace; letter-spacing:.03em; text-transform:uppercase;}
+  textarea{min-height:80px; resize:vertical;}
+
+  button[type="submit"], .action-btn{width:100%; background:var(--ink); color:#fff; border:none; padding:14px; border-radius:24px; font-weight:600; font-size:14.5px; cursor:pointer; margin-top:10px;}
+  button:disabled{opacity:.5;}
+  .error-msg{color:var(--danger); font-size:12.5px; margin-top:10px; text-align:center;}
+
+  .card{background:#fff; border:1px solid var(--line); border-left:4px solid var(--teal); border-radius:var(--radius); padding:22px; margin-bottom:16px;}
+  .card .k-title{font-family:'Source Serif 4',serif; font-size:16px; margin:0 0 4px;}
+  .card .k-meta{font-size:12px; color:var(--ink-soft); margin-bottom:14px;}
+  .statut-badge{display:inline-block; font-size:11.5px; font-weight:700; padding:4px 11px; border-radius:14px; background:#F2FBF9; color:var(--teal-dark); border:1px solid #BFE6DE;}
+  .k-row{margin-bottom:10px;}
+  .k-row .k-label{font-size:10.5px; text-transform:uppercase; letter-spacing:.06em; color:var(--ink-soft); margin-bottom:2px;}
+  .k-row .k-val{font-size:13.5px; white-space:pre-wrap;}
+
+  .histo{margin-top:16px;}
+  .histo-item{border-top:1px solid var(--line); padding:10px 0; font-size:12.5px;}
+  .histo-item .h-date{color:var(--ink-soft); font-size:11px; margin-bottom:2px;}
+  .histo-item .h-tag{display:inline-block; font-size:10px; font-weight:700; padding:1px 8px; border-radius:10px; margin-left:6px; background:#F3EFF6; color:var(--purple);}
+
+  .back-link{display:inline-block; margin-top:6px; font-size:12.5px; color:var(--teal-dark); text-decoration:none; font-weight:600;}
+  .toast{font-size:12.5px; color:var(--teal-dark); margin-top:8px; text-align:center; display:none;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="brand">
+    <div class="brand-mark" id="brandMark"></div>
+    <div class="brand-text">CS<span>2E</span> · CSSCT</div>
+  </div>
+
+  <div id="searchZone">
+    <h1>Suivre ma demande</h1>
+    <p class="subtitle">Retrouve ta demande (signalement ou expression de besoin) grâce au code de suivi qui t'a été communiqué à l'envoi.</p>
+
+    <form id="searchForm">
+      <div class="field">
+        <label>Code de suivi</label>
+        <input type="text" id="codeInput" required placeholder="XXXX-XXXX-XX">
+      </div>
+      <button type="submit" id="searchBtn">Rechercher</button>
+      <div class="error-msg" id="searchError"></div>
+    </form>
+
+    <a class="back-link" href="portail.html">← Retour au portail</a>
+  </div>
+
+  <div id="resultZone" style="display:none;"></div>
+</div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js";
+  import { getFirestore, collection, doc, getDoc, updateDoc, arrayUnion } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
+
+ const firebaseConfig = {
+  apiKey: "AIzaSyACY8fyy8Rd9NyLJ855xsDyknuUMV-pAag",
+  authDomain: "cssct-cs2e-c655b.firebaseapp.com",
+  projectId: "cssct-cs2e-c655b",
+  storageBucket: "cssct-cs2e-c655b.firebasestorage.app",
+  messagingSenderId: "277603883255",
+  appId: "1:277603883255:web:b3b7a5c3097a60caac1bf2"
+};
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+  const signalementsCol = collection(db, "signalements");
+  const besoinsCol = collection(db, "expressions_besoin");
+
+  getDoc(doc(db, 'config', 'branding')).then((snap) => {
+    const data = snap.exists() ? snap.data() : {};
+    if(!data.logoBase64) return;
+    document.querySelectorAll('.brand-mark').forEach(function(el){
+      el.style.background = 'none';
+      el.innerHTML = '<img src="data:image/png;base64,' + data.logoBase64 + '" alt="Logo" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">';
+    });
+  }).catch(() => {});
+
+  let DESTINATAIRES_SIGNALEMENT = [];
+  let DESTINATAIRES_BESOIN = [];
+  getDoc(doc(db, 'config', 'notifications_signalement')).then((snap) => {
+    const data = snap.exists() ? snap.data() : {};
+    if(Array.isArray(data.list)) DESTINATAIRES_SIGNALEMENT = data.list.slice();
+  }).catch(() => {});
+  getDoc(doc(db, 'config', 'notifications_besoin')).then((snap) => {
+    const data = snap.exists() ? snap.data() : {};
+    if(Array.isArray(data.list)) DESTINATAIRES_BESOIN = data.list.slice();
+  }).catch(() => {});
+
+  function esc(s){ return (s==null?'':String(s)).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+  function toFR(iso){
+    if(!iso) return '';
+    const parts = String(iso).split('-');
+    if(parts.length !== 3) return iso;
+    return parts[2] + '/' + parts[1] + '/' + parts[0];
+  }
+
+  let currentKind = null; // 'signalement' | 'besoin'
+  let currentCode = null;
+
+  function renderHistorique(list, containerEl){
+    const arr = (list||[]).slice().sort(function(a,b){ return (a.date||'').localeCompare(b.date||''); });
+    if(!arr.length){ containerEl.innerHTML = '<div class="histo-item" style="border-top:none;color:var(--ink-soft);">Aucun échange enregistré pour l\'instant.</div>'; return; }
+    containerEl.innerHTML = arr.map(function(h){
+      const tag = h.auteur === 'salarie' ? '<span class="h-tag">Toi</span>' : (h.auteur ? '<span class="h-tag" style="background:#F2FBF9;color:var(--teal-dark);">CSSCT</span>' : '');
+      return '<div class="histo-item"><div class="h-date">' + toFR(h.date) + tag + '</div><div>' + esc(h.text) + '</div></div>';
+    }).join('');
+  }
+
+  function renderResult(kind, code, data){
+    currentKind = kind; currentCode = code;
+    const zone = document.getElementById('resultZone');
+    document.getElementById('searchZone').style.display = 'none';
+    zone.style.display = 'block';
+
+    let titleHtml, metaHtml, rowsHtml, histoField, histoData;
+    if(kind === 'signalement'){
+      titleHtml = esc(data.objet || 'Dossier de signalement');
+      metaHtml = 'N° ' + esc(data.numero) + ' — ' + toFR(data.date || (data.createdAt||'').slice(0,10));
+      rowsHtml =
+        '<div class="k-row"><div class="k-label">Nature</div><div class="k-val">' + esc(data.natureIncident||'—') + '</div></div>' +
+        '<div class="k-row"><div class="k-label">Description</div><div class="k-val">' + esc(data.description||'—') + '</div></div>';
+      histoField = 'suivi';
+      histoData = data.suivi;
+    } else {
+      titleHtml = esc(data.theme || 'Expression de besoin');
+      metaHtml = toFR((data.createdAt||'').slice(0,10));
+      rowsHtml =
+        '<div class="k-row"><div class="k-label">Description</div><div class="k-val">' + esc(data.description||'—') + '</div></div>' +
+        '<div class="k-row"><div class="k-label">Impact</div><div class="k-val">' + esc(data.impact||'—') + '</div></div>';
+      histoField = 'historique';
+      histoData = data.historique;
+    }
+
+    zone.innerHTML =
+      '<div class="card">' +
+        '<div class="k-title">' + titleHtml + '</div>' +
+        '<div class="k-meta">' + metaHtml + '</div>' +
+        '<span class="statut-badge">' + esc(data.statut || 'Statut inconnu') + '</span>' +
+        '<div style="margin-top:16px;">' + rowsHtml + '</div>' +
+        '<div class="histo"><div class="k-row"><div class="k-label">Échanges</div></div><div id="histoList"></div></div>' +
+      '</div>' +
+      '<div class="card">' +
+        '<div class="k-row"><div class="k-label">Ajouter une information complémentaire</div></div>' +
+        '<textarea id="complementText" placeholder="Précision, complément d\'information, nouvelle question…"></textarea>' +
+        '<button class="action-btn" id="complementBtn" type="button">Envoyer ce complément</button>' +
+        '<div class="error-msg" id="complementError"></div>' +
+        '<div class="toast" id="complementToast">✓ Complément envoyé, merci.</div>' +
+      '</div>' +
+      '<a class="back-link" href="portail.html">← Retour au portail</a>';
+
+    renderHistorique(histoData, document.getElementById('histoList'));
+
+    document.getElementById('complementBtn').addEventListener('click', async function(){
+      const btn = this;
+      const errEl = document.getElementById('complementError');
+      const toastEl = document.getElementById('complementToast');
+      errEl.textContent = ''; toastEl.style.display = 'none';
+      const text = document.getElementById('complementText').value.trim();
+      if(!text){ errEl.textContent = 'Écris ton complément avant d\'envoyer.'; return; }
+      btn.disabled = true; btn.textContent = 'Envoi…';
+      try{
+        const entry = { date: new Date().toISOString().slice(0,10), text: text, auteur: 'salarie' };
+        const col = kind === 'signalement' ? signalementsCol : besoinsCol;
+        await updateDoc(doc(col, code), { [histoField]: arrayUnion(entry) });
+        histoData = (histoData||[]).concat([entry]);
+        renderHistorique(histoData, document.getElementById('histoList'));
+        document.getElementById('complementText').value = '';
+        toastEl.style.display = 'block';
+        try{
+          const destinataires = kind === 'signalement' ? DESTINATAIRES_SIGNALEMENT : DESTINATAIRES_BESOIN;
+          await fetch('/api/ajout-complement', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ kind: kind, code: code, numero: data.numero || null, objet: data.objet || data.theme || '', text: text, destinataires: destinataires })
+          });
+        }catch(mailErr){ /* le complément est enregistré même si la notification échoue */ }
+      }catch(err){
+        errEl.textContent = "Erreur : " + err.message;
+      }
+      btn.disabled = false; btn.textContent = 'Envoyer ce complément';
+    });
+  }
+
+  document.getElementById('searchForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = document.getElementById('searchBtn');
+    const errEl = document.getElementById('searchError');
+    errEl.textContent = '';
+    const code = document.getElementById('codeInput').value.trim().toUpperCase();
+    if(!code){ errEl.textContent = 'Saisis ton code de suivi.'; return; }
+    btn.disabled = true; btn.textContent = 'Recherche…';
+    try{
+      const snapSig = await getDoc(doc(signalementsCol, code));
+      if(snapSig.exists()){ renderResult('signalement', code, snapSig.data()); return; }
+      const snapBesoin = await getDoc(doc(besoinsCol, code));
+      if(snapBesoin.exists()){ renderResult('besoin', code, snapBesoin.data()); return; }
+      errEl.textContent = "Aucune demande trouvée avec ce code. Vérifie qu'il est correctement recopié.";
+    }catch(err){
+      errEl.textContent = "Erreur : " + err.message;
+    }
+    btn.disabled = false; btn.textContent = 'Rechercher';
+  });
+</script>
+</body>
+</html>

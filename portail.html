@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Portail CSSCT</title>
+<link rel="icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,500;8..60,600;8..60,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --teal:#019682; --teal-dark:#017162; --purple:#5A4570; --gold:#C6AB76;
+    --paper:#F7F5F1; --ink:#2B2A2E; --ink-soft:#6B6873; --line:#E4E0D8; --radius:14px;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0; background:var(--paper); color:var(--ink); font-family:'Inter',system-ui,sans-serif; line-height:1.5;}
+  .wrap{max-width:620px; margin:0 auto; padding:40px 20px 80px;}
+  .brand{display:flex; align-items:center; gap:12px; padding-bottom:20px; border-bottom:2px solid var(--ink); margin-bottom:28px;}
+  .brand-mark{width:38px; height:38px; border-radius:50%;
+    background:conic-gradient(var(--teal) 0deg 120deg, var(--gold) 120deg 240deg, var(--purple) 240deg 360deg); flex:none;}
+  .brand-text{font-family:'Source Serif 4', serif; font-weight:700; font-size:19px;}
+  .brand-text span{color:var(--teal);}
+
+  h1{font-family:'Source Serif 4',serif; font-size:21px; margin:0 0 8px;}
+  .subtitle{font-size:13.5px; color:var(--ink-soft); margin:0 0 28px;}
+
+  .tile{display:flex; align-items:center; gap:16px; background:#fff; border:1px solid var(--line); border-radius:var(--radius); padding:20px; margin-bottom:14px; text-decoration:none; color:var(--ink); transition:box-shadow .15s, border-color .15s;}
+  .tile:hover{box-shadow:0 6px 20px rgba(0,0,0,.08); border-color:var(--teal);}
+  .tile .t-icon{font-size:28px; flex:none; width:44px; text-align:center;}
+  .tile .t-title{font-family:'Source Serif 4',serif; font-size:15.5px; font-weight:700; margin-bottom:3px;}
+  .tile .t-desc{font-size:12.5px; color:var(--ink-soft);}
+  .tile.suivi{border-left:4px solid var(--purple);}
+  .tile.signalement{border-left:4px solid var(--danger, #A85D45);}
+  .tile.besoin{border-left:4px solid var(--teal);}
+
+  .footer-note{font-size:11.5px; color:var(--ink-soft); text-align:center; margin-top:24px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="brand">
+    <div class="brand-mark" id="brandMark"></div>
+    <div class="brand-text">CS<span>2E</span> · CSSCT</div>
+  </div>
+
+  <h1>Bienvenue sur le portail CSSCT</h1>
+  <p class="subtitle">Choisis ce que tu souhaites faire. Ces démarches sont ouvertes à tous les collaborateurs, sans connexion.</p>
+
+  <a class="tile signalement" href="signalement_collaborateur.html">
+    <div class="t-icon">⚠️</div>
+    <div><div class="t-title">Signaler une situation</div><div class="t-desc">Incident, accident, situation dangereuse ou à risque sur ton lieu de travail.</div></div>
+  </a>
+
+  <a class="tile besoin" href="expression_besoin.html">
+    <div class="t-icon">💬</div>
+    <div><div class="t-title">Exprimer un besoin</div><div class="t-desc">Une question ou un besoin sur tes conditions de travail, ta rémunération, ta formation… — peut rester anonyme.</div></div>
+  </a>
+
+  <a class="tile suivi" href="suivi_demande.html">
+    <div class="t-icon">🔎</div>
+    <div><div class="t-title">Suivre ma demande</div><div class="t-desc">Retrouve le statut d'une demande déjà envoyée grâce à ton code de suivi, et ajoute un complément si besoin.</div></div>
+  </a>
+
+  <p class="footer-note">Tes démarches sont étudiées par la commission santé, sécurité et conditions de travail (CSSCT).</p>
+</div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js";
+  import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
+
+ const firebaseConfig = {
+  apiKey: "AIzaSyACY8fyy8Rd9NyLJ855xsDyknuUMV-pAag",
+  authDomain: "cssct-cs2e-c655b.firebaseapp.com",
+  projectId: "cssct-cs2e-c655b",
+  storageBucket: "cssct-cs2e-c655b.firebasestorage.app",
+  messagingSenderId: "277603883255",
+  appId: "1:277603883255:web:b3b7a5c3097a60caac1bf2"
+};
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+
+  getDoc(doc(db, 'config', 'branding')).then((snap) => {
+    const data = snap.exists() ? snap.data() : {};
+    if(!data.logoBase64) return;
+    document.querySelectorAll('.brand-mark').forEach(function(el){
+      el.style.background = 'none';
+      el.innerHTML = '<img src="data:image/png;base64,' + data.logoBase64 + '" alt="Logo" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">';
+    });
+  }).catch(() => {});
+</script>
+</body>
+</html>

@@ -37,7 +37,9 @@
 
   .confirm-box{background:#fff; border:1px solid var(--line); border-left:4px solid var(--teal); border-radius:var(--radius); padding:28px; text-align:center; display:none;}
   .confirm-box .c-num{font-family:'IBM Plex Mono',monospace; font-size:22px; font-weight:700; color:var(--teal-dark); margin:10px 0;}
+  .confirm-box .c-code{font-family:'IBM Plex Mono',monospace; font-size:19px; font-weight:700; color:var(--purple); background:#F3EFF6; border:1px dashed var(--purple); border-radius:10px; padding:12px; margin:6px 0 14px; letter-spacing:.03em;}
   .error-msg{color:var(--danger); font-size:12.5px; margin-top:10px; text-align:center;}
+  .back-suivi{display:inline-block; margin-top:14px; font-size:12.5px; color:var(--teal-dark); text-decoration:none; font-weight:600;}
 </style>
 </head>
 <body>
@@ -53,7 +55,7 @@
 
     <form id="collabForm">
       <div class="grid2">
-        <div class="field"><label>Entreprise</label><input type="text" id="entreprise" placeholder="Ex : SMAG"></div>
+        <div class="field"><label>Entreprise</label><select id="entreprise"></select></div>
         <div class="field"><label>Site <span class="req">*</span></label><select id="site" required></select></div>
       </div>
       <div class="grid2">
@@ -87,13 +89,16 @@
     <h2 style="font-family:'Source Serif 4',serif; font-size:17px; margin:8px 0;">Signalement envoyé</h2>
     <p style="font-size:13.5px; color:var(--ink-soft);">Il porte le numéro</p>
     <div class="c-num" id="confirmNumero"></div>
-    <p style="font-size:13px; color:var(--ink-soft);">Un email de confirmation vient de t'être envoyé. Veuillez vérifier vos spams. Le CSSCT va étudier ta demande.</p>
+    <p style="font-size:13px; color:var(--ink-soft); margin-bottom:2px;">Pour suivre l'avancement de ta demande ou ajouter une information, garde précieusement ce code — il ne pourra pas être renvoyé :</p>
+    <div class="c-code" id="confirmCode"></div>
+    <p style="font-size:13px; color:var(--ink-soft);">Un email de confirmation vient de t'être envoyé avec ce code. Vérifie tes spams. Le CSSCT va étudier ta demande.</p>
+    <a class="back-suivi" href="suivi_demande.html">Suivre ma demande plus tard →</a>
   </div>
 </div>
 
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js";
-  import { getFirestore, collection, doc, addDoc, runTransaction, getDoc } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
+  import { getFirestore, collection, doc, setDoc, runTransaction, getDoc } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
 
  const firebaseConfig = {
   apiKey: "AIzaSyACY8fyy8Rd9NyLJ855xsDyknuUMV-pAag",
@@ -120,6 +125,8 @@
   const DEFAULT_SITES = ["Bezannes","Chalons-en-Champagne","Evreux","Milly-la-Forêt","Montpellier","Nancy","Paris","Poitiers","Reims","Télétravail","Wavre"].sort((a,b)=>a.localeCompare(b,'fr'));
   let SITES = DEFAULT_SITES.slice();
   const NATURES = ["Situation dangereuse","Risque Psycho sociaux","Accident de travail","Accident de trajet","Prévention","Trouble musculo squelettique","Intervention du CSSCT","Signalement autre"];
+  const DEFAULT_ENTREPRISES = ["Smag","Agrinovex","Fermes Leader","Be API","Agrosolutions","Carbon & Co"];
+  let ENTREPRISES = DEFAULT_ENTREPRISES.slice();
 
   function populateSiteOptions(){
     const sel = document.getElementById('site');
@@ -127,7 +134,14 @@
     sel.innerHTML = '<option value="">Choisir…</option>' + SITES.map(s => `<option>${s}</option>`).join('');
     if(keep) sel.value = keep;
   }
+  function populateEntrepriseOptions(){
+    const sel = document.getElementById('entreprise');
+    const keep = sel.value;
+    sel.innerHTML = '<option value="">Choisir…</option>' + ENTREPRISES.map(s => `<option>${s}</option>`).join('');
+    if(keep) sel.value = keep;
+  }
   populateSiteOptions();
+  populateEntrepriseOptions();
   document.getElementById('nature').innerHTML = '<option value="">Choisir…</option>' + NATURES.map(n => `<option>${n}</option>`).join('');
 
   getDoc(doc(db, 'config', 'sites')).then((snap) => {
@@ -135,6 +149,19 @@
     if(!Array.isArray(data.list) || !data.list.length) return;
     SITES = data.list.slice().sort((a,b)=>a.localeCompare(b,'fr'));
     populateSiteOptions();
+  }).catch(() => {});
+
+  getDoc(doc(db, 'config', 'entreprises')).then((snap) => {
+    const data = snap.exists() ? snap.data() : {};
+    if(!Array.isArray(data.list) || !data.list.length) return;
+    ENTREPRISES = data.list.slice().sort((a,b)=>a.localeCompare(b,'fr'));
+    populateEntrepriseOptions();
+  }).catch(() => {});
+
+  let DESTINATAIRES_SIGNALEMENT = [];
+  getDoc(doc(db, 'config', 'notifications_signalement')).then((snap) => {
+    const data = snap.exists() ? snap.data() : {};
+    if(Array.isArray(data.list)) DESTINATAIRES_SIGNALEMENT = data.list.slice();
   }).catch(() => {});
 
   async function getNextNumero(){
@@ -145,6 +172,19 @@
       tx.set(counterRef, { value: next });
       return next;
     });
+  }
+
+  // Code de suivi non devinable : sert d'identifiant du document Firestore,
+  // communiqué uniquement au salarié, pour pouvoir retrouver sa demande sans
+  // exposer la liste complète des dossiers (aucune lecture par liste n'est
+  // nécessaire côté public, seulement une lecture directe par identifiant connu).
+  function genCodeSuivi(){
+    const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    const bytes = new Uint8Array(10);
+    crypto.getRandomValues(bytes);
+    let out = '';
+    for(let i=0;i<bytes.length;i++){ out += alphabet[bytes[i] % alphabet.length]; }
+    return out.slice(0,4) + '-' + out.slice(4,8) + '-' + out.slice(8);
   }
 
   document.getElementById('collabForm').addEventListener('submit', async (e) => {
@@ -177,25 +217,30 @@
 
     try{
       const numero = await getNextNumero();
+      const codeSuivi = genCodeSuivi();
       payload.numero = numero;
-      await addDoc(signalementsCol, payload);
+      payload.codeSuivi = codeSuivi;
+      await setDoc(doc(signalementsCol, codeSuivi), payload);
 
       await fetch('/api/signalement-collaborateur', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           numero: numero,
+          codeSuivi: codeSuivi,
           rapporteur: payload.rapporteur,
           rapporteurEmail: payload.rapporteurEmail,
           site: payload.site,
           nature: payload.natureIncident,
-          objet: payload.objet
+          objet: payload.objet,
+          destinataires: DESTINATAIRES_SIGNALEMENT
         })
       });
 
       document.getElementById('formZone').style.display = 'none';
       document.getElementById('confirmBox').style.display = 'block';
       document.getElementById('confirmNumero').textContent = 'N° ' + numero;
+      document.getElementById('confirmCode').textContent = codeSuivi;
     }catch(err){
       errorMsg.textContent = "Une erreur est survenue, réessaie dans un instant. (" + err.message + ")";
       btn.disabled = false;

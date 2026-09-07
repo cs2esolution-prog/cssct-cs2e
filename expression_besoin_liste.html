@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Expressions de besoin . CSSCT</title>
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-title" content="Mon appli CSSCT">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#2B2A2E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,500;8..60,600;8..60,700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --teal:#019682; --teal-dark:#017162; --purple:#5A4570; --gold:#C6AB76;
+    --paper:#F7F5F1; --ink:#2B2A2E; --ink-soft:#6B6873; --line:#E4E0D8; --danger:#A85D45; --radius:10px;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0; background:var(--paper); color:var(--ink); font-family:'Inter',system-ui,sans-serif; line-height:1.5;}
+  .wrap{max-width:1040px; margin:0 auto; padding:32px 24px 106px;}
+  header.top{display:flex; align-items:center; justify-content:space-between; padding-bottom:20px; border-bottom:2px solid var(--ink); margin-bottom:24px; flex-wrap:wrap; gap:10px;}
+  .brand{display:flex; align-items:center; gap:12px; cursor:pointer;}
+  .brand-mark{width:38px; height:38px; border-radius:50%;
+    background:conic-gradient(var(--teal) 0deg 120deg, var(--gold) 120deg 240deg, var(--purple) 240deg 360deg); flex:none;}
+  .brand-text{font-family:'Source Serif 4', serif; font-weight:700; font-size:19px;}
+  .brand-text span{color:var(--teal);}
+  .back-link{font-size:12.5px; font-weight:600; color:var(--ink-soft); text-decoration:none; border:1px solid var(--line); padding:6px 14px; border-radius:20px;}
+
+  h1{font-family:'Source Serif 4',serif; font-size:20px; margin:0 0 4px;}
+  .subtitle{font-size:12.5px; color:var(--ink-soft); margin:0 0 16px;}
+
+  .filter-tabs{display:flex; gap:8px; margin-bottom:16px; flex-wrap:wrap;}
+  .filter-tab{padding:7px 14px; border-radius:16px; font-size:12px; font-weight:600; border:1px solid var(--line); background:#fff; cursor:pointer; color:var(--ink-soft);}
+  .filter-tab.active{background:var(--ink); color:#fff; border-color:var(--ink);}
+
+  .list{display:flex; flex-direction:column; gap:8px;}
+  .row{display:flex; justify-content:space-between; align-items:center; gap:14px; background:#fff; border:1px solid var(--line); border-left:4px solid var(--teal); border-radius:var(--radius); padding:14px 18px; cursor:pointer;}
+  .row:hover{box-shadow:0 4px 14px rgba(0,0,0,.06);}
+  .row.statut-nouveau{border-left-color:var(--purple);}
+  .row.statut-clos{border-left-color:var(--ink-soft);}
+  .row .r-title{font-weight:600; font-size:14px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:420px;}
+  .row .r-meta{font-size:11.5px; color:var(--ink-soft); margin-top:2px;}
+  .r-badge{font-size:10.5px; font-weight:700; padding:3px 10px; border-radius:12px; background:#F2FBF9; color:var(--teal-dark); border:1px solid #BFE6DE; white-space:nowrap;}
+
+  .drawer-overlay{position:fixed; inset:0; background:rgba(30,28,32,.5); display:none; z-index:80; justify-content:center; align-items:flex-start;}
+  .drawer-overlay.show{display:flex;}
+  .drawer{width:min(900px, 78vw); max-width:900px; margin-top:72px; max-height:calc(100vh - 90px); background:var(--paper); overflow-y:auto; border-radius:16px 16px 0 0; box-shadow:0 -10px 50px rgba(0,0,0,.3);}
+  @media (max-width:900px){ .drawer{ width:96vw; margin-top:56px; max-height:calc(100vh - 60px); } }
+  .drawer-head{position:sticky; top:0; background:#fff; z-index:2; border-bottom:1px solid var(--line); padding:16px 24px; display:flex; align-items:flex-start; justify-content:space-between; gap:12px; border-radius:16px 16px 0 0;}
+  .drawer-head h2{font-family:'Source Serif 4',serif; font-size:15.5px; margin:0; word-break:break-word; line-height:1.3;}
+  .drawer-head .dh-meta{font-size:11px; color:var(--ink-soft); margin-top:3px;}
+  .drawer-close{background:none; border:none; font-size:22px; cursor:pointer; color:var(--ink-soft); flex:none;}
+  .drawer-body{padding:20px 24px 100px;}
+
+  .dsection{background:#fff; border:1px solid var(--line); border-radius:var(--radius); padding:18px 20px; margin-bottom:14px;}
+  .dsection h3{font-family:'Source Serif 4',serif; font-size:14.5px; margin:0 0 10px;}
+  .dfield{margin-bottom:10px;}
+  .dfield .dlabel{font-size:10.5px; text-transform:uppercase; letter-spacing:.06em; color:var(--ink-soft); margin-bottom:2px;}
+  .dfield .dval{font-size:13.5px; white-space:pre-wrap;}
+  .dfield .dval.empty{color:#B8B4AC; font-style:italic;}
+  .dfield input, .dfield textarea, .dfield select{width:100%; font-family:'Inter',sans-serif; font-size:13.5px; padding:8px 10px; border:1px solid var(--line); border-radius:7px;}
+  .dfield textarea{min-height:70px;}
+  .code-mono{font-family:'IBM Plex Mono',monospace; font-size:13px; color:var(--purple);}
+
+  .histo-item{border-top:1px solid var(--line); padding:10px 0; font-size:12.5px;}
+  .histo-item:first-child{border-top:none;}
+  .histo-item .h-date{color:var(--ink-soft); font-size:11px; margin-bottom:2px;}
+  .h-tag{display:inline-block; font-size:10px; font-weight:700; padding:1px 8px; border-radius:10px; margin-left:6px; background:#F3EFF6; color:var(--purple);}
+  .h-tag.cssct{background:#F2FBF9; color:var(--teal-dark);}
+
+  .action-row{display:flex; gap:10px; flex-wrap:wrap;}
+  .btn{padding:9px 16px; border-radius:20px; font-size:12.5px; font-weight:600; cursor:pointer; border:1px solid var(--line); background:#fff;}
+  button.primary{background:var(--ink); color:#fff; border:none; padding:10px 18px; border-radius:20px; font-weight:600; font-size:13px; cursor:pointer;}
+
+  .tabbar{
+    position:fixed; left:0; right:0; bottom:0; z-index:140;
+    display:flex; background:#fff; border-top:1px solid var(--line);
+    padding:6px 4px calc(6px + env(safe-area-inset-bottom));
+    box-shadow:0 -2px 10px rgba(0,0,0,.05);
+  }
+  .tab-item{
+    flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px;
+    text-decoration:none; color:var(--ink-soft); font-size:9.5px; font-weight:600; padding:5px 2px; border-radius:10px;
+    min-width:0;
+  }
+  .tab-item .tab-icon{font-size:18px; line-height:1;}
+  .tab-item .tab-lbl{white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:100%;}
+  .tab-item.active{color:var(--teal-dark);}
+
+  #toast{position:fixed; left:50%; bottom:24px; transform:translate(-50%,120%); background:var(--ink); color:#fff; padding:12px 20px; border-radius:12px; font-size:13.5px; transition:transform .3s ease; z-index:250; max-width:90vw;}
+  #toast.show{transform:translate(-50%,0);}
+
+  #authGate{position:fixed;inset:0;background:#2B2A2E;display:flex;align-items:center;justify-content:center;z-index:200;padding:20px;}
+  #authForm{display:none;background:#fff;border-radius:14px;padding:32px;max-width:360px;width:100%;text-align:center;}
+</style>
+</head>
+<body>
+
+<div id="authGate">
+  <div id="authChecking" style="color:#ffffffaa;font-size:13.5px;">Vérification de la connexion…</div>
+  <div id="authForm">
+    <div style="font-family:'Source Serif 4',serif;font-weight:700;font-size:18px;margin-bottom:6px;">CS<span style="color:#019682;">2E</span> · CSSCT</div>
+    <p style="font-size:13px;color:#6B6873;margin:0 0 18px;">Connecte-toi avec ton email professionnel.</p>
+    <input type="email" id="authEmail" placeholder="prenom.nom@entreprise.com" style="width:100%;padding:10px 12px;border:1px solid #E4E0D8;border-radius:8px;font-size:13.5px;margin-bottom:10px;">
+    <button id="authSendLink" style="width:100%;background:#2B2A2E;color:#fff;border:none;padding:11px;border-radius:20px;font-weight:600;cursor:pointer;">Recevoir un lien de connexion</button>
+    <div id="authMsg" style="font-size:12px;color:#A85D45;margin-top:10px;min-height:14px;"></div>
+    <div style="margin-top:16px;padding-top:14px;border-top:1px solid #E4E0D8;text-align:left;">
+      <p style="font-size:11px;color:#6B6873;margin:0 0 8px;">Le lien s'ouvre dans un autre navigateur au lieu de cette appli épinglée ? Copie-le depuis ton email et colle-le ici :</p>
+      <input type="text" id="pastedLinkInput" placeholder="Colle le lien reçu par email" style="width:100%;padding:9px 11px;border:1px solid #E4E0D8;border-radius:8px;font-size:12.5px;margin-bottom:8px;">
+      <button id="pastedLinkBtn" style="width:100%;background:#fff;color:#2B2A2E;border:1px solid #E4E0D8;padding:10px;border-radius:20px;font-weight:600;font-size:12.5px;cursor:pointer;">Se connecter avec ce lien</button>
+      <div id="pastedLinkMsg" style="font-size:11.5px;color:#A85D45;margin-top:8px;min-height:14px;"></div>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+  <header class="top">
+    <div class="brand" onclick="window.location.href='index.html'">
+      <div class="brand-mark" id="brandMark"></div>
+      <div class="brand-text">CS<span>2E</span> · CSSCT</div>
+    </div>
+    <div style="display:flex; gap:10px; align-items:center;">
+      <a class="back-link" href="index.html">Retour à l'accueil</a>
+      <button id="logoutBtn" title="Se déconnecter" style="background:#fff;border:1px solid #E4E0D8;color:#A85D45;width:34px;height:34px;border-radius:50%;font-weight:700;cursor:pointer;font-size:14px;">✕</button>
+    </div>
+  </header>
+
+  <h1>Expressions de besoin</h1>
+  <p class="subtitle">Demandes reçues via le formulaire public « Exprimer un besoin ».</p>
+
+  <div class="filter-tabs" id="filterTabs">
+    <button class="filter-tab active" data-statut="Tous" onclick="switchFilter('Tous')">Tous</button>
+    <button class="filter-tab" data-statut="Nouveau" onclick="switchFilter('Nouveau')">Nouveau</button>
+    <button class="filter-tab" data-statut="En cours" onclick="switchFilter('En cours')">En cours</button>
+    <button class="filter-tab" data-statut="Traité" onclick="switchFilter('Traité')">Traité</button>
+    <button class="filter-tab" data-statut="Clos" onclick="switchFilter('Clos')">Clos</button>
+  </div>
+
+  <div class="list" id="list"><div style="font-size:13px;color:var(--ink-soft);">Chargement…</div></div>
+</div>
+
+<nav class="tabbar" aria-label="Navigation principale">
+  <a href="signalement_liste.html" class="tab-item"><span class="tab-icon">🗃️</span><span class="tab-lbl">Dossiers</span></a>
+  <a href="inspections.html" class="tab-item"><span class="tab-icon">🔍</span><span class="tab-lbl">Inspections</span></a>
+  <a href="comptes_rendus_reunion.html" class="tab-item"><span class="tab-icon">📋</span><span class="tab-lbl">CR réunion</span></a>
+  <a href="expression_besoin_liste.html" class="tab-item active"><span class="tab-icon">💬</span><span class="tab-lbl">Besoins</span></a>
+  <a href="index.html" class="tab-item"><span class="tab-icon">🏠</span><span class="tab-lbl">Accueil</span></a>
+  <a href="administration.html" class="tab-item"><span class="tab-icon">⚙️</span><span class="tab-lbl">Admin</span></a>
+</nav>
+
+<div class="drawer-overlay" id="drawerOverlay"><div class="drawer" id="drawer"></div></div>
+
+<div id="toast"></div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js";
+  import { getAuth, sendSignInLinkToEmail, isSignInWithEmailLink, signInWithEmailLink, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js";
+  import { getFirestore, collection, onSnapshot, doc, updateDoc, getDoc, arrayUnion, getDocs } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
+
+ const firebaseConfig = {
+  apiKey: "AIzaSyACY8fyy8Rd9NyLJ855xsDyknuUMV-pAag",
+  authDomain: "cssct-cs2e-c655b.firebaseapp.com",
+  projectId: "cssct-cs2e-c655b",
+  storageBucket: "cssct-cs2e-c655b.firebasestorage.app",
+  messagingSenderId: "277603883255",
+  appId: "1:277603883255:web:b3b7a5c3097a60caac1bf2"
+};
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+  const col = collection(db, "expressions_besoin");
+  const crCol = collection(db, "comptes_rendus_reunion");
+
+  const actionCodeSettings = { url: window.location.origin + window.location.pathname, handleCodeInApp: true };
+
+  if (isSignInWithEmailLink(auth, window.location.href)) {
+    let email = window.prompt("Confirme ton adresse email pour terminer la connexion :");
+    signInWithEmailLink(auth, email, window.location.href)
+      .then(() => window.history.replaceState({}, document.title, window.location.pathname))
+      .catch(err => alert("Connexion impossible : " + err.message));
+  }
+
+  function applyBrandingLogo(){
+    getDoc(doc(db, 'config', 'branding')).then((snap) => {
+      const data = snap.exists() ? snap.data() : {};
+      if(!data.logoBase64) return;
+      document.querySelectorAll('.brand-mark').forEach(function(el){
+        el.style.background = 'none';
+        el.innerHTML = '<img src="data:image/png;base64,' + data.logoBase64 + '" alt="Logo" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">';
+      });
+    }).catch(() => {});
+  }
+
+  let unsubscribe = null;
+  onAuthStateChanged(auth, (user) => {
+    document.getElementById('authChecking').style.display = 'none';
+    if (user) {
+      document.getElementById('authGate').style.display = 'none';
+      applyBrandingLogo();
+      loadCRList();
+      if(!unsubscribe){
+        unsubscribe = onSnapshot(col, (snap) => {
+          window._besoins = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+          window.renderList();
+          if(window._openDrawerId && document.getElementById('drawerOverlay').classList.contains('show')){
+            window.openDrawer(window._openDrawerId);
+          }
+        });
+      }
+    } else {
+      document.getElementById('authGate').style.display = 'flex';
+      document.getElementById('authForm').style.display = 'block';
+    }
+  });
+
+  document.getElementById('authSendLink').addEventListener('click', () => {
+    const email = document.getElementById('authEmail').value.trim();
+    const msg = document.getElementById('authMsg');
+    if (!email) { msg.textContent = "Merci de saisir ton email."; return; }
+    sendSignInLinkToEmail(auth, email, actionCodeSettings)
+      .then(() => { msg.style.color = '#019682'; msg.textContent = "Lien envoyé, vérifie ta boîte mail."; })
+      .catch(err => { msg.textContent = "Erreur : " + err.message; });
+  });
+
+  document.getElementById('pastedLinkBtn').addEventListener('click', () => {
+    const link = document.getElementById('pastedLinkInput').value.trim();
+    const msg = document.getElementById('pastedLinkMsg');
+    if (!link) { msg.textContent = "Colle d'abord le lien reçu par email."; return; }
+    if (!isSignInWithEmailLink(auth, link)) { msg.textContent = "Ce lien ne semble pas valide."; return; }
+    let email = window.prompt("Confirme ton adresse email pour terminer la connexion :");
+    if (!email) return;
+    signInWithEmailLink(auth, email, link)
+      .then(() => { msg.style.color = '#019682'; msg.textContent = "Connexion réussie !"; })
+      .catch(err => { msg.textContent = "Erreur : " + err.message; });
+  });
+
+  document.getElementById('logoutBtn').addEventListener('click', () => {
+    if(confirm('Se déconnecter ?')){ signOut(auth).then(() => { window.location.href = 'index.html'; }); }
+  });
+
+  window.BESOIN_FIREBASE = {
+    async update(id, fields){ await updateDoc(doc(col, id), fields); },
+    async addNote(id, entry){ await updateDoc(doc(col, id), { notesInternes: arrayUnion(entry) }); }
+  };
+
+  window._crList = [];
+  async function loadCRList(){
+    try{
+      const snap = await getDocs(crCol);
+      window._crList = snap.docs.map(d => ({ id: d.id, titre: d.data().titre, date: d.data().date }))
+        .sort((a,b) => (b.date||'').localeCompare(a.date||''));
+    }catch(err){ window._crList = []; }
+  }
+</script>
+
+<script>
+function esc(s){ return (s==null?'':String(s)).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+function toFR(iso){
+  if(!iso) return '';
+  const parts = String(iso).split('-');
+  if(parts.length !== 3) return iso;
+  return parts[2] + '/' + parts[1] + '/' + parts[0];
+}
+
+window._filter = 'Tous';
+window.switchFilter = function(statut){
+  window._filter = statut;
+  document.querySelectorAll('.filter-tab').forEach(function(b){ b.classList.toggle('active', b.dataset.statut === statut); });
+  window.renderList();
+};
+
+function findBesoin(id){ return (window._besoins||[]).find(function(x){ return x.id === id; }); }
+
+window.renderList = function(){
+  const list = document.getElementById('list');
+  let items = (window._besoins||[]).slice().sort(function(a,b){ return (b.createdAt||'').localeCompare(a.createdAt||''); });
+  if(window._filter !== 'Tous'){ items = items.filter(function(it){ return (it.statut||'Nouveau') === window._filter; }); }
+  if(!items.length){
+    list.innerHTML = '<div style="font-size:13px;color:var(--ink-soft);">Aucune expression de besoin' + (window._filter !== 'Tous' ? ' avec ce statut' : '') + '.</div>';
+    return;
+  }
+  list.innerHTML = items.map(function(it){
+    const statutClass = (it.statut === 'Nouveau') ? 'statut-nouveau' : (it.statut === 'Clos' ? 'statut-clos' : '');
+    const auteur = it.nomPrenom ? esc(it.nomPrenom) : 'Anonyme';
+    return '<div class="row ' + statutClass + '" onclick="openDrawer(\'' + it.id + '\')">' +
+      '<div style="min-width:0;"><div class="r-title">' + esc(it.theme || 'Sans thème') + '</div><div class="r-meta">' + auteur + ' · ' + toFR((it.createdAt||'').slice(0,10)) + (it.entreprise ? ' · ' + esc(it.entreprise) : '') + '</div></div>' +
+      '<span class="r-badge">' + esc(it.statut || 'Nouveau') + '</span>' +
+    '</div>';
+  }).join('');
+};
+
+function renderNotesInternes(it){
+  const arr = (it.notesInternes||[]).slice().sort(function(a,b){ return (a.date||'').localeCompare(b.date||''); });
+  if(!arr.length) return '<div style="font-size:12px;color:var(--ink-soft);">Aucune note interne pour l\'instant.</div>';
+  return arr.map(function(n){
+    return '<div class="histo-item"><div class="h-date">' + toFR(n.date) + '</div><div>' + esc(n.text) + '</div></div>';
+  }).join('');
+}
+
+function renderHistorique(it){
+  const arr = (it.historique||[]).slice().sort(function(a,b){ return (a.date||'').localeCompare(b.date||''); });
+  if(!arr.length) return '<div style="font-size:12px;color:var(--ink-soft);">Aucun complément envoyé par le salarié.</div>';
+  return arr.map(function(h){
+    const tag = h.auteur === 'salarie' ? '<span class="h-tag">Salarié</span>' : '<span class="h-tag cssct">CSSCT</span>';
+    return '<div class="histo-item"><div class="h-date">' + toFR(h.date) + tag + '</div><div>' + esc(h.text) + '</div></div>';
+  }).join('');
+}
+
+window.openDrawer = function(id){
+  const it = findBesoin(id);
+  if(!it) return;
+  window._openDrawerId = id;
+
+  const crOptions = '<option value="">Aucune réunion liée</option>' + (window._crList||[]).map(function(cr){
+    const sel = (it.reunionLieeId === cr.id) ? 'selected' : '';
+    return '<option value="' + cr.id + '" ' + sel + '>' + esc(cr.titre) + ' — ' + toFR(cr.date) + '</option>';
+  }).join('');
+
+  const drawer = document.getElementById('drawer');
+  drawer.innerHTML =
+    '<div class="drawer-head"><div><h2>' + esc(it.theme || 'Expression de besoin') + '</h2><div class="dh-meta">Code : <span class="code-mono">' + esc(it.codeSuivi||it.id) + '</span> · ' + toFR((it.createdAt||'').slice(0,10)) + '</div></div><button class="drawer-close" onclick="closeDrawer()">×</button></div>' +
+    '<div class="drawer-body">' +
+      '<div class="dsection"><h3>Statut et suivi interne</h3>' +
+        '<div class="dfield"><div class="dlabel">Statut</div><select id="statutSelect">' +
+          ['Nouveau','En cours','Traité','Clos'].map(function(s){ return '<option value="' + s + '" ' + (it.statut===s?'selected':'') + '>' + s + '</option>'; }).join('') +
+        '</select></div>' +
+        '<div class="dfield"><div class="dlabel">Réunion où le sujet a été abordé</div><select id="reunionSelect">' + crOptions + '</select></div>' +
+        '<button class="btn" onclick="saveStatutReunion(\'' + id + '\')">Enregistrer</button>' +
+      '</div>' +
+      '<div class="dsection"><h3>Détail de la demande</h3>' +
+        '<div class="dfield"><div class="dlabel">Structure</div><div class="dval ' + (it.entreprise?'':'empty') + '">' + (esc(it.entreprise) || 'Non précisé') + '</div></div>' +
+        '<div class="dfield"><div class="dlabel">Nom et prénom</div><div class="dval ' + (it.nomPrenom?'':'empty') + '">' + (esc(it.nomPrenom) || 'Anonyme') + '</div></div>' +
+        '<div class="dfield"><div class="dlabel">Email de contact</div><div class="dval ' + (it.emailContact?'':'empty') + '">' + (esc(it.emailContact) || 'Non fourni') + '</div></div>' +
+        '<div class="dfield"><div class="dlabel">Thème</div><div class="dval">' + esc(it.theme) + '</div></div>' +
+        '<div class="dfield"><div class="dlabel">Description</div><div class="dval">' + esc(it.description) + '</div></div>' +
+        '<div class="dfield"><div class="dlabel">Impact ressenti</div><div class="dval">' + esc(it.impact) + '</div></div>' +
+        '<div class="dfield"><div class="dlabel">Ampleur perçue</div><div class="dval">' + esc(it.ampleur) + '</div></div>' +
+        '<div class="dfield"><div class="dlabel">Souhait de contact</div><div class="dval ' + (it.souhaitContact?'':'empty') + '">' + (esc(it.souhaitContact) || 'Non précisé') + '</div></div>' +
+      '</div>' +
+      '<div class="dsection"><h3>Échanges avec le salarié (via le code de suivi)</h3><div id="histoBlock">' + renderHistorique(it) + '</div></div>' +
+      '<div class="dsection"><h3>Notes internes CSSCT</h3><div id="notesBlock">' + renderNotesInternes(it) + '</div>' +
+        '<textarea id="newNoteText" placeholder="Ajouter une note interne (visible CSSCT uniquement)…" style="margin-top:10px;"></textarea>' +
+        '<button class="btn" style="margin-top:8px;" onclick="addInternalNote(\'' + id + '\')">+ Ajouter cette note</button>' +
+      '</div>' +
+    '</div>';
+
+  document.getElementById('drawerOverlay').classList.add('show');
+};
+function closeDrawer(){ document.getElementById('drawerOverlay').classList.remove('show'); window._openDrawerId = null; }
+
+window.saveStatutReunion = async function(id){
+  const it = findBesoin(id);
+  const statut = document.getElementById('statutSelect').value;
+  const reunionId = document.getElementById('reunionSelect').value;
+  const cr = (window._crList||[]).find(function(c){ return c.id === reunionId; });
+  const fields = {
+    statut: statut,
+    reunionLieeId: reunionId || '',
+    reunionLieeLabel: cr ? (cr.titre + ' — ' + toFR(cr.date)) : ''
+  };
+  try{
+    await window.BESOIN_FIREBASE.update(id, fields);
+    Object.assign(it, fields);
+    showToast('Enregistré ✓');
+    window.renderList();
+  }catch(err){ showToast('Erreur : ' + err.message); }
+};
+
+window.addInternalNote = async function(id){
+  const text = document.getElementById('newNoteText').value.trim();
+  if(!text){ showToast('Écris une note avant de l\'ajouter.'); return; }
+  const it = findBesoin(id);
+  const entry = { date: new Date().toISOString().slice(0,10), text: text };
+  try{
+    await window.BESOIN_FIREBASE.addNote(id, entry);
+    it.notesInternes = (it.notesInternes||[]).concat([entry]);
+    document.getElementById('notesBlock').innerHTML = renderNotesInternes(it);
+    document.getElementById('newNoteText').value = '';
+    showToast('Note ajoutée ✓');
+  }catch(err){ showToast('Erreur : ' + err.message); }
+};
+
+let toastTimer;
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  clearTimeout(toastTimer); toastTimer = setTimeout(function(){ t.classList.remove('show'); }, 3200);
+}
+</script>
+</body>
+</html>

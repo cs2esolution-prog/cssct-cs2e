@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Exprimer un besoin . CSSCT</title>
+<link rel="icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,500;8..60,600;8..60,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --teal:#019682; --teal-dark:#017162; --purple:#5A4570; --gold:#C6AB76;
+    --paper:#F7F5F1; --ink:#2B2A2E; --ink-soft:#6B6873; --line:#E4E0D8; --danger:#A85D45; --radius:12px;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0; background:var(--paper); color:var(--ink); font-family:'Inter',system-ui,sans-serif; line-height:1.5;}
+  .wrap{max-width:600px; margin:0 auto; padding:32px 20px 80px;}
+  .brand{display:flex; align-items:center; gap:12px; padding-bottom:20px; border-bottom:2px solid var(--ink); margin-bottom:24px;}
+  .brand-mark{width:38px; height:38px; border-radius:50%;
+    background:conic-gradient(var(--teal) 0deg 120deg, var(--gold) 120deg 240deg, var(--purple) 240deg 360deg); flex:none;}
+  .brand-text{font-family:'Source Serif 4', serif; font-weight:700; font-size:19px;}
+  .brand-text span{color:var(--teal);}
+
+  h1{font-family:'Source Serif 4',serif; font-size:19px; margin:0 0 6px;}
+  .subtitle{font-size:13px; color:var(--ink-soft); margin:0 0 24px;}
+
+  .field{margin-bottom:18px;}
+  .field label.qlabel{display:block; font-size:13.5px; font-weight:600; margin-bottom:8px;}
+  .field .qhint{font-size:11.5px; color:var(--ink-soft); font-weight:400; margin-top:2px;}
+  .field .req{color:var(--danger);}
+  input, select, textarea{width:100%; font-family:'Inter',sans-serif; font-size:14px; padding:10px 12px; border:1px solid var(--line); border-radius:8px; background:#fff;}
+  textarea{min-height:90px; resize:vertical;}
+  .charcount{font-size:11px; color:var(--ink-soft); text-align:right; margin-top:3px;}
+  .charcount.over{color:var(--danger); font-weight:600;}
+
+  .opt-list{display:flex; flex-direction:column; gap:8px;}
+  .opt-item{display:flex; align-items:flex-start; gap:9px; background:#fff; border:1px solid var(--line); border-radius:9px; padding:10px 12px; cursor:pointer; font-size:13.5px;}
+  .opt-item:hover{border-color:var(--teal);}
+  .opt-item input{width:auto; margin-top:2px; flex:none;}
+  .opt-item.checked{border-color:var(--teal); background:#F2FBF9;}
+
+  button[type="submit"]{width:100%; background:var(--ink); color:#fff; border:none; padding:14px; border-radius:24px; font-weight:600; font-size:14.5px; cursor:pointer; margin-top:10px;}
+  button[type="submit"]:disabled{opacity:.5;}
+
+  .confirm-box{background:#fff; border:1px solid var(--line); border-left:4px solid var(--teal); border-radius:var(--radius); padding:28px; text-align:center; display:none;}
+  .confirm-box .c-code{font-family:'IBM Plex Mono',monospace; font-size:19px; font-weight:700; color:var(--purple); background:#F3EFF6; border:1px dashed var(--purple); border-radius:10px; padding:12px; margin:10px 0 14px; letter-spacing:.03em;}
+  .error-msg{color:var(--danger); font-size:12.5px; margin-top:10px; text-align:center;}
+  .back-suivi{display:inline-block; margin-top:14px; font-size:12.5px; color:var(--teal-dark); text-decoration:none; font-weight:600;}
+  .anon-note{font-size:11.5px; color:var(--ink-soft); margin-top:-8px; margin-bottom:16px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="brand">
+    <div class="brand-mark" id="brandMark"></div>
+    <div class="brand-text">CS<span>2E</span> · CSSCT</div>
+  </div>
+
+  <div id="formZone">
+    <h1>Exprimer un besoin auprès du CSE</h1>
+    <p class="subtitle">Ce formulaire est ouvert à tous les collaborateurs, sans connexion, et peut rester anonyme. Il permet de faire remonter une question ou un besoin qui n'est pas un signalement d'incident.</p>
+
+    <form id="besoinForm">
+      <div class="field">
+        <label class="qlabel">🏢 À quelle structure appartenez-vous ? <span style="font-weight:400;color:var(--ink-soft);">(Facultatif)</span></label>
+        <select id="entreprise"></select>
+      </div>
+
+      <div class="field">
+        <label class="qlabel">💬 Souhaitez-vous indiquer votre nom et prénom ? <span style="font-weight:400;color:var(--ink-soft);">(Facultatif)</span></label>
+        <input type="text" id="nomPrenom" placeholder="Nom et prénom">
+        <div class="qhint">📌 Cela nous permettra de vous contacter si nécessaire, mais vous pouvez aussi rester anonyme.</div>
+      </div>
+
+      <div class="field">
+        <label class="qlabel">Thème de la question <span class="req">*</span></label>
+        <div class="opt-list" id="themeList" data-name="theme"></div>
+      </div>
+
+      <div class="field">
+        <label class="qlabel">Décrivez votre demande en quelques mots <span class="req">*</span></label>
+        <textarea id="description" required maxlength="300" placeholder="Exprimez votre besoin de manière synthétique et le plus clairement possible"></textarea>
+        <div class="charcount" id="charcount">0 / 300</div>
+      </div>
+
+      <div class="field">
+        <label class="qlabel">Quel est l'impact de ce problème pour vous ? <span class="req">*</span></label>
+        <div class="opt-list" id="impactList" data-name="impact"></div>
+      </div>
+
+      <div class="field">
+        <label class="qlabel">Pensez-vous que d'autres collègues rencontrent le même problème ? <span class="req">*</span></label>
+        <div class="opt-list" id="ampleurList" data-name="ampleur"></div>
+      </div>
+
+      <div class="field">
+        <label class="qlabel">Souhaitez-vous être contacté pour en discuter ? <span style="font-weight:400;color:var(--ink-soft);">(Facultatif)</span></label>
+        <div class="opt-list" id="contactList" data-name="souhaitContact"></div>
+      </div>
+
+      <div class="field">
+        <label class="qlabel">Email pour suivre votre demande <span style="font-weight:400;color:var(--ink-soft);">(Facultatif)</span></label>
+        <input type="email" id="emailContact" placeholder="toi@entreprise.com">
+        <div class="qhint">📌 Sans email, votre demande reste anonyme mais vous pourrez quand même la retrouver plus tard grâce au code de suivi qui s'affichera après l'envoi — notez-le bien, il ne sera pas renvoyé.</div>
+      </div>
+
+      <button type="submit" id="submitBtn">Envoyer ma demande</button>
+      <div class="error-msg" id="errorMsg"></div>
+    </form>
+  </div>
+
+  <div class="confirm-box" id="confirmBox">
+    <div style="font-size:30px;">✓</div>
+    <h2 style="font-family:'Source Serif 4',serif; font-size:17px; margin:8px 0;">Demande envoyée</h2>
+    <p style="font-size:13px; color:var(--ink-soft); margin-bottom:2px;">Pour suivre l'avancement de ta demande ou ajouter une information, garde précieusement ce code — il ne pourra pas être renvoyé :</p>
+    <div class="c-code" id="confirmCode"></div>
+    <p style="font-size:13px; color:var(--ink-soft);" id="confirmEmailNote">Un email de confirmation vient de t'être envoyé avec ce code. Vérifie tes spams.</p>
+    <a class="back-suivi" href="suivi_demande.html">Suivre ma demande plus tard →</a>
+  </div>
+</div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js";
+  import { getFirestore, collection, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
+
+ const firebaseConfig = {
+  apiKey: "AIzaSyACY8fyy8Rd9NyLJ855xsDyknuUMV-pAag",
+  authDomain: "cssct-cs2e-c655b.firebaseapp.com",
+  projectId: "cssct-cs2e-c655b",
+  storageBucket: "cssct-cs2e-c655b.firebasestorage.app",
+  messagingSenderId: "277603883255",
+  appId: "1:277603883255:web:b3b7a5c3097a60caac1bf2"
+};
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+  const besoinsCol = collection(db, "expressions_besoin");
+
+  getDoc(doc(db, 'config', 'branding')).then((snap) => {
+    const data = snap.exists() ? snap.data() : {};
+    if(!data.logoBase64) return;
+    document.querySelectorAll('.brand-mark').forEach(function(el){
+      el.style.background = 'none';
+      el.innerHTML = '<img src="data:image/png;base64,' + data.logoBase64 + '" alt="Logo" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">';
+    });
+  }).catch(() => {});
+
+  const DEFAULT_ENTREPRISES = ["Smag","Agrinovex","Fermes Leader","Be API","Agrosolutions","Carbon & Co"];
+  let ENTREPRISES = DEFAULT_ENTREPRISES.slice();
+  function populateEntrepriseOptions(){
+    const sel = document.getElementById('entreprise');
+    const keep = sel.value;
+    sel.innerHTML = '<option value="">Préférer ne pas préciser</option>' + ENTREPRISES.map(s => `<option>${s}</option>`).join('');
+    if(keep) sel.value = keep;
+  }
+  populateEntrepriseOptions();
+  getDoc(doc(db, 'config', 'entreprises')).then((snap) => {
+    const data = snap.exists() ? snap.data() : {};
+    if(!Array.isArray(data.list) || !data.list.length) return;
+    ENTREPRISES = data.list.slice().sort((a,b)=>a.localeCompare(b,'fr'));
+    populateEntrepriseOptions();
+  }).catch(() => {});
+
+  let DESTINATAIRES_BESOIN = [];
+  getDoc(doc(db, 'config', 'notifications_besoin')).then((snap) => {
+    const data = snap.exists() ? snap.data() : {};
+    if(Array.isArray(data.list)) DESTINATAIRES_BESOIN = data.list.slice();
+  }).catch(() => {});
+
+  const THEMES = [
+    "Conditions de travail (horaires, organisation, charge de travail…)",
+    "Rémunération et avantages (primes, tickets restaurant, CE…)",
+    "Santé et sécurité (locaux, matériel, risques professionnels…)",
+    "Relations et management (communication, bien-être au travail…)",
+    "Formations et évolution professionnelle"
+  ];
+  const IMPACTS = [
+    "Mineur – ce serait un plus, mais ce n'est pas bloquant",
+    "Modéré – cela a un effet sur mon bien-être/travail",
+    "Important – cela affecte significativement mon quotidien",
+    "Critique – il est urgent d'agir sur ce sujet"
+  ];
+  const AMPLEURS = [
+    "Oui, beaucoup de personnes sont concernées",
+    "Oui, quelques personnes seulement",
+    "Non, c'est un cas très spécifique",
+    "Je ne sais pas"
+  ];
+  const CONTACTS = [
+    "Oui, je veux échanger avec un représentant du CSE",
+    "Non, ce n'est pas nécessaire"
+  ];
+
+  function renderOptions(containerId, name, options){
+    const el = document.getElementById(containerId);
+    el.innerHTML = options.map(function(opt, i){
+      const id = name + '_' + i;
+      return '<label class="opt-item" for="' + id + '"><input type="radio" name="' + name + '" id="' + id + '" value="' + opt.replace(/"/g,'&quot;') + '"><span>' + opt + '</span></label>';
+    }).join('');
+    el.querySelectorAll('input[type="radio"]').forEach(function(r){
+      r.addEventListener('change', function(){
+        el.querySelectorAll('.opt-item').forEach(function(l){ l.classList.remove('checked'); });
+        if(r.checked) r.closest('.opt-item').classList.add('checked');
+      });
+    });
+  }
+  renderOptions('themeList', 'theme', THEMES);
+  renderOptions('impactList', 'impact', IMPACTS);
+  renderOptions('ampleurList', 'ampleur', AMPLEURS);
+  renderOptions('contactList', 'souhaitContact', CONTACTS);
+
+  const descField = document.getElementById('description');
+  const charcount = document.getElementById('charcount');
+  descField.addEventListener('input', function(){
+    const len = descField.value.length;
+    charcount.textContent = len + ' / 300';
+    charcount.classList.toggle('over', len > 300);
+  });
+
+  function getRadioValue(name){
+    const el = document.querySelector('input[name="' + name + '"]:checked');
+    return el ? el.value : '';
+  }
+
+  function genCodeSuivi(){
+    const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    const bytes = new Uint8Array(10);
+    crypto.getRandomValues(bytes);
+    let out = '';
+    for(let i=0;i<bytes.length;i++){ out += alphabet[bytes[i] % alphabet.length]; }
+    return out.slice(0,4) + '-' + out.slice(4,8) + '-' + out.slice(8);
+  }
+
+  document.getElementById('besoinForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = document.getElementById('submitBtn');
+    const errorMsg = document.getElementById('errorMsg');
+    errorMsg.textContent = '';
+
+    const theme = getRadioValue('theme');
+    const description = descField.value.trim();
+    const impact = getRadioValue('impact');
+    const ampleur = getRadioValue('ampleur');
+
+    if(!theme){ errorMsg.textContent = 'Merci de choisir un thème.'; return; }
+    if(!description){ errorMsg.textContent = 'Merci de décrire ta demande.'; return; }
+    if(description.length > 300){ errorMsg.textContent = 'La description dépasse 300 caractères.'; return; }
+    if(!impact){ errorMsg.textContent = "Merci d'indiquer l'impact pour toi."; return; }
+    if(!ampleur){ errorMsg.textContent = 'Merci d\'indiquer si d\'autres collègues sont concernés.'; return; }
+
+    btn.disabled = true;
+    btn.textContent = 'Envoi en cours…';
+
+    const emailContact = document.getElementById('emailContact').value.trim();
+
+    const payload = {
+      entreprise: document.getElementById('entreprise').value,
+      nomPrenom: document.getElementById('nomPrenom').value.trim(),
+      theme: theme,
+      description: description,
+      impact: impact,
+      ampleur: ampleur,
+      souhaitContact: getRadioValue('souhaitContact'),
+      emailContact: emailContact,
+      statut: 'Nouveau',
+      notesInternes: [],
+      reunionLiee: '',
+      historique: [],
+      createdAt: new Date().toISOString()
+    };
+
+    try{
+      const codeSuivi = genCodeSuivi();
+      payload.codeSuivi = codeSuivi;
+      await setDoc(doc(besoinsCol, codeSuivi), payload);
+
+      try{
+        await fetch('/api/expression-besoin', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            codeSuivi: codeSuivi,
+            nomPrenom: payload.nomPrenom,
+            entreprise: payload.entreprise,
+            emailContact: emailContact,
+            theme: theme,
+            description: description,
+            destinataires: DESTINATAIRES_BESOIN
+          })
+        });
+      }catch(mailErr){ /* la demande est enregistrée même si l'email échoue */ }
+
+      document.getElementById('formZone').style.display = 'none';
+      document.getElementById('confirmBox').style.display = 'block';
+      document.getElementById('confirmCode').textContent = codeSuivi;
+      if(!emailContact){
+        document.getElementById('confirmEmailNote').textContent = "Tu n'as pas indiqué d'email : c'est ce code, et lui seul, qui te permettra de retrouver ta demande.";
+      }
+    }catch(err){
+      errorMsg.textContent = "Une erreur est survenue, réessaie dans un instant. (" + err.message + ")";
+      btn.disabled = false;
+      btn.textContent = 'Envoyer ma demande';
+    }
+  });
+</script>
+</body>
+</html>
