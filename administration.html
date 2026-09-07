@@ -181,6 +181,21 @@
     <div><div class="a-title">Entreprises / structures</div><div class="a-desc">Liste utilisée par le formulaire collaborateur et l'expression de besoin (public)</div></div>
     <div class="a-arrow">›</div>
   </button>
+  <button type="button" class="admin-card" onclick="openSitesModal()">
+    <div class="a-icon">📍</div>
+    <div><div class="a-title">Sites</div><div class="a-desc">Liste utilisée par le formulaire collaborateur, les inspections et les trousses de secours</div></div>
+    <div class="a-arrow">›</div>
+  </button>
+  <button type="button" class="admin-card" onclick="openNotifSignalementModal()">
+    <div class="a-icon">📧</div>
+    <div><div class="a-title">Destinataires — nouveaux signalements</div><div class="a-desc">Adresses qui reçoivent un mail à chaque nouveau dossier créé par un collaborateur</div></div>
+    <div class="a-arrow">›</div>
+  </button>
+  <button type="button" class="admin-card" onclick="openNotifBesoinModal()">
+    <div class="a-icon">📧</div>
+    <div><div class="a-title">Destinataires — expressions de besoin</div><div class="a-desc">Adresses qui reçoivent un mail à chaque nouvelle expression de besoin ou complément</div></div>
+    <div class="a-arrow">›</div>
+  </button>
 
   <div class="section-lbl">Multi-CSSCT</div>
   <button type="button" class="admin-card" onclick="document.getElementById('modopModal').classList.add('show')">
@@ -353,6 +368,60 @@
   </div>
 </div>
 
+<div class="modal-overlay" id="sitesModal">
+  <div class="modal" style="max-width:480px;">
+    <div class="modal-head">
+      <h3>📍 Sites</h3>
+      <button class="modal-close" onclick="document.getElementById('sitesModal').classList.remove('show')">×</button>
+    </div>
+    <div class="modal-body">
+      <p class="s-help" style="margin:0 0 10px;">Cette liste alimente le champ "Site" du formulaire de signalement collaborateur, des inspections et des trousses de secours. Chaque ajout/retrait est enregistré immédiatement.</p>
+      <ul class="access-list" id="sitesList"></ul>
+      <div class="access-add-row">
+        <input type="text" id="newSiteName" placeholder="Nom du site">
+        <button type="button" onclick="addSite()">Ajouter</button>
+      </div>
+      <div class="access-msg" id="sitesMsg"></div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="notifSignalementModal">
+  <div class="modal" style="max-width:480px;">
+    <div class="modal-head">
+      <h3>📧 Destinataires — nouveaux signalements</h3>
+      <button class="modal-close" onclick="document.getElementById('notifSignalementModal').classList.remove('show')">×</button>
+    </div>
+    <div class="modal-body">
+      <p class="s-help" style="margin:0 0 10px;">Ces adresses reçoivent un mail à chaque nouveau dossier de signalement créé par un collaborateur (formulaire public), en plus du mail de confirmation envoyé au collaborateur lui-même. Ajoute ici les adresses des élus CSSCT et/ou CSE concernés. Chaque ajout/retrait est enregistré immédiatement.</p>
+      <ul class="access-list" id="notifSignalementList"></ul>
+      <div class="access-add-row">
+        <input type="email" id="newNotifSignalementEmail" placeholder="prenom.nom@entreprise.com">
+        <button type="button" onclick="addNotifSignalement()">Ajouter</button>
+      </div>
+      <div class="access-msg" id="notifSignalementMsg"></div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="notifBesoinModal">
+  <div class="modal" style="max-width:480px;">
+    <div class="modal-head">
+      <h3>📧 Destinataires — expressions de besoin</h3>
+      <button class="modal-close" onclick="document.getElementById('notifBesoinModal').classList.remove('show')">×</button>
+    </div>
+    <div class="modal-body">
+      <p class="s-help" style="margin:0 0 10px;">Ces adresses reçoivent un mail à chaque nouvelle expression de besoin ou complément ajouté par un salarié (formulaire public), en plus du mail de confirmation envoyé au salarié lui-même s'il a laissé son email. Ajoute ici les adresses des élus CSSCT et/ou CSE concernés. Chaque ajout/retrait est enregistré immédiatement.</p>
+      <ul class="access-list" id="notifBesoinList"></ul>
+      <div class="access-add-row">
+        <input type="email" id="newNotifBesoinEmail" placeholder="prenom.nom@entreprise.com">
+        <button type="button" onclick="addNotifBesoin()">Ajouter</button>
+      </div>
+      <div class="access-msg" id="notifBesoinMsg"></div>
+    </div>
+  </div>
+</div>
+
 <div class="modal-overlay" id="modopModal">
   <div class="modal" style="max-width:680px;">
     <div class="modal-head">
@@ -422,6 +491,10 @@ const firebaseConfig = {
   const authorizedEmailsCol = collection(db, "authorized_emails");
   const entreprisesConfigRef = doc(db, "config", "entreprises");
   const DEFAULT_ENTREPRISES = ["Smag","Agrinovex","Fermes Leader","Be API","Agrosolutions","Carbon & Co"];
+  const sitesConfigRef = doc(db, "config", "sites");
+  const DEFAULT_SITES = ["Bezannes","Chalons-en-Champagne","Evreux","Milly-la-Forêt","Montpellier","Nancy","Paris","Poitiers","Reims","Télétravail","Wavre"];
+  const notifSignalementConfigRef = doc(db, "config", "notifications_signalement");
+  const notifBesoinConfigRef = doc(db, "config", "notifications_besoin");
   const MAIL_RELANCE_DEFAULTS = {
     presidentCSE: "alhermitte@smag.tech",
     elusCSSCT: "cdizien@agrosolutions.com;imariotti@smag.tech;choudayer@smag.tech"
@@ -444,6 +517,9 @@ const firebaseConfig = {
       window._currentUserEmail = (user.email || '').toLowerCase();
       loadAccessData();
       loadEntreprisesData();
+      loadSitesData();
+      loadNotifSignalementData();
+      loadNotifBesoinData();
     } else {
       document.getElementById('authGate').style.display = 'flex';
       document.getElementById('authForm').style.display = 'block';
@@ -628,6 +704,150 @@ const firebaseConfig = {
       window._entreprisesList = list;
       msg.style.color = '#019682'; msg.textContent = 'Retiré ✓';
       renderEntreprisesList();
+    }catch(err){ msg.style.color = '#A85D45'; msg.textContent = "Erreur : " + err.message; }
+  };
+
+  // ---- Sites (liste partagée avec les formulaires publics et internes) ----
+  function renderSitesList(){
+    const list = window._sitesList || [];
+    const el = document.getElementById('sitesList');
+    if(!list.length){
+      el.innerHTML = '<li class="access-empty">Aucun site enregistré.</li>';
+    } else {
+      el.innerHTML = list.map(function(name){
+        return '<li><span class="ax-email">' + escAdmin(name) + '</span>' +
+          '<button type="button" class="ax-remove" onclick="removeSite(\'' + escAdmin(name).replace(/'/g,"\\'") + '\')">Retirer</button></li>';
+      }).join('');
+    }
+  }
+
+  window.loadSitesData = async function(){
+    const msg = document.getElementById('sitesMsg');
+    if(msg) msg.textContent = '';
+    try{
+      const snap = await getDoc(sitesConfigRef);
+      const data = snap.exists() ? snap.data() : {};
+      window._sitesList = (Array.isArray(data.list) && data.list.length)
+        ? data.list.slice().sort((a,b) => a.localeCompare(b,'fr'))
+        : DEFAULT_SITES.slice();
+      renderSitesList();
+    }catch(err){
+      window._sitesList = DEFAULT_SITES.slice();
+      renderSitesList();
+      if(msg){ msg.style.color = '#A85D45'; msg.textContent = "Erreur de chargement : " + err.message; }
+    }
+  };
+
+  window.openSitesModal = function(){
+    document.getElementById('sitesModal').classList.add('show');
+    loadSitesData();
+  };
+
+  window.addSite = async function(){
+    const input = document.getElementById('newSiteName');
+    const msg = document.getElementById('sitesMsg');
+    const name = input.value.trim();
+    if(!name){ msg.style.color = '#A85D45'; msg.textContent = 'Saisis un nom de site.'; return; }
+    const current = window._sitesList || [];
+    if(current.some(function(e){ return e.toLowerCase() === name.toLowerCase(); })){
+      msg.style.color = '#A85D45'; msg.textContent = 'Ce site est déjà dans la liste.'; return;
+    }
+    const list = current.concat([name]).sort(function(a,b){ return a.localeCompare(b,'fr'); });
+    try{
+      await setDoc(sitesConfigRef, { list: list });
+      window._sitesList = list;
+      input.value = '';
+      msg.style.color = '#019682'; msg.textContent = 'Ajouté ✓';
+      renderSitesList();
+    }catch(err){ msg.style.color = '#A85D45'; msg.textContent = "Erreur : " + err.message; }
+  };
+
+  window.removeSite = async function(name){
+    const msg = document.getElementById('sitesMsg');
+    const list = (window._sitesList || []).filter(function(e){ return e !== name; });
+    try{
+      await setDoc(sitesConfigRef, { list: list });
+      window._sitesList = list;
+      msg.style.color = '#019682'; msg.textContent = 'Retiré ✓';
+      renderSitesList();
+    }catch(err){ msg.style.color = '#A85D45'; msg.textContent = "Erreur : " + err.message; }
+  };
+
+  // ---- Destinataires des notifications par mail (une liste par formulaire public) ----
+  function renderNotifList(listVarName, elId){
+    const list = window[listVarName] || [];
+    const el = document.getElementById(elId);
+    if(!list.length){
+      el.innerHTML = '<li class="access-empty">Aucun destinataire enregistré — un destinataire par défaut est utilisé en interne tant que cette liste est vide.</li>';
+    } else {
+      el.innerHTML = list.map(function(email){
+        return '<li><span class="ax-email">' + escAdmin(email) + '</span>' +
+          '<button type="button" class="ax-remove" onclick="removeNotifEmail(\'' + listVarName + '\',\'' + escAdmin(email).replace(/'/g,"\\'") + '\')">Retirer</button></li>';
+      }).join('');
+    }
+  }
+
+  async function loadNotifData(configRef, listVarName, elId, msgId){
+    const msg = document.getElementById(msgId);
+    if(msg) msg.textContent = '';
+    try{
+      const snap = await getDoc(configRef);
+      const data = snap.exists() ? snap.data() : {};
+      window[listVarName] = Array.isArray(data.list) ? data.list.slice().sort((a,b) => a.localeCompare(b,'fr')) : [];
+      renderNotifList(listVarName, elId);
+    }catch(err){
+      window[listVarName] = [];
+      renderNotifList(listVarName, elId);
+      if(msg){ msg.style.color = '#A85D45'; msg.textContent = "Erreur de chargement : " + err.message; }
+    }
+  }
+
+  window.loadNotifSignalementData = function(){ return loadNotifData(notifSignalementConfigRef, '_notifSignalementList', 'notifSignalementList', 'notifSignalementMsg'); };
+  window.loadNotifBesoinData = function(){ return loadNotifData(notifBesoinConfigRef, '_notifBesoinList', 'notifBesoinList', 'notifBesoinMsg'); };
+
+  window.openNotifSignalementModal = function(){
+    document.getElementById('notifSignalementModal').classList.add('show');
+    window.loadNotifSignalementData();
+  };
+  window.openNotifBesoinModal = function(){
+    document.getElementById('notifBesoinModal').classList.add('show');
+    window.loadNotifBesoinData();
+  };
+
+  async function addNotifEmail(configRef, listVarName, elId, inputId, msgId){
+    const input = document.getElementById(inputId);
+    const msg = document.getElementById(msgId);
+    const email = input.value.trim();
+    if(!email){ msg.style.color = '#A85D45'; msg.textContent = 'Saisis une adresse email.'; return; }
+    const current = window[listVarName] || [];
+    if(current.some(function(e){ return e.toLowerCase() === email.toLowerCase(); })){
+      msg.style.color = '#A85D45'; msg.textContent = 'Cette adresse est déjà dans la liste.'; return;
+    }
+    const list = current.concat([email]).sort(function(a,b){ return a.localeCompare(b,'fr'); });
+    try{
+      await setDoc(configRef, { list: list });
+      window[listVarName] = list;
+      input.value = '';
+      msg.style.color = '#019682'; msg.textContent = 'Ajouté ✓';
+      renderNotifList(listVarName, elId);
+    }catch(err){ msg.style.color = '#A85D45'; msg.textContent = "Erreur : " + err.message; }
+  }
+
+  window.addNotifSignalement = function(){ return addNotifEmail(notifSignalementConfigRef, '_notifSignalementList', 'notifSignalementList', 'newNotifSignalementEmail', 'notifSignalementMsg'); };
+  window.addNotifBesoin = function(){ return addNotifEmail(notifBesoinConfigRef, '_notifBesoinList', 'notifBesoinList', 'newNotifBesoinEmail', 'notifBesoinMsg'); };
+
+  window.removeNotifEmail = async function(listVarName, email){
+    const isSignalement = listVarName === '_notifSignalementList';
+    const configRef = isSignalement ? notifSignalementConfigRef : notifBesoinConfigRef;
+    const elId = isSignalement ? 'notifSignalementList' : 'notifBesoinList';
+    const msgId = isSignalement ? 'notifSignalementMsg' : 'notifBesoinMsg';
+    const msg = document.getElementById(msgId);
+    const list = (window[listVarName] || []).filter(function(e){ return e !== email; });
+    try{
+      await setDoc(configRef, { list: list });
+      window[listVarName] = list;
+      msg.style.color = '#019682'; msg.textContent = 'Retiré ✓';
+      renderNotifList(listVarName, elId);
     }catch(err){ msg.style.color = '#A85D45'; msg.textContent = "Erreur : " + err.message; }
   };
 
