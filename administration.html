@@ -522,6 +522,15 @@
         <li>Ajoute l'URL <code>*.workers.dev</code> obtenue (ou ton domaine personnalisé) aux "Authorized domains" Firebase (étape 1.3).</li>
       </ol>
 
+      <h4>Étape 3bis — Envoi d'email (Mailjet) &amp; notifications push (ntfy)</h4>
+      <div class="modop-note">⚠️ Étape facile à oublier : sans elle, l'instance fonctionne normalement mais n'envoie jamais aucun email ni notification push, sans erreur visible pour l'utilisateur.</div>
+      <ol>
+        <li>5 secrets à définir sur le Worker (jamais dans le code, pour ne pas les exposer dans Git) : <code>MAILJET_API_KEY</code>, <code>MAILJET_API_SECRET</code>, <code>MAILJET_FROM_EMAIL</code>, <code>MAILJET_FROM_NAME</code>, <code>NTFY_TOPIC</code> (choisis un nom de topic unique et difficile à deviner).</li>
+        <li>Depuis le dépôt : <code>npx wrangler secret put MAILJET_API_KEY</code> (idem pour les 4 autres) — ou depuis le tableau de bord Cloudflare : Workers &amp; Pages &gt; le Worker &gt; Settings &gt; Variables and Secrets &gt; "Add" (cocher "Encrypt").</li>
+        <li>Un redéploiement (<code>wrangler deploy</code>) n'écrase pas les secrets déjà définis.</li>
+        <li>À vérifier : crée un signalement ou une expression de besoin de test et confirme que l'email et la notification ntfy arrivent bien. En cas de souci, les logs du Worker (Cloudflare &gt; le Worker &gt; Logs, ou <code>npx wrangler tail</code>) affichent les erreurs Mailjet/ntfy.</li>
+      </ol>
+
       <h4>Étape 4 — Premiers comptes</h4>
       <ol>
         <li>Ajoute ton email dans <code>authorized_emails</code> (console Firebase du nouveau projet).</li>
@@ -530,7 +539,7 @@
         <li>Ajoute ensuite les comptes autorisés suivants et la config du mail de relance, toujours depuis Administration.</li>
       </ol>
 
-      <div class="modop-note">Limite à connaître : le code est aujourd'hui dupliqué à l'identique entre chaque instance (pas de configuration centralisée), donc toute correction ou nouvelle fonctionnalité doit être reportée manuellement sur chaque dépôt.</div>
+      <div class="modop-note">Limite à connaître : le code est aujourd'hui dupliqué à l'identique entre chaque instance (pas de configuration centralisée), donc toute correction ou nouvelle fonctionnalité doit être reportée manuellement sur chaque dépôt. Les secrets Mailjet/ntfy (étape 3bis) sont eux aussi à reconfigurer à chaque instance — aucune interface d'administration pour les saisir depuis l'appli, ce sont des secrets d'infrastructure.</div>
     </div>
   </div>
 </div>
