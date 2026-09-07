@@ -13,7 +13,6 @@
 <meta name="theme-color" content="#2B2A2E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,500;8..60,600;8..60,700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
 <style>
   :root{
     --teal:#019682; --teal-dark:#017162; --purple:#5A4570; --gold:#C6AB76;
@@ -48,7 +47,7 @@
   .sitemap-link:hover{border-color:var(--teal);}
 
   .qr-card{background:#fff; border:1px solid var(--line); border-radius:var(--radius); padding:24px; text-align:center;}
-  #qrCanvas{margin:0 auto 12px;}
+  .qr-img{margin:0 auto 12px; display:block; width:180px; height:180px; border-radius:8px;}
   .qr-url{font-family:'IBM Plex Mono',monospace; font-size:11.5px; color:var(--ink-soft); word-break:break-all;}
   .copy-btn{margin-top:10px; background:var(--ink); color:#fff; border:none; padding:9px 18px; border-radius:20px; font-weight:600; font-size:12.5px; cursor:pointer;}
 
@@ -219,13 +218,17 @@
     <a class="sitemap-link" href="import_excel.html">Import historique Excel</a>
     <a class="sitemap-link" href="changelog.html">Notes de mise à jour</a>
     <a class="sitemap-link" href="signalement_collaborateur.html">Signalement collaborateur (public)</a>
+    <a class="sitemap-link" href="expression_besoin.html">Expression de besoin (public)</a>
+    <a class="sitemap-link" href="suivi_demande.html">Suivre ma demande (public)</a>
+    <a class="sitemap-link" href="portail.html">Portail salariés (public)</a>
+    <a class="sitemap-link" href="expression_besoin_liste.html">Expressions de besoin (équipe)</a>
     <a class="sitemap-link" href="a_propos.html">À propos</a>
     <a class="sitemap-link" href="administration.html">Administration (ici)</a>
   </div>
 
   <div class="section-lbl">Partager l'application (équipe CSSCT)</div>
   <div class="qr-card">
-    <canvas id="qrCanvas"></canvas>
+    <img class="qr-img" id="qrCanvas" alt="QR code">
     <div class="qr-url" id="qrUrl"></div>
     <button class="copy-btn" id="copyUrlBtn">Copier le lien</button>
   </div>
@@ -233,9 +236,25 @@
   <div class="section-lbl">Formulaire de signalement collaborateur</div>
   <p style="font-size:12px;color:var(--ink-soft);margin:-4px 0 12px;">Ce lien est public, sans connexion — partage-le librement à tous les collaborateurs (affichage, email, intranet...).</p>
   <div class="qr-card">
-    <canvas id="qrCanvasCollab"></canvas>
+    <img class="qr-img" id="qrCanvasCollab" alt="QR code">
     <div class="qr-url" id="qrUrlCollab"></div>
     <button class="copy-btn" id="copyUrlBtnCollab">Copier le lien</button>
+  </div>
+
+  <div class="section-lbl">Formulaire d'expression de besoin</div>
+  <p style="font-size:12px;color:var(--ink-soft);margin:-4px 0 12px;">Public, sans connexion — un salarié peut y rester anonyme.</p>
+  <div class="qr-card">
+    <img class="qr-img" id="qrCanvasBesoin" alt="QR code">
+    <div class="qr-url" id="qrUrlBesoin"></div>
+    <button class="copy-btn" id="copyUrlBtnBesoin">Copier le lien</button>
+  </div>
+
+  <div class="section-lbl">Portail salariés (signalement + besoin + suivi)</div>
+  <p style="font-size:12px;color:var(--ink-soft);margin:-4px 0 12px;">Page d'entrée unique à partager si tu préfères ne diffuser qu'un seul lien plutôt que les formulaires séparément.</p>
+  <div class="qr-card">
+    <img class="qr-img" id="qrCanvasPortail" alt="QR code">
+    <div class="qr-url" id="qrUrlPortail"></div>
+    <button class="copy-btn" id="copyUrlBtnPortail">Copier le lien</button>
   </div>
 </div>
 
@@ -698,34 +717,30 @@ const firebaseConfig = {
 </script>
 
 <script>
-window.renderQR = function(){
-  const url = window.location.origin + '/index.html';
-  document.getElementById('qrUrl').textContent = url;
-  if(window.QRCode){
-    QRCode.toCanvas(document.getElementById('qrCanvas'), url, { width: 200, margin: 1, color: { dark: '#2B2A2E', light: '#F7F5F1' } });
-  }
-  document.getElementById('copyUrlBtn').addEventListener('click', function(){
-    navigator.clipboard.writeText(url).then(function(){
-      const btn = document.getElementById('copyUrlBtn');
-      const old = btn.textContent;
-      btn.textContent = 'Copié ✓';
-      setTimeout(function(){ btn.textContent = old; }, 1500);
-    });
-  });
+function qrImgUrl(text){
+  return 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&margin=8&data=' + encodeURIComponent(text);
+}
 
-  const collabUrl = window.location.origin + '/signalement_collaborateur.html';
-  document.getElementById('qrUrlCollab').textContent = collabUrl;
-  if(window.QRCode){
-    QRCode.toCanvas(document.getElementById('qrCanvasCollab'), collabUrl, { width: 200, margin: 1, color: { dark: '#5A4570', light: '#F7F5F1' } });
-  }
-  document.getElementById('copyUrlBtnCollab').addEventListener('click', function(){
-    navigator.clipboard.writeText(collabUrl).then(function(){
-      const btn = document.getElementById('copyUrlBtnCollab');
+function setupShareLink(page, canvasId, urlId, btnId){
+  const url = window.location.origin + '/' + page;
+  const img = document.getElementById(canvasId);
+  img.src = qrImgUrl(url);
+  document.getElementById(urlId).textContent = url;
+  document.getElementById(btnId).addEventListener('click', function(){
+    navigator.clipboard.writeText(url).then(function(){
+      const btn = document.getElementById(btnId);
       const old = btn.textContent;
       btn.textContent = 'Copié ✓';
       setTimeout(function(){ btn.textContent = old; }, 1500);
     });
   });
+}
+
+window.renderQR = function(){
+  setupShareLink('index.html', 'qrCanvas', 'qrUrl', 'copyUrlBtn');
+  setupShareLink('signalement_collaborateur.html', 'qrCanvasCollab', 'qrUrlCollab', 'copyUrlBtnCollab');
+  setupShareLink('expression_besoin.html', 'qrCanvasBesoin', 'qrUrlBesoin', 'copyUrlBtnBesoin');
+  setupShareLink('portail.html', 'qrCanvasPortail', 'qrUrlPortail', 'copyUrlBtnPortail');
 };
 
 document.getElementById('ntfy-share-btn').addEventListener('click', showNtfyShareModal);
