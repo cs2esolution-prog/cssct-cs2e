@@ -243,7 +243,8 @@
 
   window.BESOIN_FIREBASE = {
     async update(id, fields){ await updateDoc(doc(col, id), fields); },
-    async addNote(id, entry){ await updateDoc(doc(col, id), { notesInternes: arrayUnion(entry) }); }
+    async addNote(id, entry){ await updateDoc(doc(col, id), { notesInternes: arrayUnion(entry) }); },
+    async addHistorique(id, entry){ await updateDoc(doc(col, id), { historique: arrayUnion(entry) }); }
   };
 
   window._crList = [];
@@ -272,12 +273,27 @@ window.switchFilter = function(statut){
   window.renderList();
 };
 
+(function(){
+  const params = new URLSearchParams(window.location.search);
+  const statut = params.get('statut');
+  if(statut === 'Ouvert'){
+    window._filter = 'Ouvert';
+  } else if(['Nouveau','En cours','Traité','Clos'].indexOf(statut) !== -1){
+    window._filter = statut;
+    document.querySelectorAll('.filter-tab').forEach(function(b){ b.classList.toggle('active', b.dataset.statut === statut); });
+  }
+})();
+
 function findBesoin(id){ return (window._besoins||[]).find(function(x){ return x.id === id; }); }
 
 window.renderList = function(){
   const list = document.getElementById('list');
   let items = (window._besoins||[]).slice().sort(function(a,b){ return (b.createdAt||'').localeCompare(a.createdAt||''); });
-  if(window._filter !== 'Tous'){ items = items.filter(function(it){ return (it.statut||'Nouveau') === window._filter; }); }
+  if(window._filter === 'Ouvert'){
+    items = items.filter(function(it){ const s = it.statut||'Nouveau'; return s !== 'Traité' && s !== 'Clos'; });
+  } else if(window._filter !== 'Tous'){
+    items = items.filter(function(it){ return (it.statut||'Nouveau') === window._filter; });
+  }
   if(!items.length){
     list.innerHTML = '<div style="font-size:13px;color:var(--ink-soft);">Aucune expression de besoin' + (window._filter !== 'Tous' ? ' avec ce statut' : '') + '.</div>';
     return;
@@ -340,7 +356,13 @@ window.openDrawer = function(id){
         '<div class="dfield"><div class="dlabel">Ampleur perçue</div><div class="dval">' + esc(it.ampleur) + '</div></div>' +
         '<div class="dfield"><div class="dlabel">Souhait de contact</div><div class="dval ' + (it.souhaitContact?'':'empty') + '">' + (esc(it.souhaitContact) || 'Non précisé') + '</div></div>' +
       '</div>' +
-      '<div class="dsection"><h3>Échanges avec le salarié (via le code de suivi)</h3><div id="histoBlock">' + renderHistorique(it) + '</div></div>' +
+      '<div class="dsection"><h3>Échanges avec le salarié (via le code de suivi)</h3><div id="histoBlock">' + renderHistorique(it) + '</div>' +
+        '<textarea id="newSuiviText" placeholder="Ajouter un suivi visible par le salarié (statut, réponse, précision…)…" style="margin-top:10px;"></textarea>' +
+        '<div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;">' +
+          '<button class="btn" onclick="addSuiviPublic(\'' + id + '\')">+ Ajouter au suivi</button>' +
+          '<button class="btn" style="background:var(--purple);color:#fff;border-color:var(--purple);" onclick="envoyerMail(\'' + id + '\')">✉️ Envoyer un mail</button>' +
+        '</div>' +
+      '</div>' +
       '<div class="dsection"><h3>Notes internes CSSCT</h3><div id="notesBlock">' + renderNotesInternes(it) + '</div>' +
         '<textarea id="newNoteText" placeholder="Ajouter une note interne (visible CSSCT uniquement)…" style="margin-top:10px;"></textarea>' +
         '<button class="btn" style="margin-top:8px;" onclick="addInternalNote(\'' + id + '\')">+ Ajouter cette note</button>' +
@@ -381,6 +403,50 @@ window.addInternalNote = async function(id){
     document.getElementById('newNoteText').value = '';
     showToast('Note ajoutée ✓');
   }catch(err){ showToast('Erreur : ' + err.message); }
+};
+
+window.addSuiviPublic = async function(id){
+  const text = document.getElementById('newSuiviText').value.trim();
+  if(!text){ showToast('Écris un texte avant de l\'ajouter au suivi.'); return; }
+  const it = findBesoin(id);
+  const entry = { date: new Date().toISOString().slice(0,10), text: text, auteur: 'cssct' };
+  try{
+    await window.BESOIN_FIREBASE.addHistorique(id, entry);
+    it.historique = (it.historique||[]).concat([entry]);
+    document.getElementById('histoBlock').innerHTML = renderHistorique(it);
+    document.getElementById('newSuiviText').value = '';
+    showToast('Suivi ajouté ✓ (visible par le salarié)');
+  }catch(err){ showToast('Erreur : ' + err.message); }
+};
+
+window.envoyerMail = function(id){
+  const it = findBesoin(id);
+  if(!it) return;
+  const code = it.codeSuivi || it.id;
+  if(!it.emailContact){
+    showToast("Aucun email fourni par le salarié — communique-lui uniquement le code de suivi (" + code + ") par un autre moyen.");
+    return;
+  }
+  const draft = document.getElementById('newSuiviText').value.trim();
+  const subject = 'CSSCT - Votre demande ' + code;
+  const body =
+    'Bonjour,\n\n' +
+    (draft || ('Suite à votre demande auprès du CSSCT (code de suivi ' + code + '), nous revenons vers vous :')) +
+    '\n\n' +
+    'Vous pouvez à tout moment suivre l’avancement de votre demande depuis la page "Suivre ma demande" de l’application, en indiquant ce code : ' + code + '.\n\n' +
+    'Cordialement,\n' +
+    'L’équipe CSSCT';
+  const mailto = 'mailto:' + it.emailContact +
+    '?subject=' + encodeURIComponent(subject) +
+    '&body=' + encodeURIComponent(body);
+  window.location.href = mailto;
+
+  const entry = { date: new Date().toISOString().slice(0,10), text: draft || 'Mail envoyé au salarié ce jour.', auteur: 'cssct' };
+  window.BESOIN_FIREBASE.addHistorique(id, entry).then(function(){
+    it.historique = (it.historique||[]).concat([entry]);
+    document.getElementById('histoBlock').innerHTML = renderHistorique(it);
+    document.getElementById('newSuiviText').value = '';
+  }).catch(function(err){ showToast('Erreur lors de la journalisation du suivi : ' + err.message); });
 };
 
 let toastTimer;
