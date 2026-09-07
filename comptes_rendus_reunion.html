@@ -436,6 +436,7 @@ window.createCR = async function(){
     titre: titre, date: date,
     participants: '', ordreJour: '', priseNoteBrute: '',
     pointsAbordes: '', decisions: '', prochaineEcheance: '',
+    estReunionSSCT: false,
     sectionsComplementaires: C.sectionsComplementaires.map(function(s){ return { titre:s, texte:'' }; }),
     createdAt: new Date().toISOString()
   };
@@ -478,6 +479,7 @@ window.openDrawer = function(id){
   drawer.innerHTML =
     '<div class="drawer-head"><div><h2>' + esc(it.titre) + '</h2><div class="dh-meta">' + esc(it.date) + '</div></div><button class="drawer-close" onclick="closeDrawer()">×</button></div>' +
     '<div class="drawer-body">' +
+      '<div class="dsection"><label style="display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--ink-soft);cursor:pointer;"><input type="checkbox" id="estSSCTCheckbox" ' + (it.estReunionSSCT?'checked':'') + ' onchange="toggleEstSSCT(\'' + id + '\', this.checked)" style="width:auto;"> Réunion consacrée (en tout ou partie) à la santé/sécurité/conditions de travail — comptée dans l\'objectif légal de 4/an</label></div>' +
       sectionCard('Informations générales', 1, id, [
         {id:'titre', label:'Titre de la réunion', value:it.titre},
         {id:'date', label:'Date', value:it.date},
@@ -502,6 +504,13 @@ window.openDrawer = function(id){
   document.getElementById('drawerOverlay').classList.add('show');
 };
 function closeDrawer(){ document.getElementById('drawerOverlay').classList.remove('show'); window._openDrawerId = null; }
+
+window.toggleEstSSCT = async function(crId, val){
+  const it = findCR(crId);
+  if(it) it.estReunionSSCT = val;
+  try{ await window.CR_FIREBASE.update(crId, { estReunionSSCT: val }); showToast(val ? 'Comptée dans les 4 réunions SSCT/an ✓' : 'Retirée du décompte SSCT'); }
+  catch(err){ showToast('Erreur : ' + err.message); }
+};
 
 window.toggleEdit = function(crId, sectionNum){
   const it = findCR(crId);
