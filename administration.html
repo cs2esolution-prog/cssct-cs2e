@@ -59,8 +59,12 @@
   .settings-card input[type="text"], .settings-card input[type="email"]{
     width:100%; padding:9px 12px; border:1px solid var(--line); border-radius:8px; font-size:13px; font-family:'Inter',sans-serif; margin-bottom:14px;
   }
+  .settings-card textarea{width:100%; padding:9px 12px; border:1px solid var(--line); border-radius:8px; font-size:13px; font-family:'Inter',sans-serif; margin-bottom:14px; resize:vertical; min-height:100px;}
   .settings-save-btn{background:var(--ink); color:#fff; border:none; padding:9px 18px; border-radius:20px; font-weight:600; font-size:12.5px; cursor:pointer;}
+  .settings-reset-btn{background:#fff; color:var(--ink-soft); border:1px solid var(--line); padding:9px 14px; border-radius:20px; font-weight:600; font-size:12.5px; cursor:pointer; margin-left:8px;}
   .settings-msg{font-size:11.5px; margin-top:8px; min-height:14px;}
+  .settings-subhead{font-size:12.5px; font-weight:700; margin:18px 0 8px;}
+  .settings-subhead:first-of-type{margin-top:0;}
 
   .modal-overlay{position:fixed; inset:0; background:rgba(30,28,32,.55); display:none; align-items:center; justify-content:center; z-index:150; padding:20px;}
   .modal-overlay.show{display:flex;}
@@ -135,14 +139,12 @@
   <h1>Administration</h1>
   <p class="subtitle">Accès rapide aux réglages techniques et à la gestion de l'application.</p>
 
-  <div class="section-lbl">Statistiques</div>
+  <div class="section-lbl">Général</div>
   <a class="admin-card" href="dashboard.html">
     <div class="a-icon">📊</div>
     <div><div class="a-title">Tableau de bord</div><div class="a-desc">Indicateurs, comparaison annuelle, bilan téléchargeable</div></div>
     <div class="a-arrow">›</div>
   </a>
-
-  <div class="section-lbl">Accès et données (Firebase)</div>
   <button type="button" class="admin-card" onclick="openAccessModal()">
     <div class="a-icon">👤</div>
     <div><div class="a-title">Comptes autorisés &amp; administrateurs</div><div class="a-desc">Ajouter / retirer des comptes et des administrateurs, directement depuis l'appli</div></div>
@@ -163,48 +165,6 @@
     <div><div class="a-title">Console Firebase (vue d'ensemble)</div><div class="a-desc">Accès général au projet Firebase</div></div>
     <div class="a-arrow">↗</div>
   </a>
-
-  <div class="section-lbl">Mail de relance (dossiers de signalement)</div>
-  <div class="settings-card">
-    <p class="s-help" style="margin-top:0;">Destinataire et copie utilisés par le bouton "✉️ Mail de relance" dans un dossier de signalement.</p>
-    <label class="s-label" for="mrPresident">Destinataire — Président du CSE</label>
-    <input type="email" id="mrPresident" placeholder="alhermitte@smag.tech">
-    <label class="s-label" for="mrElus">Copie — Élus CSSCT (adresses séparées par ;)</label>
-    <input type="text" id="mrElus" placeholder="cdizien@agrosolutions.com;imariotti@smag.tech;choudayer@smag.tech">
-    <button class="settings-save-btn" id="mrSaveBtn">Enregistrer</button>
-    <div class="settings-msg" id="mrMsg"></div>
-  </div>
-
-  <div class="section-lbl">Listes paramétrables</div>
-  <button type="button" class="admin-card" onclick="openEntreprisesModal()">
-    <div class="a-icon">🏢</div>
-    <div><div class="a-title">Entreprises / structures</div><div class="a-desc">Liste utilisée par le formulaire collaborateur et l'expression de besoin (public)</div></div>
-    <div class="a-arrow">›</div>
-  </button>
-  <button type="button" class="admin-card" onclick="openSitesModal()">
-    <div class="a-icon">📍</div>
-    <div><div class="a-title">Sites</div><div class="a-desc">Liste utilisée par le formulaire collaborateur, les inspections et les trousses de secours</div></div>
-    <div class="a-arrow">›</div>
-  </button>
-  <button type="button" class="admin-card" onclick="openNotifSignalementModal()">
-    <div class="a-icon">📧</div>
-    <div><div class="a-title">Destinataires — nouveaux signalements</div><div class="a-desc">Adresses qui reçoivent un mail à chaque nouveau dossier créé par un collaborateur</div></div>
-    <div class="a-arrow">›</div>
-  </button>
-  <button type="button" class="admin-card" onclick="openNotifBesoinModal()">
-    <div class="a-icon">📧</div>
-    <div><div class="a-title">Destinataires — expressions de besoin</div><div class="a-desc">Adresses qui reçoivent un mail à chaque nouvelle expression de besoin ou complément</div></div>
-    <div class="a-arrow">›</div>
-  </button>
-
-  <div class="section-lbl">Multi-CSSCT</div>
-  <button type="button" class="admin-card" onclick="document.getElementById('modopModal').classList.add('show')">
-    <div class="a-icon">🧭</div>
-    <div><div class="a-title">Créer une nouvelle instance CSSCT</div><div class="a-desc">Mode opératoire complet pour dupliquer l'appli pour un autre CSSCT</div></div>
-    <div class="a-arrow">›</div>
-  </button>
-
-  <div class="section-lbl">Code et hébergement</div>
   <a class="admin-card" href="https://github.com/cs2esolution-prog/cssct-cs2e-c655b" target="_blank" rel="noopener">
     <div class="a-icon">💻</div>
     <div><div class="a-title">Dépôt GitHub</div><div class="a-desc">Code source de l'application, historique des commits</div></div>
@@ -215,7 +175,83 @@
     <div><div class="a-title">Tableau de bord Cloudflare</div><div class="a-desc">Déploiements, statut du site</div></div>
     <div class="a-arrow">↗</div>
   </a>
-        <button class="tile" id="ntfy-share-btn" style="border:none;width:100%;">
+  <button type="button" class="admin-card" onclick="document.getElementById('modopModal').classList.add('show')">
+    <div class="a-icon">🧭</div>
+    <div><div class="a-title">Créer une nouvelle instance CSSCT</div><div class="a-desc">Mode opératoire complet pour dupliquer l'appli pour un autre CSSCT</div></div>
+    <div class="a-arrow">›</div>
+  </button>
+
+  <div class="section-lbl">Listes partagées</div>
+  <button type="button" class="admin-card" onclick="openSitesModal()">
+    <div class="a-icon">📍</div>
+    <div><div class="a-title">Sites</div><div class="a-desc">Liste utilisée par le formulaire collaborateur, les inspections et les trousses de secours</div></div>
+    <div class="a-arrow">›</div>
+  </button>
+  <button type="button" class="admin-card" onclick="openEntreprisesModal()">
+    <div class="a-icon">🏢</div>
+    <div><div class="a-title">Entreprises / structures</div><div class="a-desc">Liste utilisée par le formulaire collaborateur et l'expression de besoin (public)</div></div>
+    <div class="a-arrow">›</div>
+  </button>
+
+  <div class="section-lbl">Dossiers de signalement</div>
+  <div class="settings-card">
+    <p class="s-help" style="margin-top:0;">Destinataire et copie utilisés par le bouton "✉️ Mail de relance" dans un dossier de signalement.</p>
+    <label class="s-label" for="mrPresident">Destinataire — Président du CSE</label>
+    <input type="email" id="mrPresident" placeholder="alhermitte@smag.tech">
+    <label class="s-label" for="mrElus">Copie — Élus CSSCT (adresses séparées par ;)</label>
+    <input type="text" id="mrElus" placeholder="cdizien@agrosolutions.com;imariotti@smag.tech;choudayer@smag.tech">
+    <button class="settings-save-btn" id="mrSaveBtn">Enregistrer</button>
+    <div class="settings-msg" id="mrMsg"></div>
+  </div>
+  <button type="button" class="admin-card" onclick="openNotifSignalementModal()">
+    <div class="a-icon">📧</div>
+    <div><div class="a-title">Destinataires — nouveaux signalements</div><div class="a-desc">Adresses qui reçoivent un mail à chaque nouveau dossier créé par un collaborateur</div></div>
+    <div class="a-arrow">›</div>
+  </button>
+  <button type="button" class="admin-card" onclick="openTemplatesSignalementModal()">
+    <div class="a-icon">✉️</div>
+    <div><div class="a-title">Modèles d'email</div><div class="a-desc">Textes envoyés au collaborateur et à l'équipe CSSCT après un signalement</div></div>
+    <div class="a-arrow">›</div>
+  </button>
+  <p style="font-size:12px;color:var(--ink-soft);margin:14px 0 8px;">Formulaire public, sans connexion — partage-le librement à tous les collaborateurs (affichage, email, intranet...).</p>
+  <div class="qr-card">
+    <img class="qr-img" id="qrCanvasCollab" alt="QR code">
+    <div class="qr-url" id="qrUrlCollab"></div>
+    <button class="copy-btn" id="copyUrlBtnCollab">Copier le lien</button>
+  </div>
+
+  <div class="section-lbl">Expression de besoin</div>
+  <button type="button" class="admin-card" onclick="openNotifBesoinModal()">
+    <div class="a-icon">📧</div>
+    <div><div class="a-title">Destinataires — expressions de besoin</div><div class="a-desc">Adresses qui reçoivent un mail à chaque nouvelle expression de besoin ou complément</div></div>
+    <div class="a-arrow">›</div>
+  </button>
+  <button type="button" class="admin-card" onclick="openTemplatesBesoinModal()">
+    <div class="a-icon">✉️</div>
+    <div><div class="a-title">Modèles d'email</div><div class="a-desc">Textes envoyés au salarié et à l'équipe CSSCT après une expression de besoin</div></div>
+    <div class="a-arrow">›</div>
+  </button>
+  <p style="font-size:12px;color:var(--ink-soft);margin:14px 0 8px;">Formulaire public, sans connexion — un salarié peut y rester anonyme.</p>
+  <div class="qr-card">
+    <img class="qr-img" id="qrCanvasBesoin" alt="QR code">
+    <div class="qr-url" id="qrUrlBesoin"></div>
+    <button class="copy-btn" id="copyUrlBtnBesoin">Copier le lien</button>
+  </div>
+  <p style="font-size:12px;color:var(--ink-soft);margin:14px 0 8px;">Portail d'entrée unique (signalement + besoin + suivi), si tu préfères ne diffuser qu'un seul lien.</p>
+  <div class="qr-card">
+    <img class="qr-img" id="qrCanvasPortail" alt="QR code">
+    <div class="qr-url" id="qrUrlPortail"></div>
+    <button class="copy-btn" id="copyUrlBtnPortail">Copier le lien</button>
+  </div>
+
+  <div class="section-lbl">Partage général &amp; notifications</div>
+  <p style="font-size:12px;color:var(--ink-soft);margin:0 0 8px;">Lien de l'application complète, réservé à l'équipe CSSCT (connexion requise).</p>
+  <div class="qr-card">
+    <img class="qr-img" id="qrCanvas" alt="QR code">
+    <div class="qr-url" id="qrUrl"></div>
+    <button class="copy-btn" id="copyUrlBtn">Copier le lien</button>
+  </div>
+        <button class="tile" id="ntfy-share-btn" style="border:none;width:100%;margin-top:14px;">
         <div class="tile-icon">📲</div>
         <div class="tile-title">Partager les notifs (QR)</div>
       </button>
@@ -239,37 +275,6 @@
     <a class="sitemap-link" href="expression_besoin_liste.html">Expressions de besoin (équipe)</a>
     <a class="sitemap-link" href="a_propos.html">À propos</a>
     <a class="sitemap-link" href="administration.html">Administration (ici)</a>
-  </div>
-
-  <div class="section-lbl">Partager l'application (équipe CSSCT)</div>
-  <div class="qr-card">
-    <img class="qr-img" id="qrCanvas" alt="QR code">
-    <div class="qr-url" id="qrUrl"></div>
-    <button class="copy-btn" id="copyUrlBtn">Copier le lien</button>
-  </div>
-
-  <div class="section-lbl">Formulaire de signalement collaborateur</div>
-  <p style="font-size:12px;color:var(--ink-soft);margin:-4px 0 12px;">Ce lien est public, sans connexion — partage-le librement à tous les collaborateurs (affichage, email, intranet...).</p>
-  <div class="qr-card">
-    <img class="qr-img" id="qrCanvasCollab" alt="QR code">
-    <div class="qr-url" id="qrUrlCollab"></div>
-    <button class="copy-btn" id="copyUrlBtnCollab">Copier le lien</button>
-  </div>
-
-  <div class="section-lbl">Formulaire d'expression de besoin</div>
-  <p style="font-size:12px;color:var(--ink-soft);margin:-4px 0 12px;">Public, sans connexion — un salarié peut y rester anonyme.</p>
-  <div class="qr-card">
-    <img class="qr-img" id="qrCanvasBesoin" alt="QR code">
-    <div class="qr-url" id="qrUrlBesoin"></div>
-    <button class="copy-btn" id="copyUrlBtnBesoin">Copier le lien</button>
-  </div>
-
-  <div class="section-lbl">Portail salariés (signalement + besoin + suivi)</div>
-  <p style="font-size:12px;color:var(--ink-soft);margin:-4px 0 12px;">Page d'entrée unique à partager si tu préfères ne diffuser qu'un seul lien plutôt que les formulaires séparément.</p>
-  <div class="qr-card">
-    <img class="qr-img" id="qrCanvasPortail" alt="QR code">
-    <div class="qr-url" id="qrUrlPortail"></div>
-    <button class="copy-btn" id="copyUrlBtnPortail">Copier le lien</button>
   </div>
 </div>
 
@@ -422,6 +427,66 @@
   </div>
 </div>
 
+<div class="modal-overlay" id="templatesSignalementModal">
+  <div class="modal" style="max-width:640px;">
+    <div class="modal-head">
+      <h3>✉️ Modèles d'email — Dossiers de signalement</h3>
+      <button class="modal-close" onclick="document.getElementById('templatesSignalementModal').classList.remove('show')">×</button>
+    </div>
+    <div class="modal-body">
+      <p class="s-help" style="margin:0 0 14px;">Variables disponibles, remplacées automatiquement : <code>{{numero}}</code>, <code>{{rapporteur}}</code>, <code>{{site}}</code>, <code>{{nature}}</code>, <code>{{objet}}</code>.</p>
+
+      <div class="settings-card" style="padding:0;border:none;">
+        <div class="settings-subhead">Confirmation envoyée au collaborateur</div>
+        <label class="s-label" for="tplSigConfirmSubject">Sujet</label>
+        <input type="text" id="tplSigConfirmSubject">
+        <label class="s-label" for="tplSigConfirmBody">Message</label>
+        <textarea id="tplSigConfirmBody" rows="6"></textarea>
+
+        <div class="settings-subhead">Notification envoyée à l'équipe CSSCT</div>
+        <label class="s-label" for="tplSigNotifSubject">Sujet</label>
+        <input type="text" id="tplSigNotifSubject">
+        <label class="s-label" for="tplSigNotifBody">Message</label>
+        <textarea id="tplSigNotifBody" rows="6"></textarea>
+
+        <button class="settings-save-btn" onclick="saveTemplatesSignalement()">Enregistrer</button>
+        <button type="button" class="settings-reset-btn" onclick="resetTemplatesSignalement()">Réinitialiser aux valeurs par défaut</button>
+        <div class="settings-msg" id="tplSigMsg"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="templatesBesoinModal">
+  <div class="modal" style="max-width:640px;">
+    <div class="modal-head">
+      <h3>✉️ Modèles d'email — Expression de besoin</h3>
+      <button class="modal-close" onclick="document.getElementById('templatesBesoinModal').classList.remove('show')">×</button>
+    </div>
+    <div class="modal-body">
+      <p class="s-help" style="margin:0 0 14px;">Variables disponibles, remplacées automatiquement : <code>{{codeSuivi}}</code>, <code>{{theme}}</code>, <code>{{description}}</code>, <code>{{auteurLabel}}</code> (nom du salarié ou "anonyme"), <code>{{entrepriseLabel}}</code> (structure indiquée, ou vide).</p>
+
+      <div class="settings-card" style="padding:0;border:none;">
+        <div class="settings-subhead">Confirmation envoyée au salarié (s'il a laissé son email)</div>
+        <label class="s-label" for="tplBesConfirmSubject">Sujet</label>
+        <input type="text" id="tplBesConfirmSubject">
+        <label class="s-label" for="tplBesConfirmBody">Message</label>
+        <textarea id="tplBesConfirmBody" rows="6"></textarea>
+
+        <div class="settings-subhead">Notification envoyée à l'équipe CSSCT</div>
+        <label class="s-label" for="tplBesNotifSubject">Sujet</label>
+        <input type="text" id="tplBesNotifSubject">
+        <label class="s-label" for="tplBesNotifBody">Message</label>
+        <textarea id="tplBesNotifBody" rows="6"></textarea>
+
+        <button class="settings-save-btn" onclick="saveTemplatesBesoin()">Enregistrer</button>
+        <button type="button" class="settings-reset-btn" onclick="resetTemplatesBesoin()">Réinitialiser aux valeurs par défaut</button>
+        <div class="settings-msg" id="tplBesMsg"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div class="modal-overlay" id="modopModal">
   <div class="modal" style="max-width:680px;">
     <div class="modal-head">
@@ -495,6 +560,25 @@ const firebaseConfig = {
   const DEFAULT_SITES = ["Bezannes","Chalons-en-Champagne","Evreux","Milly-la-Forêt","Montpellier","Nancy","Paris","Poitiers","Reims","Télétravail","Wavre"];
   const notifSignalementConfigRef = doc(db, "config", "notifications_signalement");
   const notifBesoinConfigRef = doc(db, "config", "notifications_besoin");
+  const emailTemplatesConfigRef = doc(db, "config", "email_templates");
+  const DEFAULT_TEMPLATES = {
+    signalementConfirmation: {
+      subject: 'Confirmation de votre signalement CSSCT - {{numero}}',
+      body: 'Bonjour,\n\nVous venez de réaliser une demande de suivi auprès du CSSCT. Merci pour votre message. Nous allons étudier votre demande qui porte le numéro "{{numero}}" qu\'il faudra systématiquement intégrer dans nos échanges.\n\nSi des photos doivent être transmises, vous pouvez les envoyer en réponse à ce mail.\n\nNous vous souhaitons une bonne journée.'
+    },
+    signalementNotifCSSCT: {
+      subject: 'Formulaire CSSCT - {{nature}} - {{numero}}',
+      body: 'Bonjour,\n\nUn nouveau signalement a été réalisé par {{rapporteur}} sur le site de {{site}} et concerne un {{nature}} : {{objet}}\nLe suivi se fera sous le numéro {{numero}}\n\n\nCe message a été envoyé automatiquement de l\'application CSSCT.'
+    },
+    besoinConfirmation: {
+      subject: 'Confirmation de votre demande CSSCT - {{codeSuivi}}',
+      body: 'Bonjour,\n\nNous avons bien reçu votre expression de besoin auprès du CSSCT. Merci pour votre message.\n\nVotre code de suivi est : {{codeSuivi}}\nConservez-le précieusement : il vous permettra de suivre l\'avancement de votre demande et d\'ajouter un complément si besoin, depuis la page "Suivre ma demande".\n\nNous vous souhaitons une bonne journée.'
+    },
+    besoinNotifCSSCT: {
+      subject: 'Formulaire CSSCT - Expression de besoin - {{theme}}',
+      body: 'Bonjour,\n\nUne nouvelle expression de besoin a été déposée ({{auteurLabel}}{{entrepriseLabel}}).\nThème : {{theme}}\nDescription : {{description}}\n\nLe suivi se fera sous le code {{codeSuivi}}\n\nCe message a été envoyé automatiquement de l\'application CSSCT.'
+    }
+  };
   const MAIL_RELANCE_DEFAULTS = {
     presidentCSE: "alhermitte@smag.tech",
     elusCSSCT: "cdizien@agrosolutions.com;imariotti@smag.tech;choudayer@smag.tech"
@@ -849,6 +933,89 @@ const firebaseConfig = {
       msg.style.color = '#019682'; msg.textContent = 'Retiré ✓';
       renderNotifList(listVarName, elId);
     }catch(err){ msg.style.color = '#A85D45'; msg.textContent = "Erreur : " + err.message; }
+  };
+
+  // ---- Modèles d'email (textes des mails envoyés après un signalement ou une expression de besoin) ----
+  async function loadEmailTemplates(){
+    try{
+      const snap = await getDoc(emailTemplatesConfigRef);
+      window._emailTemplates = snap.exists() ? snap.data() : {};
+    }catch(err){
+      window._emailTemplates = {};
+    }
+  }
+
+  function fillTemplateField(fieldKey, subjectId, bodyId){
+    const t = (window._emailTemplates || {})[fieldKey] || {};
+    const d = DEFAULT_TEMPLATES[fieldKey];
+    document.getElementById(subjectId).value = t.subject || d.subject;
+    document.getElementById(bodyId).value = t.body || d.body;
+  }
+
+  window.openTemplatesSignalementModal = async function(){
+    document.getElementById('templatesSignalementModal').classList.add('show');
+    await loadEmailTemplates();
+    fillTemplateField('signalementConfirmation', 'tplSigConfirmSubject', 'tplSigConfirmBody');
+    fillTemplateField('signalementNotifCSSCT', 'tplSigNotifSubject', 'tplSigNotifBody');
+  };
+
+  window.openTemplatesBesoinModal = async function(){
+    document.getElementById('templatesBesoinModal').classList.add('show');
+    await loadEmailTemplates();
+    fillTemplateField('besoinConfirmation', 'tplBesConfirmSubject', 'tplBesConfirmBody');
+    fillTemplateField('besoinNotifCSSCT', 'tplBesNotifSubject', 'tplBesNotifBody');
+  };
+
+  window.saveTemplatesSignalement = async function(){
+    const msg = document.getElementById('tplSigMsg');
+    const data = {
+      signalementConfirmation: {
+        subject: document.getElementById('tplSigConfirmSubject').value.trim(),
+        body: document.getElementById('tplSigConfirmBody').value
+      },
+      signalementNotifCSSCT: {
+        subject: document.getElementById('tplSigNotifSubject').value.trim(),
+        body: document.getElementById('tplSigNotifBody').value
+      }
+    };
+    try{
+      await setDoc(emailTemplatesConfigRef, data, { merge: true });
+      Object.assign((window._emailTemplates = window._emailTemplates || {}), data);
+      msg.style.color = '#019682'; msg.textContent = 'Enregistré ✓';
+    }catch(err){ msg.style.color = '#A85D45'; msg.textContent = "Erreur : " + err.message; }
+  };
+
+  window.saveTemplatesBesoin = async function(){
+    const msg = document.getElementById('tplBesMsg');
+    const data = {
+      besoinConfirmation: {
+        subject: document.getElementById('tplBesConfirmSubject').value.trim(),
+        body: document.getElementById('tplBesConfirmBody').value
+      },
+      besoinNotifCSSCT: {
+        subject: document.getElementById('tplBesNotifSubject').value.trim(),
+        body: document.getElementById('tplBesNotifBody').value
+      }
+    };
+    try{
+      await setDoc(emailTemplatesConfigRef, data, { merge: true });
+      Object.assign((window._emailTemplates = window._emailTemplates || {}), data);
+      msg.style.color = '#019682'; msg.textContent = 'Enregistré ✓';
+    }catch(err){ msg.style.color = '#A85D45'; msg.textContent = "Erreur : " + err.message; }
+  };
+
+  window.resetTemplatesSignalement = function(){
+    document.getElementById('tplSigConfirmSubject').value = DEFAULT_TEMPLATES.signalementConfirmation.subject;
+    document.getElementById('tplSigConfirmBody').value = DEFAULT_TEMPLATES.signalementConfirmation.body;
+    document.getElementById('tplSigNotifSubject').value = DEFAULT_TEMPLATES.signalementNotifCSSCT.subject;
+    document.getElementById('tplSigNotifBody').value = DEFAULT_TEMPLATES.signalementNotifCSSCT.body;
+  };
+
+  window.resetTemplatesBesoin = function(){
+    document.getElementById('tplBesConfirmSubject').value = DEFAULT_TEMPLATES.besoinConfirmation.subject;
+    document.getElementById('tplBesConfirmBody').value = DEFAULT_TEMPLATES.besoinConfirmation.body;
+    document.getElementById('tplBesNotifSubject').value = DEFAULT_TEMPLATES.besoinNotifCSSCT.subject;
+    document.getElementById('tplBesNotifBody').value = DEFAULT_TEMPLATES.besoinNotifCSSCT.body;
   };
 
   window.openAccessModal = function(){

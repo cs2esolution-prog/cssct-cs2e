@@ -164,6 +164,11 @@
     if(Array.isArray(data.list)) DESTINATAIRES_SIGNALEMENT = data.list.slice();
   }).catch(() => {});
 
+  let EMAIL_TEMPLATES = {};
+  getDoc(doc(db, 'config', 'email_templates')).then((snap) => {
+    if(snap.exists()) EMAIL_TEMPLATES = snap.data();
+  }).catch(() => {});
+
   async function getNextNumero(){
     return await runTransaction(db, async (tx) => {
       const snap = await tx.get(counterRef);
@@ -233,7 +238,11 @@
           site: payload.site,
           nature: payload.natureIncident,
           objet: payload.objet,
-          destinataires: DESTINATAIRES_SIGNALEMENT
+          destinataires: DESTINATAIRES_SIGNALEMENT,
+          templates: {
+            signalementConfirmation: EMAIL_TEMPLATES.signalementConfirmation,
+            signalementNotifCSSCT: EMAIL_TEMPLATES.signalementNotifCSSCT
+          }
         })
       });
 

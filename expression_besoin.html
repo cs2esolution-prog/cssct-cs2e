@@ -166,6 +166,11 @@
     if(Array.isArray(data.list)) DESTINATAIRES_BESOIN = data.list.slice();
   }).catch(() => {});
 
+  let EMAIL_TEMPLATES = {};
+  getDoc(doc(db, 'config', 'email_templates')).then((snap) => {
+    if(snap.exists()) EMAIL_TEMPLATES = snap.data();
+  }).catch(() => {});
+
   const THEMES = [
     "Conditions de travail (horaires, organisation, charge de travail…)",
     "Rémunération et avantages (primes, tickets restaurant, CE…)",
@@ -284,7 +289,11 @@
             emailContact: emailContact,
             theme: theme,
             description: description,
-            destinataires: DESTINATAIRES_BESOIN
+            destinataires: DESTINATAIRES_BESOIN,
+            templates: {
+              besoinConfirmation: EMAIL_TEMPLATES.besoinConfirmation,
+              besoinNotifCSSCT: EMAIL_TEMPLATES.besoinNotifCSSCT
+            }
           })
         });
       }catch(mailErr){ /* la demande est enregistrée même si l'email échoue */ }
