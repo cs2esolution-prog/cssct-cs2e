@@ -1,5 +1,17 @@
 [
   {
+    "hash": "07375ff",
+    "date": "07/09/2026",
+    "title": "Update comptes_rendus_reunion.html",
+    "description": ""
+  },
+  {
+    "hash": "be9717a",
+    "date": "07/09/2026",
+    "title": "chore: mise a jour automatique du changelog [skip ci]",
+    "description": ""
+  },
+  {
     "hash": "6fd92e1",
     "date": "07/09/2026",
     "title": "Update index.html",
