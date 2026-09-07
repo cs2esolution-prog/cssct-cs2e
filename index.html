@@ -285,14 +285,17 @@ const firebaseConfig = {
   async function loadHighlights(){
     const stack = document.getElementById('alertStack');
     try{
-      const [sigSnap, trousseSnap] = await Promise.all([
+      const [sigSnap, trousseSnap, besoinSnap] = await Promise.all([
         getDocs(collection(db,'signalements')),
-        getDocs(collection(db,'trousses_secours'))
+        getDocs(collection(db,'trousses_secours')),
+        getDocs(collection(db,'expressions_besoin'))
       ]);
       const dossiers = sigSnap.docs.map(d => d.data());
       const items = trousseSnap.docs.map(d => d.data());
+      const besoins = besoinSnap.docs.map(d => d.data());
 
       const enCours = dossiers.filter(d => (d.statut||'').startsWith('1')).length;
+      const besoinsOuverts = besoins.filter(function(b){ const s = b.statut||'Nouveau'; return s !== 'Traité' && s !== 'Clos'; }).length;
       const today = new Date();
       const enSouffrance = dossiers.filter(function(d){
         if((d.statut||'').startsWith('3')) return false;
@@ -317,11 +320,13 @@ const firebaseConfig = {
         '<div class="a-num">' + peremptionAlerte + '</div><div><div class="a-title">Trousses périmées</div><div class="a-text">Date de péremption dépassée</div></div></a>';
       html += '<a class="alert-card' + (controleAlerte ? '' : ' ok') + '" href="trousses_secours.html?alerte=controle">' +
         '<div class="a-num">' + controleAlerte + '</div><div><div class="a-title">Trousses à contrôler</div><div class="a-text">Date de contrôle dépassée</div></div></a>';
+      html += '<a class="alert-card' + (besoinsOuverts ? '' : ' ok') + '" href="expression_besoin_liste.html?statut=Ouvert">' +
+        '<div class="a-num">' + besoinsOuverts + '</div><div><div class="a-title">Expressions de besoin en cours</div><div class="a-text">Demandes salariés à traiter</div></div></a>';
 
       stack.innerHTML = html;
 
       if('setAppBadge' in navigator){
-        const total = enCours + peremptionAlerte + controleAlerte;
+        const total = enCours + peremptionAlerte + controleAlerte + besoinsOuverts;
         if(total > 0) navigator.setAppBadge(total).catch(function(){});
         else if('clearAppBadge' in navigator) navigator.clearAppBadge().catch(function(){});
       }
