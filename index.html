@@ -58,6 +58,53 @@
     border:1px solid var(--line); padding:10px; border-radius:20px;
   }
 
+  .echeance-toggle{display:flex; align-items:center; gap:8px; margin-bottom:12px;}
+  .et-btn{flex:1; background:#fff; border:1px solid var(--line); color:var(--ink-soft); font-size:12px; font-weight:600; padding:8px 10px; border-radius:20px; cursor:pointer;}
+  .et-btn.active{background:var(--ink); color:#fff; border-color:var(--ink);}
+  .et-manage{background:#fff; border:1px solid var(--line); color:var(--ink-soft); width:34px; height:34px; border-radius:50%; cursor:pointer; font-size:14px; flex:none;}
+
+  .echeance-card{background:#fff; border:1px solid var(--line); border-left:4px solid var(--teal); border-radius:12px; padding:12px 16px; margin-bottom:8px;}
+  .echeance-card.late{border-left-color:var(--danger);}
+  .echeance-card.pending{border-left-color:var(--gold);}
+  .echeance-card .e-title{font-size:13.5px; font-weight:600; display:flex; justify-content:space-between; align-items:baseline; gap:8px;}
+  .echeance-card .e-count{font-family:'IBM Plex Mono',monospace; font-size:12.5px; color:var(--ink-soft); flex:none;}
+  .echeance-card .e-text{font-size:11.5px; color:var(--ink-soft); margin-top:3px;}
+  .echeance-card .e-add{margin-top:8px; display:flex; gap:6px;}
+  .echeance-card .e-add input{flex:1; font-size:12px; padding:6px 8px; border:1px solid var(--line); border-radius:8px;}
+  .echeance-card .e-add button{font-size:11.5px; font-weight:600; border:1px solid var(--line); background:#fff; border-radius:16px; padding:6px 12px; cursor:pointer;}
+
+  .cal-nav{display:flex; align-items:center; justify-content:space-between; margin-bottom:10px;}
+  .cal-nav button{background:#fff; border:1px solid var(--line); border-radius:50%; width:30px; height:30px; cursor:pointer; font-size:14px;}
+  .cal-nav .cal-label{font-family:'Source Serif 4',serif; font-size:14.5px; font-weight:600;}
+  .cal-grid{display:grid; grid-template-columns:repeat(7,1fr); gap:4px;}
+  .cal-dow{text-align:center; font-size:9.5px; color:var(--ink-soft); font-weight:600; padding-bottom:4px;}
+  .cal-cell{aspect-ratio:1; border-radius:8px; background:#fff; border:1px solid var(--line); display:flex; flex-direction:column; align-items:center; justify-content:center; font-size:11px; position:relative;}
+  .cal-cell.empty{background:transparent; border:none;}
+  .cal-cell.today{border-color:var(--teal); border-width:2px;}
+  .cal-cell.has-events{cursor:pointer;}
+  .cal-dots{display:flex; gap:2px; margin-top:2px;}
+  .cal-dot{width:5px; height:5px; border-radius:50%; display:inline-block;}
+  .cal-day-detail{margin-top:12px; background:#fff; border:1px solid var(--line); border-radius:12px; padding:12px 16px; font-size:12.5px;}
+  .cal-day-detail .cdd-item{display:flex; align-items:center; gap:8px; margin-bottom:6px;}
+  .cal-day-detail .cdd-item:last-child{margin-bottom:0;}
+
+  .modal-overlay{position:fixed; inset:0; background:rgba(30,28,32,.55); display:none; align-items:flex-start; justify-content:center; padding:32px 16px; z-index:210; overflow:auto;}
+  .modal-overlay.show{display:flex;}
+  .modal{background:#fff; border-radius:14px; max-width:460px; width:100%; box-shadow:0 20px 60px rgba(0,0,0,.3);}
+  .modal-head{display:flex; align-items:center; justify-content:space-between; padding:18px 22px; border-bottom:1px solid var(--line);}
+  .modal-head h3{font-family:'Source Serif 4',serif; margin:0; font-size:15.5px;}
+  .modal-close{background:none; border:none; font-size:20px; cursor:pointer; color:var(--ink-soft);}
+  .modal-body{padding:18px 22px; max-height:65vh; overflow-y:auto;}
+  .modal-actions{display:flex; justify-content:flex-end; gap:8px; padding:14px 22px; border-top:1px solid var(--line);}
+  button.primary{background:var(--ink); color:#fff; border:none; padding:10px 18px; border-radius:20px; font-weight:600; font-size:13px; cursor:pointer;}
+  button.ghost{background:none; border:1px solid var(--line); padding:10px 18px; border-radius:20px; font-weight:600; font-size:13px; cursor:pointer; color:var(--ink-soft);}
+  .oblig-item{border:1px solid var(--line); border-radius:8px; padding:10px 12px; margin-bottom:8px; background:#FBFAF7;}
+  .oblig-item .oi-top{display:flex; justify-content:space-between; align-items:center; gap:8px;}
+  .oblig-item input[type=text]{width:100%; font-size:12.5px; padding:7px 9px; border:1px solid var(--line); border-radius:6px; margin:0;}
+  .oblig-item input[type=number]{width:60px; font-size:12.5px; padding:7px 9px; border:1px solid var(--line); border-radius:6px;}
+  .remove-x{background:none; border:none; color:var(--danger); font-size:16px; cursor:pointer; flex:none;}
+  .add-admin-btn{background:#fff; border:1px solid var(--line); color:var(--ink); font-size:12px; font-weight:600; padding:8px 14px; border-radius:18px; cursor:pointer; margin-top:6px;}
+
   #authGate{position:fixed;inset:0;background:#2B2A2E;display:flex;align-items:center;justify-content:center;z-index:200;padding:20px;}
   #authForm{display:none;background:#fff;border-radius:14px;padding:32px;max-width:360px;width:100%;text-align:center;}
 
@@ -111,10 +158,34 @@
     <div style="text-align:center;font-size:12.5px;color:var(--ink-soft);">Chargement des indicateurs…</div>
   </div>
 
+  <div class="section-lbl" style="margin-top:0;">Échéances CSSCT</div>
+  <div class="echeance-toggle">
+    <button class="et-btn active" id="viewListBtn" onclick="switchEcheanceView('liste')">📋 Liste</button>
+    <button class="et-btn" id="viewCalBtn" onclick="switchEcheanceView('calendrier')">📅 Calendrier</button>
+    <button class="et-manage" onclick="openObligationsModal()" title="Gérer les échéances récurrentes">⚙️</button>
+  </div>
+  <div id="echeanceListView"><div style="text-align:center;font-size:12.5px;color:var(--ink-soft);">Chargement…</div></div>
+  <div id="echeanceCalView" style="display:none;"></div>
+
   <a class="update-link" id="changelogLink" href="changelog.html">Notes de mise à jour</a>
   <a class="update-link" href="guide_vigilance.html" style="margin-top:8px;">📖 Guide de vigilance CSE</a>
   <a class="update-link" href="a_propos.html" style="margin-top:8px;">À propos de cette application</a>
   <a class="update-link" href="administration.html" style="margin-top:8px;">🔗 Partager le formulaire collaborateur</a>
+</div>
+
+<div class="modal-overlay" id="obligationsModal">
+  <div class="modal">
+    <div class="modal-head"><h3>⚙️ Échéances récurrentes</h3><button class="modal-close" onclick="document.getElementById('obligationsModal').classList.remove('show')">×</button></div>
+    <div class="modal-body">
+      <p style="font-size:11.5px;color:var(--ink-soft);margin:0 0 12px;">Objectif annuel par obligation. Les réunions CSSCT (cochées comme telles dans les CR de réunion), les inspections et les exercices d'évacuation sont comptés automatiquement depuis leurs modules respectifs. Pour une obligation ajoutée manuellement, ajoute toi-même les dates réalisées depuis la vue Liste de l'accueil.</p>
+      <div id="obligationsList"></div>
+      <button class="add-admin-btn" onclick="adminAddObligation()">+ Ajouter une obligation</button>
+    </div>
+    <div class="modal-actions">
+      <button class="ghost" onclick="document.getElementById('obligationsModal').classList.remove('show')">Fermer sans enregistrer</button>
+      <button class="primary" onclick="saveObligationsConfig()">Enregistrer</button>
+    </div>
+  </div>
 </div>
 
 <nav class="tabbar" aria-label="Navigation principale">
@@ -129,7 +200,7 @@
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js";
   import { getAuth, sendSignInLinkToEmail, isSignInWithEmailLink, signInWithEmailLink, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js";
-  import { getFirestore, collection, getDocs, doc, getDoc } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
+  import { getFirestore, collection, getDocs, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyACY8fyy8Rd9NyLJ855xsDyknuUMV-pAag",
@@ -157,6 +228,7 @@ const firebaseConfig = {
     if (user) {
       document.getElementById('authGate').style.display = 'none';
       loadHighlights();
+      loadEcheances();
       applyBrandingLogo();
     } else {
       document.getElementById('authGate').style.display = 'flex';
@@ -255,6 +327,197 @@ const firebaseConfig = {
       stack.innerHTML = '<div style="text-align:center;font-size:12px;color:var(--danger);">Impossible de charger les indicateurs.</div>';
     }
   }
+
+  function esc(s){ return (s==null?'':String(s)).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+
+  const DEFAULT_OBLIGATIONS = [
+    {id:'reunions_cssct', nom:'Réunions CSSCT', nombreParAn:4, source:'reunions_cssct'},
+    {id:'inspections', nom:'Inspections', nombreParAn:4, source:'inspections'},
+    {id:'evacuations', nom:"Exercices d'évacuation", nombreParAn:2, source:'evacuations'}
+  ];
+
+  let _obligations = [];
+  let _echeanceEvents = [];
+  let _calYear, _calMonth;
+
+  async function loadEcheances(){
+    const listView = document.getElementById('echeanceListView');
+    try{
+      const [crSnap, inspSnap, evacSnap, obligSnap, trousseSnap] = await Promise.all([
+        getDocs(collection(db,'comptes_rendus_reunion')),
+        getDocs(collection(db,'inspections')),
+        getDocs(collection(db,'exercices_evacuation')),
+        getDoc(doc(db,'config','obligations_recurrentes')),
+        getDocs(collection(db,'trousses_secours'))
+      ]);
+      const crs = crSnap.docs.map(d => d.data());
+      const insps = inspSnap.docs.map(d => d.data());
+      const evacs = evacSnap.docs.map(d => d.data());
+      const trousses = trousseSnap.docs.map(d => d.data());
+      _obligations = (obligSnap.exists() && Array.isArray(obligSnap.data().liste) && obligSnap.data().liste.length)
+        ? obligSnap.data().liste : DEFAULT_OBLIGATIONS;
+
+      const now = new Date();
+      const year = now.getFullYear();
+
+      function datesForSource(source){
+        if(source === 'reunions_cssct') return crs.filter(c => c.estReunionSSCT && c.date).map(c => c.date);
+        if(source === 'inspections') return insps.filter(i => i.date).map(i => i.date);
+        if(source === 'evacuations') return evacs.filter(e => e.date).map(e => e.date);
+        return [];
+      }
+
+      _echeanceEvents = [];
+      let html = '';
+      _obligations.forEach(function(ob){
+        const allDates = ob.source === 'manuel' ? (ob.dates||[]) : datesForSource(ob.source);
+        const datesThisYear = allDates.filter(function(d){ const p = parseISO(d); return p && p.getFullYear() === year; }).sort();
+        const count = datesThisYear.length;
+        const objectif = Number(ob.nombreParAn) || 0;
+        datesThisYear.forEach(function(d){ _echeanceEvents.push({date:d, label:ob.nom, color:'teal'}); });
+
+        let status = 'ok', statusText = count + ' réalisée(s) cette année';
+        if(objectif > 0){
+          const dayOfYear = Math.floor((now - new Date(year,0,0)) / 86400000);
+          const expected = objectif * (dayOfYear/365);
+          if(count >= objectif){ status = 'ok'; statusText = 'Objectif atteint ('+count+'/'+objectif+')'; }
+          else if(count + 0.5 < expected){ status = 'late'; statusText = 'En retard ('+count+'/'+objectif+' réalisées)'; }
+          else { status = 'pending'; statusText = count+'/'+objectif+' réalisées cette année'; }
+        }
+
+        const sortedAll = allDates.slice().sort();
+        const lastDate = datesThisYear.length ? datesThisYear[datesThisYear.length-1] : (sortedAll.length ? sortedAll[sortedAll.length-1] : null);
+
+        html += '<div class="echeance-card '+(status==='ok'?'':status)+'">' +
+          '<div class="e-title"><span>'+esc(ob.nom)+'</span><span class="e-count">'+count+(objectif?('/'+objectif):'')+'</span></div>' +
+          '<div class="e-text">'+esc(statusText)+(lastDate ? (' — dernière le '+esc(lastDate)) : ' — aucune réalisée pour l\'instant')+'</div>';
+        if(ob.source === 'manuel'){
+          html += '<div class="e-add"><input type="date" id="oblDate_'+esc(ob.id)+'"><button onclick="addManualObligationDate(\''+esc(ob.id)+'\')">+ Ajouter une date</button></div>';
+        }
+        html += '</div>';
+      });
+
+      trousses.forEach(function(it){
+        if(it.datePeremption){ _echeanceEvents.push({date: it.datePeremption, label: 'Péremption — ' + (it.nom||'article'), color:'danger'}); }
+        const nc = nextControl(it);
+        if(nc){ _echeanceEvents.push({date: nc, label: 'Contrôle — ' + (it.nom||'article'), color:'gold'}); }
+      });
+
+      listView.innerHTML = html || '<div style="text-align:center;font-size:12.5px;color:var(--ink-soft);">Aucune échéance configurée.</div>';
+
+      _calYear = now.getFullYear(); _calMonth = now.getMonth();
+      renderCalendar();
+    }catch(err){
+      listView.innerHTML = '<div style="text-align:center;font-size:12px;color:var(--danger);">Impossible de charger les échéances.</div>';
+    }
+  }
+
+  window.switchEcheanceView = function(view){
+    document.getElementById('viewListBtn').classList.toggle('active', view==='liste');
+    document.getElementById('viewCalBtn').classList.toggle('active', view==='calendrier');
+    document.getElementById('echeanceListView').style.display = view==='liste' ? 'block' : 'none';
+    document.getElementById('echeanceCalView').style.display = view==='calendrier' ? 'block' : 'none';
+  };
+
+  function renderCalendar(){
+    const dowLabels = ['Lun','Mar','Mer','Jeu','Ven','Sam','Dim'];
+    const firstOfMonth = new Date(_calYear, _calMonth, 1);
+    const startWeekday = (firstOfMonth.getDay()+6)%7;
+    const daysInMonth = new Date(_calYear, _calMonth+1, 0).getDate();
+    const todayStr = new Date().toISOString().slice(0,10);
+
+    const eventsByDay = {};
+    _echeanceEvents.forEach(function(ev){
+      if(!eventsByDay[ev.date]) eventsByDay[ev.date] = [];
+      eventsByDay[ev.date].push(ev);
+    });
+
+    let cellsHtml = '';
+    for(let i=0;i<startWeekday;i++){ cellsHtml += '<div class="cal-cell empty"></div>'; }
+    for(let day=1; day<=daysInMonth; day++){
+      const dateStr = _calYear+'-'+String(_calMonth+1).padStart(2,'0')+'-'+String(day).padStart(2,'0');
+      const evs = eventsByDay[dateStr] || [];
+      const isToday = dateStr === todayStr;
+      const dots = evs.slice(0,4).map(function(e){
+        const c = e.color==='teal' ? 'var(--teal)' : (e.color==='danger' ? 'var(--danger)' : 'var(--gold)');
+        return '<span class="cal-dot" style="background:'+c+';"></span>';
+      }).join('');
+      cellsHtml += '<div class="cal-cell'+(isToday?' today':'')+(evs.length?' has-events':'')+'"'+(evs.length?(' onclick="showCalDay(\''+dateStr+'\')"'):'')+'>' +
+        '<div>'+day+'</div>'+(dots?'<div class="cal-dots">'+dots+'</div>':'') +
+      '</div>';
+    }
+
+    const monthNames = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
+    document.getElementById('echeanceCalView').innerHTML =
+      '<div class="cal-nav"><button onclick="navCalendar(-1)">‹</button><span class="cal-label">'+monthNames[_calMonth]+' '+_calYear+'</span><button onclick="navCalendar(1)">›</button></div>' +
+      '<div class="cal-grid">' + dowLabels.map(function(d){ return '<div class="cal-dow">'+d+'</div>'; }).join('') + cellsHtml + '</div>' +
+      '<div id="calDayDetail"></div>';
+  }
+
+  window.navCalendar = function(delta){
+    _calMonth += delta;
+    if(_calMonth < 0){ _calMonth = 11; _calYear--; }
+    if(_calMonth > 11){ _calMonth = 0; _calYear++; }
+    renderCalendar();
+  };
+
+  window.showCalDay = function(dateStr){
+    const evs = _echeanceEvents.filter(function(e){ return e.date === dateStr; });
+    const detail = document.getElementById('calDayDetail');
+    if(!detail) return;
+    detail.innerHTML = '<div class="cal-day-detail"><strong style="font-size:12.5px;">'+esc(dateStr)+'</strong><div style="margin-top:8px;">' +
+      evs.map(function(e){
+        const c = e.color==='teal' ? 'var(--teal)' : (e.color==='danger' ? 'var(--danger)' : 'var(--gold)');
+        return '<div class="cdd-item"><span class="cal-dot" style="background:'+c+';"></span>'+esc(e.label)+'</div>';
+      }).join('') +
+    '</div></div>';
+  };
+
+  window.addManualObligationDate = async function(oblId){
+    const input = document.getElementById('oblDate_'+oblId);
+    const val = input && input.value;
+    if(!val) return;
+    const ob = _obligations.find(function(o){ return o.id === oblId; });
+    if(!ob) return;
+    ob.dates = ob.dates || [];
+    ob.dates.push(val);
+    try{
+      await setDoc(doc(db,'config','obligations_recurrentes'), { liste: _obligations });
+      loadEcheances();
+    }catch(err){ alert('Erreur : ' + err.message); }
+  };
+
+  window.openObligationsModal = function(){
+    window._obligDraft = JSON.parse(JSON.stringify(_obligations.length ? _obligations : DEFAULT_OBLIGATIONS));
+    renderObligationsAdmin();
+    document.getElementById('obligationsModal').classList.add('show');
+  };
+
+  function renderObligationsAdmin(){
+    const sourceLabel = {reunions_cssct:'CR de réunion (cochés SSCT)', inspections:'module Inspections', evacuations:"module Exercices d'évacuation", manuel:'saisie manuelle'};
+    document.getElementById('obligationsList').innerHTML = window._obligDraft.map(function(ob, i){
+      return '<div class="oblig-item"><div class="oi-top">' +
+        '<input type="text" value="'+esc(ob.nom).replace(/"/g,'&quot;')+'" oninput="window._obligDraft['+i+'].nom = this.value">' +
+        '<span style="font-size:10.5px;color:var(--ink-soft);white-space:nowrap;">objectif/an</span>' +
+        '<input type="number" min="0" value="'+(ob.nombreParAn||0)+'" oninput="window._obligDraft['+i+'].nombreParAn = Number(this.value)">' +
+        '<button class="remove-x" onclick="adminRemoveObligation('+i+')">✕</button>' +
+      '</div>' +
+      '<div style="font-size:10.5px;color:var(--ink-soft);margin-top:4px;">Source : ' + (sourceLabel[ob.source] || 'saisie manuelle') + '</div>' +
+      '</div>';
+    }).join('');
+  }
+  window.adminAddObligation = function(){
+    window._obligDraft.push({ id: 'manuel_'+Date.now(), nom:'Nouvelle obligation', nombreParAn:1, source:'manuel', dates:[] });
+    renderObligationsAdmin();
+  };
+  window.adminRemoveObligation = function(i){ window._obligDraft.splice(i,1); renderObligationsAdmin(); };
+  window.saveObligationsConfig = async function(){
+    try{
+      await setDoc(doc(db,'config','obligations_recurrentes'), { liste: window._obligDraft });
+      document.getElementById('obligationsModal').classList.remove('show');
+      loadEcheances();
+    }catch(err){ alert('Erreur : ' + err.message); }
+  };
 
   document.getElementById('logoutBtn').addEventListener('click', () => {
     if(confirm('Se déconnecter ?')){
