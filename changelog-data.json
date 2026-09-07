@@ -1,5 +1,17 @@
 [
   {
+    "hash": "6fd92e1",
+    "date": "07/09/2026",
+    "title": "Update index.html",
+    "description": ""
+  },
+  {
+    "hash": "4c2a57b",
+    "date": "07/09/2026",
+    "title": "chore: mise a jour automatique du changelog [skip ci]",
+    "description": ""
+  },
+  {
     "hash": "27c97ca",
     "date": "07/09/2026",
     "title": "Update index.html",
