@@ -30,7 +30,7 @@ export default {
 
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+  'Access-Control-Allow-Methods': 'GET, POST, DELETE, OPTIONS',
   'Access-Control-Allow-Headers': 'Content-Type, Authorization'
 };
 
@@ -573,6 +573,31 @@ async function handleCrFileGet(request, env, ctx) {
   const session = url.searchParams.get('session');
   const nom = url.searchParams.get('nom') || 'fichier';
   if (!fileId) return new Response(JSON.stringify({ error: 'fileId manquant' }), { status: 400, headers: CORS_HEADERS });
+
+  if (request.method === 'DELETE') {
+    // Suppression réelle et définitive du fichier dans KV (aucune corbeille, aucune sauvegarde).
+    // Réservée aux admins — jamais accessible via un jeton de session collaborateur.
+    let adminEmail;
+    try {
+      adminEmail = await requireAdmin(request, env);
+    } catch (err) {
+      console.error('DELETE /api/cr-file refusé (' + fileId + ') : ' + err.message);
+      return new Response(JSON.stringify({ error: err.message }), { status: 401, headers: CORS_HEADERS });
+    }
+    if (!env.CR_FILES) {
+      console.error('DELETE /api/cr-file (' + fileId + ') : binding KV "CR_FILES" absent.');
+      return new Response(JSON.stringify({ error: "Binding KV \"CR_FILES\" absent (voir wrangler.jsonc)." }), { status: 500, headers: CORS_HEADERS });
+    }
+    console.log('DELETE /api/cr-file par ' + adminEmail + ' — fileId=' + fileId);
+    await env.CR_FILES.delete(fileId);
+    const verif = await env.CR_FILES.get(fileId);
+    if (verif !== null) {
+      console.error('DELETE /api/cr-file : clé ' + fileId + ' encore lisible juste après la suppression (propagation KV en cours, ou binding pointant vers un autre namespace que celui affiché dans le tableau de bord).');
+    } else {
+      console.log('DELETE /api/cr-file : suppression de ' + fileId + ' confirmée.');
+    }
+    return new Response(JSON.stringify({ ok: true }), { status: 200, headers: CORS_HEADERS });
+  }
 
   let allowed = false;
   try {
