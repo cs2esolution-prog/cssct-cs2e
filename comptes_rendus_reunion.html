@@ -203,7 +203,7 @@
   <p class="subtitle">Ordre du jour, participants, décisions — historique complet du mandat.</p>
 
   <div style="margin-bottom:14px;">
-    <input type="text" id="crSearchInput" oninput="renderSearchResults()" placeholder="🔎 Rechercher un mot dans tous les CR (fichiers confidentiels inclus)…" style="width:100%;padding:10px 14px;border:1px solid var(--line);border-radius:20px;font-size:13px;">
+    <input type="text" id="crSearchInput" oninput="renderSearchResults()" placeholder="🔎 Rechercher un mot dans tous les CR (fiches et fichiers confidentiels inclus)…" style="width:100%;padding:10px 14px;border:1px solid var(--line);border-radius:20px;font-size:13px;">
     <div id="crSearchResults" style="display:none;flex-direction:column;gap:8px;margin-top:10px;"></div>
   </div>
 
@@ -795,6 +795,27 @@ function crFilesSectionHtml(it, id){
 }
 
 // ---- Recherche plein texte dans tous les CR (admin, confidentiel inclus) ----
+// Cherche à la fois dans le texte extrait des fichiers PDF/Word attachés ET dans les blocs
+// narratifs de la fiche elle-même (ordre du jour, notes brutes, points abordés, décisions,
+// prochaine échéance, participants, rubriques complémentaires personnalisées).
+const CR_SEARCH_FIELDS = [
+  {id:'participants', label:'Participants'},
+  {id:'ordreJour', label:'Ordre du jour'},
+  {id:'priseNoteBrute', label:'Prise de notes brute'},
+  {id:'pointsAbordes', label:'Points abordés'},
+  {id:'decisions', label:'Décisions prises'},
+  {id:'prochaineEcheance', label:'Prochaine échéance'}
+];
+function pushLineMatches(results, it, lignes, q, extra){
+  lignes.forEach(function(ligne, idx){
+    if(ligne.toLowerCase().indexOf(q) !== -1){
+      results.push(Object.assign({
+        crId: it.id, titre: it.titre, date: it.date,
+        before: lignes.slice(Math.max(0, idx-3), idx), match: ligne, after: lignes.slice(idx+1, idx+4)
+      }, extra));
+    }
+  });
+}
 function searchAllCR(query){
   const q = query.trim().toLowerCase();
   if(!q) return [];
@@ -805,25 +826,19 @@ function searchAllCR(query){
       if(!f) return;
       if(f.pages){
         f.pages.forEach(function(pg){
-          (pg.lignes||[]).forEach(function(ligne, idx){
-            if(ligne.toLowerCase().indexOf(q) !== -1){
-              results.push({
-                crId: it.id, titre: it.titre, date: it.date, fileId: f.fileId, nomFichier: f.nomFichier, page: pg.page,
-                before: pg.lignes.slice(Math.max(0, idx-3), idx), match: ligne, after: pg.lignes.slice(idx+1, idx+4)
-              });
-            }
-          });
+          pushLineMatches(results, it, pg.lignes||[], q, { source:'file', fileId: f.fileId, nomFichier: f.nomFichier, page: pg.page });
         });
       } else if(f.lignes){
-        f.lignes.forEach(function(ligne, idx){
-          if(ligne.toLowerCase().indexOf(q) !== -1){
-            results.push({
-              crId: it.id, titre: it.titre, date: it.date, fileId: f.fileId, nomFichier: f.nomFichier, page: null,
-              before: f.lignes.slice(Math.max(0, idx-3), idx), match: ligne, after: f.lignes.slice(idx+1, idx+4)
-            });
-          }
-        });
+        pushLineMatches(results, it, f.lignes, q, { source:'file', fileId: f.fileId, nomFichier: f.nomFichier, page: null });
       }
+    });
+    CR_SEARCH_FIELDS.forEach(function(fdef){
+      if(!it[fdef.id]) return;
+      pushLineMatches(results, it, String(it[fdef.id]).split('\n'), q, { source:'field', fieldLabel: fdef.label });
+    });
+    (it.sectionsComplementaires||[]).forEach(function(s){
+      if(!s.texte) return;
+      pushLineMatches(results, it, String(s.texte).split('\n'), q, { source:'field', fieldLabel: s.titre });
     });
   });
   results.sort(function(a, b){ return String(b.date||'').localeCompare(String(a.date||'')); });
@@ -854,12 +869,18 @@ window.renderSearchResults = function(){
         '<mark>' + esc(r.match) + '</mark>' +
         (r.after.length ? '<br>' : '') +
         r.after.map(esc).join('<br>');
+      const metaLabel = r.source === 'file'
+        ? ((r.page ? ('page ' + r.page + ' · ') : '') + esc(r.nomFichier))
+        : ('📝 ' + esc(r.fieldLabel));
+      const openFileBtn = r.source === 'file'
+        ? '<button class="btn" onclick="event.stopPropagation();openCrFile(\'' + r.fileId + '\',\'' + esc(r.nomFichier).replace(/'/g,"\\'") + '\'' + (r.page ? (',' + r.page) : '') + ')">📄 Ouvrir' + (r.page ? (' (p.' + r.page + ')') : '') + '</button>'
+        : '';
       return '<div class="sr-item">' +
         '<div class="sr-item-head">' +
-          '<div class="r-meta">' + (r.page ? ('page ' + r.page + ' · ') : '') + esc(r.nomFichier) + '</div>' +
+          '<div class="r-meta">' + metaLabel + '</div>' +
           '<div style="display:flex;gap:6px;flex:none;">' +
             '<button class="btn" onclick="event.stopPropagation();openDrawer(\'' + r.crId + '\')">📋 Voir le CR</button>' +
-            '<button class="btn" onclick="event.stopPropagation();openCrFile(\'' + r.fileId + '\',\'' + esc(r.nomFichier).replace(/'/g,"\\'") + '\'' + (r.page ? (',' + r.page) : '') + ')">📄 Ouvrir' + (r.page ? (' (p.' + r.page + ')') : '') + '</button>' +
+            openFileBtn +
           '</div>' +
         '</div>' +
         '<div class="sr-item-ctx">' + ctx + '</div>' +
