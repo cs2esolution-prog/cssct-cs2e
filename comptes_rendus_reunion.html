@@ -207,11 +207,15 @@
     <div id="crSearchResults" style="display:none;flex-direction:column;gap:8px;margin-top:10px;"></div>
   </div>
 
-  <div style="margin-bottom:14px;display:flex;align-items:center;gap:8px;">
+  <div style="margin-bottom:14px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
     <label for="crCategorieFilter" style="font-size:12px;color:var(--ink-soft);white-space:nowrap;">Catégorie :</label>
     <select id="crCategorieFilter" onchange="window.renderList()" style="padding:8px 12px;border:1px solid var(--line);border-radius:20px;font-size:13px;">
       <option value="">Toutes</option>
     </select>
+    <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--ink-soft);cursor:pointer;margin-left:6px;">
+      <input type="checkbox" id="crNonAccessibleFilter" onchange="window.renderList()" style="width:auto;">
+      🔒 Non accessibles aux salariés uniquement
+    </label>
   </div>
 
   <div class="list" id="list"><div style="font-size:13px;color:var(--ink-soft);">Chargement…</div></div>
@@ -493,10 +497,17 @@ window.renderList = function(){
     filterSel.dataset.filled = '1';
   }
   const filtreCat = filterSel ? filterSel.value : '';
+  const filtreNonAccessible = document.getElementById('crNonAccessibleFilter');
+  const nonAccessibleOnly = filtreNonAccessible ? filtreNonAccessible.checked : false;
   let items = (window._crs||[]).slice().sort(function(a,b){ return (b.date||'').localeCompare(a.date||''); });
   if(filtreCat) items = items.filter(function(it){ return it.categorie === filtreCat; });
+  if(nonAccessibleOnly) items = items.filter(function(it){ return !crHasAccessible(it); });
   if(!items.length){
-    list.innerHTML = '<div style="font-size:13px;color:var(--ink-soft);">Aucun compte-rendu enregistré' + (filtreCat ? ' pour cette catégorie' : '') + '. ' + (filtreCat ? '' : 'Clique sur "+ Nouveau CR" pour commencer.') + '</div>';
+    const raisons = [];
+    if(filtreCat) raisons.push('cette catégorie');
+    if(nonAccessibleOnly) raisons.push('ce filtre de visibilité');
+    const suffixe = raisons.length ? (' pour ' + raisons.join(' et ')) : '';
+    list.innerHTML = '<div style="font-size:13px;color:var(--ink-soft);">Aucun compte-rendu enregistré' + suffixe + '. ' + (suffixe ? '' : 'Clique sur "+ Nouveau CR" pour commencer.') + '</div>';
     return;
   }
   list.innerHTML = items.map(function(it){
