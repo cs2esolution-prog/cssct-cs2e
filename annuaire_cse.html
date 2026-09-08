@@ -161,6 +161,11 @@
     const r = ROLES.find(function(x){ return x.id === id; });
     return r ? r.nom : null;
   }
+  function sortedFonctionIds(fonctions){
+    return (fonctions || []).slice().sort(function(a, b){
+      return String(roleNomById(a) || '').localeCompare(String(roleNomById(b) || ''), 'fr');
+    });
+  }
 
   // Palette de couleurs pastel, une par rôle (attribuée de façon stable via un hash de l'id)
   // pour que chaque badge de fonction soit visuellement distinct, comme un pin/une pastille de couleur.
@@ -189,7 +194,7 @@
   // Petite rangée d'insignes/macarons (image officielle du rôle), séparée des pastilles colorées :
   // uniquement pour les rôles qui ont une image, invisible sinon (ex : Secrétaire, Trésorier n'en ont pas).
   function eluInsignesHtml(el){
-    const html = (el.fonctions || []).map(function(fid){
+    const html = sortedFonctionIds(el.fonctions).map(function(fid){
       const r = ROLES.find(function(x){ return x.id === fid; });
       if(!r || !r.imageBase64) return '';
       return '<img class="elu-insigne" src="' + r.imageBase64 + '" alt="" title="' + esc(r.nom) + '" onclick="goToRole(\'' + fid + '\')">';
@@ -243,7 +248,7 @@
       return;
     }
     wrap.innerHTML = filtered.map(function(el){
-      const badges = (el.fonctions || []).map(roleBadgeHtml).join('');
+      const badges = sortedFonctionIds(el.fonctions).map(roleBadgeHtml).join('');
       const emails = (el.emails || []).map(function(em){
         return '<a class="elu-email-link" href="mailto:' + esc(em) + '">✉️ ' + esc(em) + '</a>';
       }).join('');
