@@ -1,5 +1,17 @@
 [
   {
+    "hash": "62b4bf0",
+    "date": "08/09/2026",
+    "title": "Update cr_reunion_collaborateurs.html",
+    "description": ""
+  },
+  {
+    "hash": "536b63c",
+    "date": "08/09/2026",
+    "title": "chore: mise a jour automatique du changelog [skip ci]",
+    "description": ""
+  },
+  {
     "hash": "ac1b59e",
     "date": "08/09/2026",
     "title": "Update wrangler.jsonc",
