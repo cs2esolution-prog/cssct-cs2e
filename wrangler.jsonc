@@ -28,5 +28,15 @@
   // puis remplacer "REMPLACER_PAR_ID_NAMESPACE" ci-dessous par l'id retourné.
   "kv_namespaces": [
     { "binding": "CR_FILES", "id": "3e71a74bb3354863b7834eaf146d478b" }
+  ],
+  // Limitation de débit anti-abus sur les formulaires publics et le mot de passe CR (voir
+  // claude/mode-operatoire-multi-cssct.md). Contrairement à la KV ci-dessus, rien à créer dans le
+  // tableau de bord Cloudflare : ces deux compteurs sont définis uniquement ici et activés au
+  // prochain déploiement (npx wrangler deploy). "namespace_id" est un simple numéro choisi
+  // arbitrairement (pas un identifiant existant à récupérer) ; les deux limiteurs utilisent des
+  // numéros différents pour ne pas partager leur compteur.
+  "ratelimits": [
+    { "name": "RATE_LIMITER_FORMS", "namespace_id": "1001", "simple": { "limit": 5, "period": 60 } },
+    { "name": "RATE_LIMITER_CR_PASSWORD", "namespace_id": "1002", "simple": { "limit": 5, "period": 60 } }
   ]
 }
