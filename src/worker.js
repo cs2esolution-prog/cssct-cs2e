@@ -1,35 +1,52 @@
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
+    let response;
 
     if (url.pathname === '/api/signalement-collaborateur') {
-      return handleCollaborateurSubmission(request, env, ctx);
-    }
-    if (url.pathname === '/api/expression-besoin') {
-      return handleBesoinSubmission(request, env, ctx);
-    }
-    if (url.pathname === '/api/ajout-complement') {
-      return handleComplementSubmission(request, env, ctx);
-    }
-    if (url.pathname === '/api/cr-file-upload') {
-      return handleCrFileUpload(request, env, ctx);
-    }
-    if (url.pathname === '/api/cr-file') {
-      return handleCrFileGet(request, env, ctx);
-    }
-    if (url.pathname === '/api/cr-password-check') {
-      return handleCrPasswordCheck(request, env, ctx);
-    }
-    if (url.pathname === '/api/cr-liste-publique') {
-      return handleCrListePublique(request, env, ctx);
+      response = await handleCollaborateurSubmission(request, env, ctx);
+    } else if (url.pathname === '/api/expression-besoin') {
+      response = await handleBesoinSubmission(request, env, ctx);
+    } else if (url.pathname === '/api/ajout-complement') {
+      response = await handleComplementSubmission(request, env, ctx);
+    } else if (url.pathname === '/api/cr-file-upload') {
+      response = await handleCrFileUpload(request, env, ctx);
+    } else if (url.pathname === '/api/cr-file') {
+      response = await handleCrFileGet(request, env, ctx);
+    } else if (url.pathname === '/api/cr-password-check') {
+      response = await handleCrPasswordCheck(request, env, ctx);
+    } else if (url.pathname === '/api/cr-liste-publique') {
+      response = await handleCrListePublique(request, env, ctx);
+    } else {
+      response = await env.ASSETS.fetch(request);
     }
 
-    return env.ASSETS.fetch(request);
+    return withSecurityHeaders(response);
   }
 };
 
+// En-têtes de sécurité HTTP ajoutés à toutes les réponses (pages ET API) : réduisent le risque
+// de détournement de clickjacking (X-Frame-Options) et de mauvaise interprétation d'un fichier
+// par le navigateur (X-Content-Type-Options), limitent les informations transmises à d'autres
+// sites via l'en-tête Referer, et forcent HTTPS (HSTS). Volontairement pas de
+// Content-Security-Policy pour l'instant : toutes les pages utilisent du CSS/JS en ligne, une
+// CSP mal calibrée casserait le site — à faire dans un second temps, avec un audit dédié de
+// toutes les ressources externes utilisées par chaque page.
+function withSecurityHeaders(response) {
+  const headers = new Headers(response.headers);
+  headers.set('X-Content-Type-Options', 'nosniff');
+  headers.set('X-Frame-Options', 'DENY');
+  headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
+  headers.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+  return new Response(response.body, { status: response.status, statusText: response.statusText, headers: headers });
+}
+
+// Sécurité : plus de "Access-Control-Allow-Origin: *". Toutes les pages du site appellent ces
+// endpoints en chemin relatif ("/api/...") depuis leur propre page, donc en même origine que le
+// Worker qui les sert — le navigateur n'a jamais besoin d'un en-tête CORS pour ça. Ne plus envoyer
+// cet en-tête revient donc à fermer tout accès cross-origin (le vecteur d'abus identifié lors de
+// l'audit) sans rien changer pour l'usage réel du site, ni dépendre d'un nom de domaine particulier.
 const CORS_HEADERS = {
-  'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET, POST, DELETE, OPTIONS',
   'Access-Control-Allow-Headers': 'Content-Type, Authorization'
 };
