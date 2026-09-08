@@ -1,5 +1,17 @@
 [
   {
+    "hash": "c0834ae",
+    "date": "08/09/2026",
+    "title": "Update portail.html",
+    "description": ""
+  },
+  {
+    "hash": "53d3a78",
+    "date": "08/09/2026",
+    "title": "chore: mise a jour automatique du changelog [skip ci]",
+    "description": ""
+  },
+  {
     "hash": "f50f69f",
     "date": "08/09/2026",
     "title": "Update comptes_rendus_reunion.html",
