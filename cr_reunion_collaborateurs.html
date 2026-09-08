@@ -259,6 +259,7 @@
         }
       });
     });
+    results.sort(function(a, b){ return String(b.date||'').localeCompare(String(a.date||'')); });
     return results;
   }
 
