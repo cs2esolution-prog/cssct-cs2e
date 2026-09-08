@@ -37,7 +37,9 @@
   .cr-card .cr-titre{font-weight:700; font-size:14.5px;}
   .cr-card .cr-date{font-size:11.5px; color:var(--ink-soft); margin-top:2px; margin-bottom:10px;}
   .cr-card .cr-top{display:flex; justify-content:space-between; align-items:flex-start; gap:10px;}
+  .cr-top-badges{display:flex; align-items:center; gap:6px; flex-shrink:0;}
   .cat-badge{display:inline-block; padding:4px 10px; border-radius:12px; font-size:10.5px; font-weight:700; white-space:nowrap; flex-shrink:0;}
+  .new-badge{display:inline-block; padding:4px 10px; border-radius:12px; font-size:10.5px; font-weight:700; white-space:nowrap; flex-shrink:0; background:#FDECEA; color:#B23B3B;}
   .cr-files{display:flex; flex-direction:column; gap:6px;}
   .cr-file-row{display:flex; align-items:center; justify-content:space-between; gap:10px; background:var(--paper); border:1px solid var(--line); border-radius:8px; padding:8px 12px;}
   .cr-file-row .fname{font-size:12.5px; font-weight:600;}
@@ -97,7 +99,29 @@
 
 <script>
   const TOKEN_KEY = 'cr_collab_token';
+  const SEEN_KEY = 'cr_collab_vus';
   let CRS = [];
+
+  // Suivi "déjà consulté" local au navigateur (pas de compte individuel collaborateur —
+  // voir claude/backlog-technique.md). Limite assumée : propre à cet appareil/navigateur,
+  // remis à zéro si le collaborateur change de PC ou vide ses données de navigation.
+  function getSeenSet(){
+    try{ return new Set(JSON.parse(localStorage.getItem(SEEN_KEY) || '[]')); }
+    catch(e){ return new Set(); }
+  }
+  function saveSeenSet(set){
+    try{ localStorage.setItem(SEEN_KEY, JSON.stringify(Array.from(set))); }
+    catch(e){ /* stockage indisponible, tant pis pour la persistance */ }
+  }
+  let SEEN = getSeenSet();
+  function fileKey(f){ return f.fileId || f.id || f.url || ''; }
+  window.markFileSeen = function(key){
+    if(!key || SEEN.has(key)) return;
+    SEEN.add(key);
+    saveSeenSet(SEEN);
+    renderListe();
+  };
+  function crEstNouveau(cr){ return (cr.fichiers||[]).some(function(f){ return !SEEN.has(fileKey(f)); }); }
 
   function esc(s){ return (s==null?'':String(s)).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
 
@@ -189,9 +213,11 @@
 
   function fileRowHtml(crId, f){
     const label = (f.kind === 'confidentiel' || f.kind === 'non-confidentiel') ? (f.nomFichier || 'Compte-rendu') : (f.nom || f.nomFichier || 'Pièce jointe');
+    const key = fileKey(f);
+    const keyJs = esc(key).replace(/'/g,"\\'");
     const openBtn = f.kind === 'piece-jointe' && f.url
-      ? '<a href="' + esc(f.url) + '" target="_blank" rel="noopener">Ouvrir ↗</a>'
-      : '<button onclick="openFile(\'' + esc(f.fileId) + '\',\'' + esc(label).replace(/'/g,"\\'") + '\')">Ouvrir</button>';
+      ? '<a href="' + esc(f.url) + '" target="_blank" rel="noopener" onclick="markFileSeen(\'' + keyJs + '\')">Ouvrir ↗</a>'
+      : '<button onclick="openFile(\'' + esc(f.fileId) + '\',\'' + esc(label).replace(/'/g,"\\'") + '\',\'' + keyJs + '\')">Ouvrir</button>';
     return '<div class="cr-file-row"><div><div class="fname">' + fileIcon(f.kind) + ' ' + esc(label) + '</div><div class="ftype">' + esc(f.type||f.kind) + '</div></div>' + openBtn + '</div>';
   }
 
@@ -217,12 +243,13 @@
 
     if(!items.length){ el.innerHTML = '<p class="empty-note">Aucun compte-rendu pour cette catégorie.</p>'; return; }
     el.innerHTML = items.map(function(cr){
-      return '<div class="cr-card"><div class="cr-top"><div><div class="cr-titre">' + esc(cr.titre||'Sans titre') + '</div><div class="cr-date">' + esc(cr.date) + '</div></div>' + catBadgeHtml(cr.categorie) + '</div>' +
+      const badges = '<div class="cr-top-badges">' + (crEstNouveau(cr) ? '<span class="new-badge">🆕 Nouveau</span>' : '') + catBadgeHtml(cr.categorie) + '</div>';
+      return '<div class="cr-card"><div class="cr-top"><div><div class="cr-titre">' + esc(cr.titre||'Sans titre') + '</div><div class="cr-date">' + esc(cr.date) + '</div></div>' + badges + '</div>' +
         '<div class="cr-files">' + cr.fichiers.map(function(f){ return fileRowHtml(cr.id, f); }).join('') + '</div></div>';
     }).join('');
   }
 
-  window.openFile = async function(fileId, nom){
+  window.openFile = async function(fileId, nom, key){
     try{
       const token = getStoredToken();
       const resp = await fetch('/api/cr-file?fileId=' + encodeURIComponent(fileId) + '&nom=' + encodeURIComponent(nom) + '&session=' + encodeURIComponent(token));
@@ -230,6 +257,7 @@
       const blob = await resp.blob();
       const url = URL.createObjectURL(blob);
       window.open(url, '_blank');
+      if(key) markFileSeen(key);
     }catch(err){ alert('Erreur : ' + err.message); }
   };
 
