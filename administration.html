@@ -508,7 +508,7 @@
       <button class="modal-close" onclick="document.getElementById('templatesSignalementModal').classList.remove('show')">×</button>
     </div>
     <div class="modal-body">
-      <p class="s-help" style="margin:0 0 14px;">Variables disponibles, remplacées automatiquement : <code>{{numero}}</code>, <code>{{rapporteur}}</code>, <code>{{site}}</code>, <code>{{nature}}</code>, <code>{{objet}}</code>.</p>
+      <p class="s-help" style="margin:0 0 14px;">Variables disponibles, remplacées automatiquement : <code>{{numero}}</code>, <code>{{codeSuivi}}</code>, <code>{{rapporteur}}</code>, <code>{{site}}</code>, <code>{{nature}}</code>, <code>{{objet}}</code>.</p>
 
       <div class="settings-card" style="padding:0;border:none;">
         <div class="settings-subhead">Confirmation envoyée au collaborateur</div>
@@ -956,7 +956,7 @@ const firebaseConfig = {
   const DEFAULT_TEMPLATES = {
     signalementConfirmation: {
       subject: 'Confirmation de votre signalement CSSCT - {{numero}}',
-      body: 'Bonjour,\n\nVous venez de réaliser une demande de suivi auprès du CSSCT. Merci pour votre message. Nous allons étudier votre demande qui porte le numéro "{{numero}}" qu\'il faudra systématiquement intégrer dans nos échanges.\n\nSi des photos doivent être transmises, vous pouvez les envoyer en réponse à ce mail.\n\nNous vous souhaitons une bonne journée.'
+      body: 'Bonjour,\n\nVous venez de réaliser une demande de suivi auprès du CSSCT. Merci pour votre message. Nous allons étudier votre demande qui porte le numéro "{{numero}}" qu\'il faudra systématiquement intégrer dans nos échanges.\n\nVotre code de suivi est : {{codeSuivi}}\nConservez-le précieusement : il vous permettra de suivre l\'avancement de votre demande et d\'ajouter un complément si besoin, depuis la page "Suivre ma demande".\n\nSi des photos doivent être transmises, vous pouvez les envoyer en réponse à ce mail.\n\nNous vous souhaitons une bonne journée.'
     },
     signalementNotifCSSCT: {
       subject: 'Formulaire CSSCT - {{nature}} - {{numero}}',
