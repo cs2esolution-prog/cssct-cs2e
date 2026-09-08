@@ -711,12 +711,13 @@
       <button class="modal-close" onclick="cancelCrop()">×</button>
     </div>
     <div class="modal-body" style="text-align:center;">
-      <div style="width:280px;height:280px;margin:0 auto 14px;border-radius:12px;overflow:hidden;background:#111;touch-action:none;">
+      <div style="position:relative;width:280px;height:280px;margin:0 auto 14px;border-radius:12px;overflow:hidden;background:#111;touch-action:none;">
         <canvas id="cropCanvas" width="280" height="280" style="display:block;cursor:grab;touch-action:none;"></canvas>
+        <div style="position:absolute;inset:0;pointer-events:none;border-radius:50%;box-shadow:0 0 0 9999px rgba(17,17,17,.6), inset 0 0 0 2px rgba(255,255,255,.85);"></div>
       </div>
       <label style="font-size:11.5px;color:var(--ink-soft);display:block;margin-bottom:6px;">Zoom</label>
       <input type="range" id="cropZoom" min="100" max="300" value="100" style="width:100%;margin-bottom:14px;">
-      <p class="s-help" style="margin:0;">Fais glisser l'image pour la repositionner, ajuste le zoom, puis valide.</p>
+      <p class="s-help" style="margin:0;">Seule la zone à l'intérieur du cercle sera visible. Fais glisser l'image pour la repositionner, ajuste le zoom, puis valide.</p>
     </div>
     <div class="modal-actions">
       <button type="button" class="ghost" onclick="cancelCrop()">Annuler</button>
@@ -1673,15 +1674,13 @@ const firebaseConfig = {
       await loadElusData();
     }catch(e){ document.getElementById('eluFormMsg').textContent = 'Erreur : ' + e.message; }
   };
-  document.getElementById('eluFormPhotoInput').addEventListener('change', async function(e){
+  document.getElementById('eluFormPhotoInput').addEventListener('change', function(e){
     const file = e.target.files && e.target.files[0];
     if(!file) return;
-    try{
-      let result = await compressImageFile(file, 500, 0.75);
-      if(result.dataUrl.length > 400000){ result = await compressImageFile(file, 350, 0.6); }
-      window._eluFormPhoto = result.dataUrl;
+    openCropModal(file, function(dataUrl){
+      window._eluFormPhoto = dataUrl;
       renderEluFormPhotoPreview();
-    }catch(err){ alert('Erreur lecture de la photo : ' + err.message); }
+    });
     e.target.value = '';
   });
 
