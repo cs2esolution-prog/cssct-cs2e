@@ -147,8 +147,8 @@
       rowsHtml =
         '<div class="k-row"><div class="k-label">Nature</div><div class="k-val">' + esc(data.natureIncident||'—') + '</div></div>' +
         '<div class="k-row"><div class="k-label">Description</div><div class="k-val">' + esc(data.description||'—') + '</div></div>';
-      histoField = 'suivi';
-      histoData = data.suivi;
+      histoField = 'echanges';
+      histoData = data.echanges;
     } else {
       titleHtml = esc(data.theme || 'Expression de besoin');
       metaHtml = toFR((data.createdAt||'').slice(0,10));
