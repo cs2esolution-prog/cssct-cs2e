@@ -25,19 +25,45 @@ export default {
   }
 };
 
+// Content-Security-Policy établie en listant, page par page, toutes les ressources externes
+// réellement chargées par le site (polices Google, SDK Firebase, unpkg pour docx/jsPDF/mammoth/
+// pdf.js, api.qrserver.com pour les QR codes, et l'appel direct à firestore.googleapis.com fait
+// par cr_reunion_collaborateurs.html pour lire le logo sans SDK Firebase). 'unsafe-inline' reste
+// nécessaire sur script-src et style-src car toutes les pages du site écrivent leur CSS/JS
+// directement dans la page plutôt que dans des fichiers séparés — la CSP ne bloque donc pas un
+// script injecté par une faille XSS, mais elle empêche un tel script d'exfiltrer des données vers
+// un domaine extérieur non listé, de charger un script externe non autorisé, d'afficher le site
+// dans un cadre sur un autre site (frame-ancestors), ou de détourner un formulaire (form-action).
+const CONTENT_SECURITY_POLICY = [
+  "default-src 'self'",
+  "script-src 'self' 'unsafe-inline' https://www.gstatic.com https://unpkg.com",
+  "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+  "font-src 'self' https://fonts.gstatic.com",
+  "img-src 'self' data: https://api.qrserver.com",
+  "connect-src 'self' https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com",
+  "frame-ancestors 'none'",
+  "base-uri 'self'",
+  "object-src 'none'",
+  "form-action 'self'"
+].join('; ');
+
 // En-têtes de sécurité HTTP ajoutés à toutes les réponses (pages ET API) : réduisent le risque
 // de détournement de clickjacking (X-Frame-Options) et de mauvaise interprétation d'un fichier
 // par le navigateur (X-Content-Type-Options), limitent les informations transmises à d'autres
-// sites via l'en-tête Referer, et forcent HTTPS (HSTS). Volontairement pas de
-// Content-Security-Policy pour l'instant : toutes les pages utilisent du CSS/JS en ligne, une
-// CSP mal calibrée casserait le site — à faire dans un second temps, avec un audit dédié de
-// toutes les ressources externes utilisées par chaque page.
+// sites via l'en-tête Referer, et forcent HTTPS (HSTS).
+//
+// La CSP ci-dessus est déployée en mode "Report-Only" : le navigateur signale les violations
+// dans sa console sans jamais rien bloquer, donc sans aucun risque de casser une page. Une fois
+// confirmé qu'aucune violation ne remonte sur les pages du site, remplacer
+// 'Content-Security-Policy-Report-Only' par 'Content-Security-Policy' ci-dessous pour l'activer
+// réellement.
 function withSecurityHeaders(response) {
   const headers = new Headers(response.headers);
   headers.set('X-Content-Type-Options', 'nosniff');
   headers.set('X-Frame-Options', 'DENY');
   headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
   headers.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+  headers.set('Content-Security-Policy-Report-Only', CONTENT_SECURITY_POLICY);
   return new Response(response.body, { status: response.status, statusText: response.statusText, headers: headers });
 }
 
@@ -50,6 +76,28 @@ const CORS_HEADERS = {
   'Access-Control-Allow-Methods': 'GET, POST, DELETE, OPTIONS',
   'Access-Control-Allow-Headers': 'Content-Type, Authorization'
 };
+
+// Limitation de débit anti-abus (formulaires publics + mot de passe CR), via la Rate Limiting API
+// native de Cloudflare Workers (bindings "RATE_LIMITER_FORMS"/"RATE_LIMITER_CR_PASSWORD" à ajouter
+// dans wrangler.jsonc, voir claude/mode-operatoire-multi-cssct.md — rien à créer manuellement dans
+// le tableau de bord, contrairement à une KV). Tant que ces bindings n'existent pas encore (avant le
+// prochain déploiement), la vérification est ignorée silencieusement : aucun risque de casser les
+// formulaires en attendant, la protection s'active automatiquement une fois le binding en place.
+async function checkRateLimit(env, bindingName, request) {
+  const limiter = env[bindingName];
+  if (!limiter) return true; // binding pas encore configuré : on laisse passer
+  try {
+    const ip = request.headers.get('CF-Connecting-IP') || 'inconnu';
+    const { success } = await limiter.limit({ key: ip });
+    return success;
+  } catch (err) {
+    console.error('Erreur limitation de débit (' + bindingName + ') : ' + err.message);
+    return true; // en cas d'erreur du service de rate limiting, on ne bloque pas l'utilisateur légitime
+  }
+}
+function tooManyRequestsResponse() {
+  return new Response(JSON.stringify({ error: 'Trop de tentatives, réessaie dans quelques minutes.' }), { status: 429, headers: CORS_HEADERS });
+}
 
 // Doit correspondre au "projectId" du firebaseConfig utilisé dans les pages du site.
 const FIREBASE_PROJECT_ID = 'cssct-cs2e-c655b';
@@ -170,6 +218,9 @@ async function handleCollaborateurSubmission(request, env, ctx) {
   if (request.method !== 'POST') {
     return new Response(JSON.stringify({ error: 'Methode non autorisee' }), { status: 405, headers: CORS_HEADERS });
   }
+  if (!(await checkRateLimit(env, 'RATE_LIMITER_FORMS', request))) {
+    return tooManyRequestsResponse();
+  }
 
   try {
     const data = await request.json();
@@ -242,6 +293,9 @@ async function handleBesoinSubmission(request, env, ctx) {
   if (request.method !== 'POST') {
     return new Response(JSON.stringify({ error: 'Methode non autorisee' }), { status: 405, headers: CORS_HEADERS });
   }
+  if (!(await checkRateLimit(env, 'RATE_LIMITER_FORMS', request))) {
+    return tooManyRequestsResponse();
+  }
 
   try {
     const data = await request.json();
@@ -312,6 +366,9 @@ async function handleComplementSubmission(request, env, ctx) {
   }
   if (request.method !== 'POST') {
     return new Response(JSON.stringify({ error: 'Methode non autorisee' }), { status: 405, headers: CORS_HEADERS });
+  }
+  if (!(await checkRateLimit(env, 'RATE_LIMITER_FORMS', request))) {
+    return tooManyRequestsResponse();
   }
 
   try {
@@ -691,6 +748,9 @@ async function handleCrFileGet(request, env, ctx) {
 async function handleCrPasswordCheck(request, env, ctx) {
   if (request.method === 'OPTIONS') return new Response(null, { headers: CORS_HEADERS });
   if (request.method !== 'POST') return new Response(JSON.stringify({ error: 'Methode non autorisee' }), { status: 405, headers: CORS_HEADERS });
+  if (!(await checkRateLimit(env, 'RATE_LIMITER_CR_PASSWORD', request))) {
+    return tooManyRequestsResponse();
+  }
   try {
     const data = await request.json();
     const password = String(data.password || '');
