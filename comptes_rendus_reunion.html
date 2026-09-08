@@ -232,9 +232,9 @@
   <div class="modal">
     <div class="modal-head"><h3>Nouveau compte-rendu</h3><button class="modal-close" onclick="document.getElementById('newModal').classList.remove('show')">×</button></div>
     <div class="modal-body">
-      <div class="dfield"><label class="dlabel">Titre de la réunion</label><input type="text" id="newTitre" placeholder="Ex : Réunion CSSCT trimestrielle"></div>
-      <div class="dfield"><label class="dlabel">Date</label><input type="date" id="newDate"></div>
-      <div class="dfield"><label class="dlabel">Catégorie</label><select id="newCategorie"></select></div>
+      <div class="dfield"><label class="dlabel">Catégorie</label><select id="newCategorie" onchange="updateNewTitreDefault()"></select></div>
+      <div class="dfield"><label class="dlabel">Date</label><input type="date" id="newDate" onchange="updateNewTitreDefault()"></div>
+      <div class="dfield"><label class="dlabel">Titre de la réunion</label><input type="text" id="newTitre" placeholder="Ex : CSSCT - 08/09/2026" oninput="this.dataset.dirty='1'"></div>
     </div>
     <div class="modal-actions">
       <button class="ghost" onclick="document.getElementById('newModal').classList.remove('show')">Annuler</button>
@@ -508,9 +508,12 @@ window.renderList = function(){
 };
 
 window.openNewModal = function(){
-  document.getElementById('newTitre').value = '';
+  const titreInput = document.getElementById('newTitre');
+  titreInput.value = '';
+  titreInput.dataset.dirty = '';
   document.getElementById('newDate').valueAsDate = new Date();
   populateCategorieSelect(document.getElementById('newCategorie'), (cfg().categories||[])[0]);
+  updateNewTitreDefault();
   document.getElementById('newModal').classList.add('show');
 };
 
@@ -526,6 +529,13 @@ function titreAvecDate(titreBrut, date){
   if(!suffixe) return titre;
   return titre.endsWith(suffixe) ? titre : (titre + ' - ' + suffixe);
 }
+window.updateNewTitreDefault = function(){
+  const titreInput = document.getElementById('newTitre');
+  if(titreInput.dataset.dirty === '1') return;
+  const cat = document.getElementById('newCategorie').value;
+  const date = document.getElementById('newDate').value;
+  titreInput.value = titreAvecDate(cat, date);
+};
 
 window.createCR = async function(){
   const titreBrut = document.getElementById('newTitre').value.trim();
