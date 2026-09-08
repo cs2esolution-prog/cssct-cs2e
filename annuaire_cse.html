@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Annuaire CSE</title>
+<link rel="icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,500;8..60,600;8..60,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --teal:#019682; --teal-dark:#017162; --purple:#5A4570; --gold:#C6AB76;
+    --paper:#F7F5F1; --ink:#2B2A2E; --ink-soft:#6B6873; --line:#E4E0D8; --radius:14px;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0; background:var(--paper); color:var(--ink); font-family:'Inter',system-ui,sans-serif; line-height:1.5;}
+  .wrap{max-width:720px; margin:0 auto; padding:28px 18px 60px;}
+  .brand{display:flex; align-items:center; gap:12px; padding-bottom:16px; border-bottom:2px solid var(--ink); margin-bottom:18px;}
+  .brand-mark{width:38px; height:38px; border-radius:50%;
+    background:conic-gradient(var(--teal) 0deg 120deg, var(--gold) 120deg 240deg, var(--purple) 240deg 360deg); flex:none;}
+  .brand-text{font-family:'Source Serif 4', serif; font-weight:700; font-size:19px;}
+  .brand-text span{color:var(--teal);}
+  .back-link{margin-left:auto; font-size:12px; font-weight:600; color:var(--ink-soft); text-decoration:none; border:1px solid var(--line); padding:6px 12px; border-radius:20px;}
+
+  h1{font-family:'Source Serif 4',serif; font-size:21px; margin:0 0 6px;}
+  .subtitle{font-size:13px; color:var(--ink-soft); margin:0 0 18px;}
+
+  .search-row{display:flex; gap:8px; margin-bottom:14px; position:sticky; top:0; background:var(--paper); padding:8px 0; z-index:10;}
+  .search-row input[type="search"]{flex:1; padding:11px 14px; border:1px solid var(--line); border-radius:22px; font-size:14px; font-family:'Inter',sans-serif; background:#fff;}
+  .search-row select{padding:11px 12px; border:1px solid var(--line); border-radius:22px; font-size:13px; font-family:'Inter',sans-serif; background:#fff; max-width:150px;}
+
+  .tabs{display:flex; gap:6px; margin-bottom:18px; border-bottom:1px solid var(--line);}
+  .tab-btn{background:none; border:none; padding:10px 4px; margin-right:16px; font-size:13.5px; font-weight:600; color:var(--ink-soft); cursor:pointer; border-bottom:2px solid transparent; font-family:'Inter',sans-serif;}
+  .tab-btn.active{color:var(--ink); border-bottom-color:var(--teal);}
+  .panel{display:none;}
+  .panel.active{display:block;}
+
+  .empty-note{font-size:13px; color:var(--ink-soft); text-align:center; padding:30px 10px;}
+
+  .elu-card{display:flex; gap:14px; background:#fff; border:1px solid var(--line); border-radius:var(--radius); padding:16px; margin-bottom:12px;}
+  .elu-photo{width:56px; height:56px; border-radius:50%; object-fit:cover; flex:none; background:var(--paper); border:1px solid var(--line);}
+  .elu-photo.placeholder{display:flex; align-items:center; justify-content:center; font-size:22px; color:var(--ink-soft);}
+  .elu-name{font-family:'Source Serif 4',serif; font-weight:700; font-size:15.5px; margin-bottom:2px;}
+  .elu-sub{font-size:12px; color:var(--ink-soft); margin-bottom:6px;}
+  .elu-fonctions{display:flex; flex-wrap:wrap; gap:6px; margin-bottom:6px;}
+  .role-badge{
+    display:inline-flex; align-items:center; gap:6px;
+    font-size:11px; font-weight:700; letter-spacing:.01em;
+    padding:3px 12px 3px 3px; border-radius:999px;
+    margin:0; cursor:pointer; border:none;
+    box-shadow:0 1px 3px rgba(43,42,46,.12), inset 0 0 0 1px rgba(43,42,46,.04);
+    transition:transform .1s ease, box-shadow .1s ease;
+  }
+  .role-badge:hover{transform:translateY(-1px); box-shadow:0 3px 8px rgba(43,42,46,.16);}
+  .role-badge:active{transform:translateY(0);}
+  .role-badge img{width:20px; height:20px; border-radius:50%; object-fit:cover; flex:none; box-shadow:0 0 0 1.5px #fff;}
+  .role-badge-dot{width:9px; height:9px; margin:0 2px 0 5px; border-radius:50%; background:currentColor; flex:none; opacity:.7;}
+  .elu-msg{font-size:12.5px; color:var(--ink); margin:6px 0; line-height:1.5;}
+  .elu-emails{display:flex; flex-wrap:wrap; gap:6px; margin-top:4px;}
+  .elu-email-link{font-size:11.5px; font-weight:600; color:var(--teal-dark); text-decoration:none; background:#F2FBF9; padding:4px 10px; border-radius:12px;}
+  .elu-email-link:hover{text-decoration:underline;}
+
+  .role-card{background:#fff; border:1px solid var(--line); border-radius:var(--radius); padding:16px; margin-bottom:12px; display:flex; gap:14px;}
+  .role-img{width:56px; height:56px; border-radius:10px; object-fit:cover; flex:none; background:var(--paper); border:1px solid var(--line);}
+  .role-img.placeholder{display:flex; align-items:center; justify-content:center; font-size:22px; color:var(--ink-soft);}
+  .role-name{font-family:'Source Serif 4',serif; font-weight:700; font-size:15.5px; margin-bottom:4px;}
+  .role-desc{font-size:12.5px; color:var(--ink); margin-bottom:8px; line-height:1.5;}
+  .role-members{font-size:11.5px; color:var(--ink-soft);}
+  .member-link{background:none; border:none; color:var(--teal-dark); font-weight:600; font-size:11.5px; cursor:pointer; padding:0; text-decoration:underline;}
+
+  .coord-card{background:#fff; border:1px solid var(--line); border-radius:var(--radius); padding:18px; margin-bottom:14px;}
+  .coord-card h3{font-family:'Source Serif 4',serif; font-size:14.5px; margin:0 0 10px;}
+  .coord-line{font-size:13px; margin-bottom:8px; display:flex; gap:8px; align-items:flex-start;}
+  .coord-line .ci{flex:none; width:20px;}
+  .coord-line a{color:var(--teal-dark); font-weight:600; text-decoration:none;}
+  .coord-line a:hover{text-decoration:underline;}
+  .coord-url-desc{color:var(--ink-soft); font-size:11.5px;}
+  .local-row{font-size:12.5px; padding:8px 0; border-bottom:1px solid var(--line); display:flex; align-items:center; gap:10px;}
+  .local-row:last-child{border-bottom:none;}
+  .local-row b{font-weight:700;}
+  .local-photo{width:48px; height:48px; border-radius:8px; object-fit:cover; flex:none; border:1px solid var(--line); cursor:pointer;}
+
+  .footer-note{font-size:11.5px; color:var(--ink-soft); text-align:center; margin-top:24px;}
+
+  .zoom-overlay{position:fixed; inset:0; background:rgba(30,28,32,.85); display:none; align-items:center; justify-content:center; z-index:200; padding:24px;}
+  .zoom-overlay.show{display:flex;}
+  .zoom-overlay img{max-width:100%; max-height:85vh; border-radius:10px;}
+  .zoom-close{position:absolute; top:18px; right:18px; background:rgba(255,255,255,.15); color:#fff; border:none; width:36px; height:36px; border-radius:50%; font-size:20px; cursor:pointer;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="brand">
+    <div class="brand-mark" id="brandMark"></div>
+    <div class="brand-text">CS<span>2E</span> · CSSCT</div>
+    <a class="back-link" href="portail.html">← Portail</a>
+  </div>
+
+  <h1>Annuaire CSE</h1>
+  <p class="subtitle">Les élus, les coordonnées du CSE et le rôle de chaque instance. Ouvert à tous, sans connexion.</p>
+
+  <div class="search-row">
+    <input type="search" id="searchInput" placeholder="Rechercher un nom, une société, un site, une fonction…">
+    <select id="siteFilter"><option value="">Tous les sites</option></select>
+  </div>
+
+  <div class="tabs">
+    <button type="button" class="tab-btn active" id="tab-elus" onclick="switchTab('elus')">Élus</button>
+    <button type="button" class="tab-btn" id="tab-coord" onclick="switchTab('coord')">Coordonnées &amp; locaux</button>
+    <button type="button" class="tab-btn" id="tab-roles" onclick="switchTab('roles')">Rôles &amp; instances</button>
+  </div>
+
+  <div class="panel active" id="panel-elus"></div>
+  <div class="panel" id="panel-coord"></div>
+  <div class="panel" id="panel-roles"></div>
+
+  <p class="footer-note">Une information à corriger ? Contacte le CSE via les coordonnées de l'onglet dédié.</p>
+</div>
+
+<div class="zoom-overlay" id="zoomOverlay" onclick="closePhotoZoom()">
+  <button class="zoom-close" onclick="closePhotoZoom(); event.stopPropagation();">×</button>
+  <img id="zoomImg" src="" alt="Photo du local">
+</div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js";
+  import { getFirestore, doc, getDoc, collection, getDocs } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyACY8fyy8Rd9NyLJ855xsDyknuUMV-pAag",
+    authDomain: "cssct-cs2e-c655b.firebaseapp.com",
+    projectId: "cssct-cs2e-c655b",
+    storageBucket: "cssct-cs2e-c655b.firebasestorage.app",
+    messagingSenderId: "277603883255",
+    appId: "1:277603883255:web:b3b7a5c3097a60caac1bf2"
+  };
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+
+  function esc(s){ return (s==null?'':String(s)).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+  function norm(s){ return (s||'').toString().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,''); }
+
+  let ELUS = [];
+  let ROLES = [];
+  let COORD = {};
+
+  getDoc(doc(db, 'config', 'branding')).then(function(snap){
+    const data = snap.exists() ? snap.data() : {};
+    if(!data.logoBase64) return;
+    document.querySelectorAll('.brand-mark').forEach(function(el){
+      el.style.background = 'none';
+      el.innerHTML = '<img src="data:image/png;base64,' + data.logoBase64 + '" alt="Logo" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">';
+    });
+  }).catch(function(){});
+
+  function eluNomComplet(el){ return ((el.prenom ? el.prenom + ' ' : '') + (el.nom || '')).trim(); }
+
+  function roleNomById(id){
+    const r = ROLES.find(function(x){ return x.id === id; });
+    return r ? r.nom : null;
+  }
+
+  // Palette de couleurs pastel, une par rôle (attribuée de façon stable via un hash de l'id)
+  // pour que chaque badge de fonction soit visuellement distinct, comme un pin/une pastille de couleur.
+  const BADGE_PALETTE = [
+    { bg:'#E4F3EF', fg:'#017162' },
+    { bg:'#F3E9D9', fg:'#8A6A2F' },
+    { bg:'#EFE6F2', fg:'#5A4570' },
+    { bg:'#FBEAE5', fg:'#A85D45' },
+    { bg:'#E6EEF7', fg:'#2E5C8A' },
+    { bg:'#EAF2E2', fg:'#4C7A2E' },
+    { bg:'#F7E6EF', fg:'#8A3F63' },
+    { bg:'#F0EDE4', fg:'#6B6873' }
+  ];
+  function roleColor(id){
+    let hash = 0;
+    const s = String(id || '');
+    for(let i = 0; i < s.length; i++){ hash = (hash * 31 + s.charCodeAt(i)) >>> 0; }
+    return BADGE_PALETTE[hash % BADGE_PALETTE.length];
+  }
+  function roleBadgeHtml(fid){
+    const r = ROLES.find(function(x){ return x.id === fid; });
+    if(!r) return '';
+    const col = roleColor(fid);
+    const icon = r.imageBase64 ? '<img src="' + r.imageBase64 + '" alt="">' : '<span class="role-badge-dot"></span>';
+    return '<button type="button" class="role-badge" style="background:' + col.bg + ';color:' + col.fg + ';" onclick="goToRole(\'' + fid + '\')">' + icon + esc(r.nom) + '</button>';
+  }
+
+  window.switchTab = function(name){
+    ['elus','coord','roles'].forEach(function(t){
+      document.getElementById('tab-' + t).classList.toggle('active', t === name);
+      document.getElementById('panel-' + t).classList.toggle('active', t === name);
+    });
+    if(name === 'elus') renderElus();
+    if(name === 'roles') renderRoles();
+  };
+
+  window.goToRole = function(roleId){
+    const nom = roleNomById(roleId);
+    document.getElementById('searchInput').value = nom || '';
+    window.switchTab('roles');
+  };
+  window.openPhotoZoom = function(localIndex){
+    const l = (COORD.locaux || [])[localIndex];
+    if(!l || !l.photoBase64) return;
+    document.getElementById('zoomImg').src = l.photoBase64;
+    document.getElementById('zoomOverlay').classList.add('show');
+  };
+  window.closePhotoZoom = function(){
+    document.getElementById('zoomOverlay').classList.remove('show');
+  };
+  window.goToElu = function(nomComplet){
+    document.getElementById('searchInput').value = nomComplet;
+    document.getElementById('siteFilter').value = '';
+    window.switchTab('elus');
+  };
+
+  function renderElus(){
+    const wrap = document.getElementById('panel-elus');
+    const term = norm(document.getElementById('searchInput').value.trim());
+    const siteF = document.getElementById('siteFilter').value;
+    const actifs = ELUS.filter(function(el){ return el.actif !== false; });
+    const filtered = actifs.filter(function(el){
+      if(siteF && el.site !== siteF) return false;
+      if(!term) return true;
+      const fonctionsNoms = (el.fonctions || []).map(roleNomById).filter(Boolean).join(' ');
+      const haystack = norm([eluNomComplet(el), el.societe, el.site, fonctionsNoms, el.message].filter(Boolean).join(' '));
+      return haystack.indexOf(term) !== -1;
+    });
+    if(!filtered.length){
+      wrap.innerHTML = '<div class="empty-note">' + (actifs.length ? 'Aucun élu ne correspond à cette recherche.' : "L'annuaire n'a pas encore été renseigné.") + '</div>';
+      return;
+    }
+    wrap.innerHTML = filtered.map(function(el){
+      const badges = (el.fonctions || []).map(roleBadgeHtml).join('');
+      const emails = (el.emails || []).map(function(em){
+        return '<a class="elu-email-link" href="mailto:' + esc(em) + '">✉️ ' + esc(em) + '</a>';
+      }).join('');
+      return '<div class="elu-card">'
+        + (el.photoBase64 ? '<img class="elu-photo" src="' + el.photoBase64 + '" alt="">' : '<div class="elu-photo placeholder">👤</div>')
+        + '<div style="flex:1;min-width:0;">'
+        + '<div class="elu-name">' + esc(eluNomComplet(el)) + '</div>'
+        + '<div class="elu-sub">' + esc([el.societe, el.site].filter(Boolean).join(' · ')) + '</div>'
+        + (badges ? '<div class="elu-fonctions">' + badges + '</div>' : '')
+        + (el.message ? '<div class="elu-msg">' + esc(el.message).replace(/\n/g, '<br>') + '</div>' : '')
+        + (emails ? '<div class="elu-emails">' + emails + '</div>' : '')
+        + '</div></div>';
+    }).join('');
+  }
+
+  function renderRoles(){
+    const wrap = document.getElementById('panel-roles');
+    const term = norm(document.getElementById('searchInput').value.trim());
+    const filtered = ROLES.filter(function(r){
+      if(!term) return true;
+      return norm(r.nom + ' ' + (r.description || '')).indexOf(term) !== -1;
+    });
+    if(!filtered.length){
+      wrap.innerHTML = '<div class="empty-note">' + (ROLES.length ? 'Aucun rôle ne correspond à cette recherche.' : 'Aucun rôle/instance renseigné pour le moment.') + '</div>';
+      return;
+    }
+    const actifs = ELUS.filter(function(el){ return el.actif !== false; });
+    wrap.innerHTML = filtered.map(function(r){
+      const membres = actifs.filter(function(el){ return (el.fonctions || []).indexOf(r.id) !== -1; });
+      const membresHtml = membres.length
+        ? membres.map(function(el){
+            const nomComplet = eluNomComplet(el);
+            return '<button type="button" class="member-link" onclick="goToElu(\'' + esc(nomComplet).replace(/'/g, "\\'") + '\')">' + esc(nomComplet) + '</button>';
+          }).join(', ')
+        : 'Personne n\'occupe ce rôle pour le moment.';
+      return '<div class="role-card">'
+        + (r.imageBase64 ? '<img class="role-img" src="' + r.imageBase64 + '" alt="">' : '<div class="role-img placeholder">🏷️</div>')
+        + '<div style="flex:1;min-width:0;">'
+        + '<div class="role-name">' + esc(r.nom) + '</div>'
+        + (r.description ? '<div class="role-desc">' + esc(r.description).replace(/\n/g, '<br>') + '</div>' : '')
+        + '<div class="role-members">' + membresHtml + '</div>'
+        + '</div></div>';
+    }).join('');
+  }
+
+  function renderCoord(){
+    const wrap = document.getElementById('panel-coord');
+    const hasContact = COORD.email || COORD.tel || COORD.siteWeb || (COORD.urls && COORD.urls.length);
+    const hasLocaux = COORD.locaux && COORD.locaux.length;
+    if(!hasContact && !hasLocaux){
+      wrap.innerHTML = '<div class="empty-note">Les coordonnées du CSE n\'ont pas encore été renseignées.</div>';
+      return;
+    }
+    let html = '<div class="coord-card"><h3>Contact</h3>';
+    if(COORD.email) html += '<div class="coord-line"><span class="ci">✉️</span><a href="mailto:' + esc(COORD.email) + '">' + esc(COORD.email) + '</a></div>';
+    if(COORD.tel) html += '<div class="coord-line"><span class="ci">📞</span><a href="tel:' + esc(COORD.tel.replace(/\s+/g,'')) + '">' + esc(COORD.tel) + '</a></div>';
+    if(COORD.siteWeb) html += '<div class="coord-line"><span class="ci">🌐</span><a href="' + esc(COORD.siteWeb) + '" target="_blank" rel="noopener">' + esc(COORD.siteWeb) + '</a></div>';
+    (COORD.urls || []).forEach(function(u){
+      html += '<div class="coord-line"><span class="ci">🔗</span><div><a href="' + esc(u.url) + '" target="_blank" rel="noopener">' + esc(u.nom || u.url) + '</a>' + (u.description ? '<div class="coord-url-desc">' + esc(u.description) + '</div>' : '') + '</div></div>';
+    });
+    html += '</div>';
+    if(hasLocaux){
+      html += '<div class="coord-card"><h3>Locaux CSE par site</h3>';
+      COORD.locaux.forEach(function(l, i){
+        html += '<div class="local-row">'
+          + (l.photoBase64 ? '<img class="local-photo" src="' + l.photoBase64 + '" alt="" onclick="openPhotoZoom(' + i + ')">' : '')
+          + '<div><b>' + esc(l.site) + '</b> — ' + esc(l.emplacement) + '</div></div>';
+      });
+      html += '</div>';
+    }
+    wrap.innerHTML = html;
+  }
+
+  function populateSiteFilter(){
+    const sel = document.getElementById('siteFilter');
+    const sites = Array.from(new Set(ELUS.map(function(el){ return el.site; }).filter(Boolean))).sort(function(a,b){ return a.localeCompare(b,'fr'); });
+    sel.innerHTML = '<option value="">Tous les sites</option>' + sites.map(function(s){ return '<option>' + esc(s) + '</option>'; }).join('');
+  }
+
+  document.getElementById('searchInput').addEventListener('input', function(){
+    const active = document.querySelector('.tab-btn.active').id;
+    if(active === 'tab-elus') renderElus();
+    if(active === 'tab-roles') renderRoles();
+  });
+  document.getElementById('siteFilter').addEventListener('change', renderElus);
+
+  Promise.all([
+    getDocs(collection(db, 'elus')).catch(function(){ return { forEach: function(){} }; }),
+    getDoc(doc(db, 'config', 'roles_instances')).catch(function(){ return { exists: function(){ return false; } }; }),
+    getDoc(doc(db, 'config', 'cse_coordonnees')).catch(function(){ return { exists: function(){ return false; } }; })
+  ]).then(function(results){
+    const elusSnap = results[0], rolesSnap = results[1], coordSnap = results[2];
+    ELUS = [];
+    elusSnap.forEach(function(d){ ELUS.push(Object.assign({ id: d.id }, d.data())); });
+    ELUS.sort(function(a,b){ return (a.nom||'').localeCompare(b.nom||'','fr'); });
+    ROLES = (rolesSnap.exists && rolesSnap.exists() && Array.isArray(rolesSnap.data().list)) ? rolesSnap.data().list : [];
+    COORD = (coordSnap.exists && coordSnap.exists()) ? coordSnap.data() : {};
+    populateSiteFilter();
+    renderElus();
+    renderCoord();
+    renderRoles();
+  });
+</script>
+</body>
+</html>

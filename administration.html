@@ -106,6 +106,35 @@
   .modop-body code{background:var(--paper); padding:1px 5px; border-radius:4px; font-family:'IBM Plex Mono',monospace; font-size:11px;}
   .modop-body pre{background:#2B2A2E; color:#F7F5F1; padding:10px 12px; border-radius:8px; font-size:11px; overflow-x:auto;}
   .modop-note{background:var(--paper); border-left:3px solid var(--gold); padding:8px 10px; border-radius:6px; font-size:11.5px; margin:8px 0;}
+
+  .field{display:flex; flex-direction:column; gap:5px; margin-bottom:12px;}
+  .field label{font-size:12px; font-weight:600;}
+  .grid2{display:grid; grid-template-columns:1fr 1fr; gap:12px;}
+  .field input[type="text"], .field input[type="email"], .field input[type="tel"], .field input[type="url"], .field select, .field textarea{
+    width:100%; padding:9px 11px; border:1px solid var(--line); border-radius:7px; font-size:13.5px; font-family:'Inter',sans-serif;
+  }
+  .field textarea{resize:vertical; min-height:70px;}
+  .filebox-sm{display:inline-block; border:1.5px dashed var(--line); border-radius:8px; padding:10px 16px; font-size:12px; color:var(--ink-soft); cursor:pointer;}
+  .filebox-sm input{display:none;}
+  .photo-preview-sm{width:64px; height:64px; object-fit:cover; border-radius:8px; border:1px solid var(--line);}
+  .cat-checks{display:grid; grid-template-columns:1fr 1fr; gap:4px 14px; margin-bottom:4px;}
+  .cat-checks label{display:flex; align-items:center; gap:6px; font-size:12.5px; font-weight:400;}
+  .cat-checks input{width:auto;}
+  .modal-actions{display:flex; justify-content:space-between; align-items:center; padding:14px 20px; border-top:1px solid var(--line); position:sticky; bottom:0; background:#fff;}
+  button.primary{background:var(--ink); color:#fff; border:none; padding:9px 18px; border-radius:20px; font-weight:600; font-size:13px; cursor:pointer;}
+  button.ghost{background:none; border:1px solid var(--line); padding:9px 18px; border-radius:20px; font-weight:600; font-size:13px; cursor:pointer; color:var(--ink-soft);}
+  button.danger-link{background:none; border:none; color:var(--danger); font-size:12.5px; font-weight:600; cursor:pointer;}
+  .elu-row{display:flex; align-items:center; gap:10px; padding:9px 0; border-bottom:1px solid var(--line); cursor:pointer;}
+  .elu-row:last-child{border-bottom:none;}
+  .elu-row-photo{width:38px; height:38px; border-radius:50%; object-fit:cover; flex:none; background:var(--paper); border:1px solid var(--line);}
+  .elu-row-photo.placeholder{display:flex; align-items:center; justify-content:center; font-size:15px; color:var(--ink-soft);}
+  .elu-row-name{font-weight:600; font-size:13px;}
+  .elu-row-sub{font-size:11px; color:var(--ink-soft);}
+  .elu-row-inactive{opacity:.5;}
+  .role-row{display:flex; align-items:center; gap:10px; padding:9px 0; border-bottom:1px solid var(--line); cursor:pointer;}
+  .role-row:last-child{border-bottom:none;}
+  .role-row-name{font-weight:600; font-size:13px;}
+  .role-row-desc{font-size:11px; color:var(--ink-soft);}
 </style>
 </head>
 <body>
@@ -193,6 +222,29 @@
     <div class="a-arrow">›</div>
   </button>
 
+  <div class="section-lbl">Annuaire CSE</div>
+  <button type="button" class="admin-card" onclick="openElusModal()">
+    <div class="a-icon">🧑‍🤝‍🧑</div>
+    <div><div class="a-title">Élus (fiches individuelles)</div><div class="a-desc">Nom, société, site, fonctions, email(s), photo, message de présentation</div></div>
+    <div class="a-arrow">›</div>
+  </button>
+  <button type="button" class="admin-card" onclick="openRolesModal()">
+    <div class="a-icon">🏷️</div>
+    <div><div class="a-title">Rôles &amp; instances</div><div class="a-desc">CSE, CSSCT, référent handicap, secrétaire, trésorier... — description consultée par les salariés</div></div>
+    <div class="a-arrow">›</div>
+  </button>
+  <button type="button" class="admin-card" onclick="openCoordCseModal()">
+    <div class="a-icon">📇</div>
+    <div><div class="a-title">Coordonnées &amp; locaux CSE</div><div class="a-desc">Email, téléphone, site web, liens utiles, emplacement des locaux par site</div></div>
+    <div class="a-arrow">›</div>
+  </button>
+  <p style="font-size:12px;color:var(--ink-soft);margin:14px 0 8px;">Page publique, sans connexion — annuaire des élus, coordonnées du CSE et rôles/instances, consultable par tous les salariés.</p>
+  <div class="qr-card">
+    <img class="qr-img" id="qrCanvasAnnuaire" alt="QR code">
+    <div class="qr-url" id="qrUrlAnnuaire"></div>
+    <button class="copy-btn" id="copyUrlBtnAnnuaire">Copier le lien</button>
+  </div>
+
   <div class="section-lbl">Dossiers de signalement</div>
   <div class="settings-card">
     <p class="s-help" style="margin-top:0;">Destinataire et copie utilisés par le bouton "✉️ Mail de relance" dans un dossier de signalement.</p>
@@ -272,6 +324,7 @@
     <a class="sitemap-link" href="expression_besoin.html">Expression de besoin (public)</a>
     <a class="sitemap-link" href="suivi_demande.html">Suivre ma demande (public)</a>
     <a class="sitemap-link" href="portail.html">Portail salariés (public)</a>
+    <a class="sitemap-link" href="annuaire_cse.html">Annuaire CSE (public)</a>
     <a class="sitemap-link" href="expression_besoin_liste.html">Expressions de besoin (équipe)</a>
     <a class="sitemap-link" href="a_propos.html">À propos</a>
     <a class="sitemap-link" href="administration.html">Administration (ici)</a>
@@ -544,10 +597,159 @@
   </div>
 </div>
 
+<div class="modal-overlay" id="elusModal">
+  <div class="modal" style="max-width:560px;">
+    <div class="modal-head">
+      <h3>🧑‍🤝‍🧑 Élus (annuaire)</h3>
+      <button class="modal-close" onclick="document.getElementById('elusModal').classList.remove('show')">×</button>
+    </div>
+    <div class="modal-body">
+      <p class="s-help" style="margin:0 0 10px;">Consultable par les salariés depuis l'annuaire public, sans connexion. Clique sur une fiche pour la modifier.</p>
+      <button type="button" class="ghost" style="margin-bottom:12px;width:100%;" onclick="openEluFormModal()">+ Ajouter un élu</button>
+      <div id="elusList"></div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="eluFormModal">
+  <div class="modal" style="max-width:560px;">
+    <div class="modal-head">
+      <h3 id="eluFormTitle">Ajouter un élu</h3>
+      <button class="modal-close" onclick="closeEluFormModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="eluFormId">
+      <div class="grid2">
+        <div class="field"><label>Prénom</label><input type="text" id="eluFormPrenom"></div>
+        <div class="field"><label>Nom</label><input type="text" id="eluFormNom"></div>
+      </div>
+      <div class="grid2">
+        <div class="field"><label>Société de rattachement</label><select id="eluFormSociete"></select></div>
+        <div class="field"><label>Site</label><select id="eluFormSite"></select></div>
+      </div>
+      <div class="field">
+        <label>Fonctions <span style="font-weight:400;color:var(--ink-soft);">(plusieurs possibles)</span></label>
+        <div class="cat-checks" id="eluFonctions"></div>
+      </div>
+      <div class="field">
+        <label>Email(s)</label>
+        <ul class="access-list" id="eluFormEmailsList"></ul>
+        <div class="access-add-row">
+          <input type="email" id="newEluEmail" placeholder="prenom.nom@entreprise.com">
+          <button type="button" onclick="addEluFormEmail()">Ajouter</button>
+        </div>
+      </div>
+      <div class="field">
+        <label>Photo</label>
+        <label class="filebox-sm" for="eluFormPhotoInput">📎 Ajouter / remplacer une photo<input type="file" id="eluFormPhotoInput" accept="image/*"></label>
+        <div id="eluFormPhotoPreview"></div>
+      </div>
+      <div class="field">
+        <label>Message de présentation <span style="font-weight:400;color:var(--ink-soft);">(en quoi cette personne peut aider, ou simple mot de présentation)</span></label>
+        <textarea id="eluFormMessage" placeholder="Ex : Élue CSSCT depuis 2023, je peux t'aider sur les sujets d'aménagement de poste et de conditions de travail."></textarea>
+      </div>
+      <div class="field">
+        <label><input type="checkbox" id="eluFormActif" style="width:auto;margin-right:6px;" checked> Actif — visible dans l'annuaire public</label>
+      </div>
+      <div class="access-msg" id="eluFormMsg"></div>
+    </div>
+    <div class="modal-actions">
+      <button type="button" class="danger-link" id="deleteEluBtn" style="display:none;" onclick="deleteElu()">Supprimer cette fiche</button>
+      <div style="margin-left:auto;display:flex;gap:8px;">
+        <button type="button" class="ghost" onclick="closeEluFormModal()">Annuler</button>
+        <button type="button" class="primary" onclick="saveElu()">Enregistrer</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="rolesModal">
+  <div class="modal" style="max-width:520px;">
+    <div class="modal-head">
+      <h3>🏷️ Rôles &amp; instances</h3>
+      <button class="modal-close" onclick="document.getElementById('rolesModal').classList.remove('show')">×</button>
+    </div>
+    <div class="modal-body">
+      <p class="s-help" style="margin:0 0 10px;">Cette liste sert à la fois de fonctions cochables sur une fiche élu et de contenu pour la page "Rôles &amp; instances" consultée par les salariés (description + image facultative).</p>
+      <button type="button" class="ghost" style="margin-bottom:12px;width:100%;" onclick="openRoleFormModal()">+ Ajouter un rôle / une instance</button>
+      <div id="rolesList"></div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="roleFormModal">
+  <div class="modal" style="max-width:480px;">
+    <div class="modal-head">
+      <h3 id="roleFormTitle">Ajouter un rôle / instance</h3>
+      <button class="modal-close" onclick="document.getElementById('roleFormModal').classList.remove('show')">×</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="roleFormId">
+      <div class="field"><label>Nom</label><input type="text" id="roleFormNom" placeholder="Ex : Référent handicap"></div>
+      <div class="field"><label>Description</label><textarea id="roleFormDesc" placeholder="À quoi sert ce rôle / cette instance, son périmètre..."></textarea></div>
+      <div class="field">
+        <label>Image <span style="font-weight:400;color:var(--ink-soft);">(facultatif)</span></label>
+        <label class="filebox-sm" for="roleFormImageInput">📎 Ajouter / remplacer une image<input type="file" id="roleFormImageInput" accept="image/*"></label>
+        <div id="roleFormImagePreview"></div>
+      </div>
+      <div class="access-msg" id="roleFormMsg"></div>
+    </div>
+    <div class="modal-actions">
+      <button type="button" class="danger-link" id="deleteRoleBtn" style="display:none;" onclick="deleteRole()">Supprimer ce rôle</button>
+      <div style="margin-left:auto;display:flex;gap:8px;">
+        <button type="button" class="ghost" onclick="document.getElementById('roleFormModal').classList.remove('show')">Annuler</button>
+        <button type="button" class="primary" onclick="saveRole()">Enregistrer</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="coordCseModal">
+  <div class="modal" style="max-width:520px;">
+    <div class="modal-head">
+      <h3>📇 Coordonnées &amp; locaux CSE</h3>
+      <button class="modal-close" onclick="document.getElementById('coordCseModal').classList.remove('show')">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="grid2">
+        <div class="field"><label>Email</label><input type="email" id="coordEmail" placeholder="cse@entreprise.com"></div>
+        <div class="field"><label>Téléphone</label><input type="tel" id="coordTel" placeholder="Facultatif"></div>
+      </div>
+      <div class="field"><label>Site web</label><input type="url" id="coordSiteWeb" placeholder="https://..."></div>
+
+      <div class="field">
+        <label>Liens utiles</label>
+        <ul class="access-list" id="coordUrlsList"></ul>
+        <div class="grid2" style="margin-bottom:6px;">
+          <input type="text" id="newUrlNom" placeholder="Nom (ex : Site du CSE)">
+          <input type="url" id="newUrlHref" placeholder="https://...">
+        </div>
+        <input type="text" id="newUrlDesc" placeholder="Description (facultatif)" style="margin-bottom:6px;">
+        <button type="button" class="ghost" style="width:100%;" onclick="addCoordUrl()">+ Ajouter le lien</button>
+      </div>
+
+      <div class="field">
+        <label>Locaux CSE par site</label>
+        <ul class="access-list" id="coordLocauxList"></ul>
+        <div class="grid2" style="margin-bottom:6px;">
+          <select id="newLocalSite"></select>
+          <input type="text" id="newLocalEmplacement" placeholder="Emplacement (ex : Bâtiment B, bureau 12)">
+        </div>
+        <label class="filebox-sm" for="newLocalPhotoInput" style="margin-bottom:8px;">📎 Photo du local (facultatif)<input type="file" id="newLocalPhotoInput" accept="image/*"></label>
+        <div id="newLocalPhotoPreview"></div>
+        <button type="button" class="ghost" style="width:100%;" onclick="addCoordLocal()">+ Ajouter le local</button>
+      </div>
+
+      <button class="settings-save-btn" onclick="saveCoordCse()">Enregistrer</button>
+      <div class="settings-msg" id="coordCseMsg"></div>
+    </div>
+  </div>
+</div>
+
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js";
   import { getAuth, sendSignInLinkToEmail, isSignInWithEmailLink, signInWithEmailLink, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js";
-  import { getFirestore, doc, getDoc, setDoc, collection, getDocs, deleteDoc, updateDoc, arrayUnion, arrayRemove, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
+  import { getFirestore, doc, getDoc, setDoc, collection, getDocs, addDoc, deleteDoc, updateDoc, arrayUnion, arrayRemove, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyACY8fyy8Rd9NyLJ855xsDyknuUMV-pAag",
@@ -570,6 +772,31 @@ const firebaseConfig = {
   const notifSignalementConfigRef = doc(db, "config", "notifications_signalement");
   const notifBesoinConfigRef = doc(db, "config", "notifications_besoin");
   const emailTemplatesConfigRef = doc(db, "config", "email_templates");
+  const elusCol = collection(db, "elus");
+  const rolesConfigRef = doc(db, "config", "roles_instances");
+  const coordCseConfigRef = doc(db, "config", "cse_coordonnees");
+  function esc(s){ return (s==null?'':String(s)).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+  function compressImageFile(file, maxDim, quality){
+    return new Promise(function(resolve, reject){
+      const reader = new FileReader();
+      reader.onload = function(e){
+        const img = new Image();
+        img.onload = function(){
+          let w = img.width, h = img.height;
+          if(w > h && w > maxDim){ h = Math.round(h * maxDim / w); w = maxDim; }
+          else if(h >= w && h > maxDim){ w = Math.round(w * maxDim / h); h = maxDim; }
+          const canvas = document.createElement('canvas');
+          canvas.width = w; canvas.height = h;
+          canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+          resolve({ dataUrl: canvas.toDataURL('image/jpeg', quality), width: w, height: h });
+        };
+        img.onerror = reject;
+        img.src = e.target.result;
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  }
   const DEFAULT_TEMPLATES = {
     signalementConfirmation: {
       subject: 'Confirmation de votre signalement CSSCT - {{numero}}',
@@ -613,6 +840,8 @@ const firebaseConfig = {
       loadSitesData();
       loadNotifSignalementData();
       loadNotifBesoinData();
+      loadRolesData();
+      loadElusData();
     } else {
       document.getElementById('authGate').style.display = 'flex';
       document.getElementById('authForm').style.display = 'block';
@@ -1110,6 +1339,346 @@ const firebaseConfig = {
       await loadAccessData();
     }catch(err){ msg.textContent = friendlyAccessError(err); }
   };
+
+  // ---- Rôles & instances (config/roles_instances) ----
+  function slugifyRole(nom){
+    return (nom||'').toString().trim().toLowerCase()
+      .normalize('NFD').replace(/[̀-ͯ]/g,'')
+      .replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,'');
+  }
+  window.loadRolesData = async function(){
+    try{
+      const snap = await getDoc(rolesConfigRef);
+      window._roles = (snap.exists() && Array.isArray(snap.data().list)) ? snap.data().list : [];
+    }catch(e){ window._roles = []; }
+    renderRolesList();
+    populateEluFonctionsChecks();
+  };
+  function renderRolesList(){
+    const wrap = document.getElementById('rolesList');
+    if(!wrap) return;
+    if(!window._roles.length){ wrap.innerHTML = '<div class="access-empty">Aucun rôle défini pour le moment.</div>'; return; }
+    wrap.innerHTML = window._roles.map(function(r){
+      return '<div class="role-row" onclick="openRoleFormModal(\'' + r.id + '\')">'
+        + (r.imageBase64 ? '<img class="elu-row-photo" src="' + r.imageBase64 + '" alt="">' : '<div class="elu-row-photo placeholder">🏷️</div>')
+        + '<div style="flex:1;"><div class="role-row-name">' + esc(r.nom) + '</div><div class="role-row-desc">' + esc((r.description||'').slice(0,90)) + '</div></div>'
+        + '<div class="a-arrow">›</div></div>';
+    }).join('');
+  }
+  window.openRolesModal = function(){
+    document.getElementById('rolesModal').classList.add('show');
+    loadRolesData();
+  };
+  window.openRoleFormModal = function(id){
+    const r = id ? window._roles.find(function(x){ return x.id === id; }) : null;
+    document.getElementById('roleFormTitle').textContent = r ? 'Modifier le rôle' : 'Ajouter un rôle / instance';
+    document.getElementById('roleFormId').value = r ? r.id : '';
+    document.getElementById('roleFormNom').value = r ? r.nom : '';
+    document.getElementById('roleFormDesc').value = r ? (r.description || '') : '';
+    window._roleFormImage = r ? (r.imageBase64 || null) : null;
+    renderRoleFormImagePreview();
+    document.getElementById('deleteRoleBtn').style.display = r ? 'inline-block' : 'none';
+    document.getElementById('roleFormMsg').textContent = '';
+    document.getElementById('roleFormModal').classList.add('show');
+  };
+  function renderRoleFormImagePreview(){
+    const box = document.getElementById('roleFormImagePreview');
+    box.innerHTML = window._roleFormImage
+      ? '<div style="display:flex;align-items:center;gap:10px;margin-top:6px;"><img class="photo-preview-sm" src="' + window._roleFormImage + '" alt=""><button type="button" class="ghost" onclick="window._roleFormImage=null;renderRoleFormImagePreview_();">Retirer</button></div>'
+      : '';
+  }
+  window.renderRoleFormImagePreview_ = renderRoleFormImagePreview;
+  window.saveRole = async function(){
+    const nom = document.getElementById('roleFormNom').value.trim();
+    const msg = document.getElementById('roleFormMsg');
+    if(!nom){ msg.textContent = 'Le nom est obligatoire.'; return; }
+    let id = document.getElementById('roleFormId').value;
+    if(!id){
+      id = slugifyRole(nom) || ('role-' + Date.now().toString(36));
+      if(window._roles.some(function(r){ return r.id === id; })){ id = id + '-' + Date.now().toString(36); }
+    }
+    const entry = { id: id, nom: nom, description: document.getElementById('roleFormDesc').value.trim(), imageBase64: window._roleFormImage || null };
+    const list = window._roles.filter(function(r){ return r.id !== id; });
+    list.push(entry);
+    list.sort(function(a,b){ return a.nom.localeCompare(b.nom, 'fr'); });
+    try{
+      await setDoc(rolesConfigRef, { list: list });
+      window._roles = list;
+      renderRolesList();
+      populateEluFonctionsChecks();
+      document.getElementById('roleFormModal').classList.remove('show');
+    }catch(e){ msg.textContent = 'Erreur : ' + e.message; }
+  };
+  window.deleteRole = async function(){
+    const id = document.getElementById('roleFormId').value;
+    if(!id) return;
+    if(!confirm("Supprimer ce rôle ? Les élus qui l'ont coché le perdront simplement de leur fiche.")) return;
+    const list = window._roles.filter(function(r){ return r.id !== id; });
+    try{
+      await setDoc(rolesConfigRef, { list: list });
+      window._roles = list;
+      renderRolesList();
+      populateEluFonctionsChecks();
+      document.getElementById('roleFormModal').classList.remove('show');
+    }catch(e){ document.getElementById('roleFormMsg').textContent = 'Erreur : ' + e.message; }
+  };
+  document.getElementById('roleFormImageInput').addEventListener('change', async function(e){
+    const file = e.target.files && e.target.files[0];
+    if(!file) return;
+    try{
+      let result = await compressImageFile(file, 500, 0.75);
+      if(result.dataUrl.length > 400000){ result = await compressImageFile(file, 350, 0.6); }
+      window._roleFormImage = result.dataUrl;
+      renderRoleFormImagePreview();
+    }catch(err){ alert('Erreur lecture image : ' + err.message); }
+    e.target.value = '';
+  });
+
+  // ---- Élus (collection "elus") ----
+  function populateEluFonctionsChecks(){
+    const wrap = document.getElementById('eluFonctions');
+    if(!wrap) return;
+    wrap.innerHTML = (window._roles && window._roles.length)
+      ? window._roles.map(function(r){ return '<label><input type="checkbox" class="elu-fonction-check" value="' + r.id + '"> ' + esc(r.nom) + '</label>'; }).join('')
+      : '<span class="access-empty">Ajoute d\'abord des rôles/instances.</span>';
+  }
+  function populateEluSocieteOptions(){
+    const sel = document.getElementById('eluFormSociete');
+    sel.innerHTML = '<option value="">—</option>' + (window._entreprisesList || []).map(function(s){ return '<option>' + esc(s) + '</option>'; }).join('');
+  }
+  function populateEluSiteOptions(){
+    const sel = document.getElementById('eluFormSite');
+    sel.innerHTML = '<option value="">—</option>' + (window._sitesList || []).map(function(s){ return '<option>' + esc(s) + '</option>'; }).join('');
+  }
+  window.loadElusData = async function(){
+    try{
+      const snap = await getDocs(elusCol);
+      const list = [];
+      snap.forEach(function(d){ list.push(Object.assign({ id: d.id }, d.data())); });
+      list.sort(function(a,b){ return (a.nom||'').localeCompare(b.nom||'', 'fr'); });
+      window._elus = list;
+    }catch(e){ window._elus = []; }
+    renderElusList();
+  };
+  function renderElusList(){
+    const wrap = document.getElementById('elusList');
+    if(!wrap) return;
+    if(!window._elus.length){ wrap.innerHTML = '<div class="access-empty">Aucun élu enregistré pour le moment.</div>'; return; }
+    wrap.innerHTML = window._elus.map(function(el){
+      const fonctionsLbl = (el.fonctions || []).map(function(fid){
+        const r = (window._roles || []).find(function(x){ return x.id === fid; });
+        return r ? r.nom : null;
+      }).filter(Boolean).join(', ');
+      const nomComplet = ((el.prenom ? el.prenom + ' ' : '') + (el.nom || '')).trim();
+      return '<div class="elu-row' + (el.actif === false ? ' elu-row-inactive' : '') + '" onclick="openEluFormModal(\'' + el.id + '\')">'
+        + (el.photoBase64 ? '<img class="elu-row-photo" src="' + el.photoBase64 + '" alt="">' : '<div class="elu-row-photo placeholder">👤</div>')
+        + '<div style="flex:1;"><div class="elu-row-name">' + esc(nomComplet) + (el.actif === false ? ' (inactif)' : '') + '</div><div class="elu-row-sub">' + esc([el.societe, el.site, fonctionsLbl].filter(Boolean).join(' · ')) + '</div></div>'
+        + '<div class="a-arrow">›</div></div>';
+    }).join('');
+  }
+  window.openElusModal = function(){
+    document.getElementById('elusModal').classList.add('show');
+    loadElusData();
+  };
+  window.openEluFormModal = function(id){
+    const el = id ? window._elus.find(function(x){ return x.id === id; }) : null;
+    document.getElementById('eluFormTitle').textContent = el ? "Modifier l'élu" : 'Ajouter un élu';
+    document.getElementById('eluFormId').value = el ? el.id : '';
+    document.getElementById('eluFormNom').value = el ? (el.nom || '') : '';
+    document.getElementById('eluFormPrenom').value = el ? (el.prenom || '') : '';
+    populateEluSocieteOptions();
+    populateEluSiteOptions();
+    document.getElementById('eluFormSociete').value = el ? (el.societe || '') : '';
+    document.getElementById('eluFormSite').value = el ? (el.site || '') : '';
+    document.getElementById('eluFormMessage').value = el ? (el.message || '') : '';
+    document.getElementById('eluFormActif').checked = el ? (el.actif !== false) : true;
+    populateEluFonctionsChecks();
+    const fonctions = el ? (el.fonctions || []) : [];
+    document.querySelectorAll('.elu-fonction-check').forEach(function(cb){ cb.checked = fonctions.indexOf(cb.value) !== -1; });
+    window._eluFormEmails = el ? (el.emails || []).slice() : [];
+    renderEluFormEmails();
+    window._eluFormPhoto = el ? (el.photoBase64 || null) : null;
+    renderEluFormPhotoPreview();
+    document.getElementById('deleteEluBtn').style.display = el ? 'inline-block' : 'none';
+    document.getElementById('eluFormMsg').textContent = '';
+    document.getElementById('eluFormModal').classList.add('show');
+  };
+  window.closeEluFormModal = function(){ document.getElementById('eluFormModal').classList.remove('show'); };
+  function renderEluFormEmails(){
+    const ul = document.getElementById('eluFormEmailsList');
+    ul.innerHTML = (window._eluFormEmails || []).map(function(em){
+      return '<li><span class="ax-email">' + esc(em) + '</span><button type="button" class="ax-remove" onclick="removeEluFormEmail(\'' + esc(em).replace(/'/g, "\\'") + '\')">Retirer</button></li>';
+    }).join('');
+  }
+  window.addEluFormEmail = function(){
+    const input = document.getElementById('newEluEmail');
+    const val = input.value.trim();
+    const msg = document.getElementById('eluFormMsg');
+    if(!val) return;
+    if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val)){ msg.textContent = 'Email invalide.'; return; }
+    if(window._eluFormEmails.indexOf(val) === -1) window._eluFormEmails.push(val);
+    input.value = '';
+    msg.textContent = '';
+    renderEluFormEmails();
+  };
+  window.removeEluFormEmail = function(email){
+    window._eluFormEmails = window._eluFormEmails.filter(function(e){ return e !== email; });
+    renderEluFormEmails();
+  };
+  function renderEluFormPhotoPreview(){
+    const box = document.getElementById('eluFormPhotoPreview');
+    box.innerHTML = window._eluFormPhoto
+      ? '<div style="display:flex;align-items:center;gap:10px;margin-top:6px;"><img class="photo-preview-sm" style="border-radius:50%;" src="' + window._eluFormPhoto + '" alt=""><button type="button" class="ghost" onclick="window._eluFormPhoto=null;renderEluFormPhotoPreview_();">Retirer</button></div>'
+      : '';
+  }
+  window.renderEluFormPhotoPreview_ = renderEluFormPhotoPreview;
+  window.saveElu = async function(){
+    const nom = document.getElementById('eluFormNom').value.trim();
+    const msg = document.getElementById('eluFormMsg');
+    if(!nom){ msg.textContent = 'Le nom est obligatoire.'; return; }
+    const fonctions = Array.from(document.querySelectorAll('.elu-fonction-check:checked')).map(function(cb){ return cb.value; });
+    const payload = {
+      nom: nom,
+      prenom: document.getElementById('eluFormPrenom').value.trim(),
+      societe: document.getElementById('eluFormSociete').value,
+      site: document.getElementById('eluFormSite').value,
+      fonctions: fonctions,
+      emails: (window._eluFormEmails || []).slice(),
+      photoBase64: window._eluFormPhoto || null,
+      message: document.getElementById('eluFormMessage').value.trim(),
+      actif: document.getElementById('eluFormActif').checked
+    };
+    const id = document.getElementById('eluFormId').value;
+    try{
+      if(id){ await updateDoc(doc(db, 'elus', id), payload); }
+      else { await addDoc(elusCol, payload); }
+      document.getElementById('eluFormModal').classList.remove('show');
+      await loadElusData();
+    }catch(e){ msg.textContent = 'Erreur : ' + e.message; }
+  };
+  window.deleteElu = async function(){
+    const id = document.getElementById('eluFormId').value;
+    if(!id) return;
+    if(!confirm('Supprimer définitivement cette fiche élu ?')) return;
+    try{
+      await deleteDoc(doc(db, 'elus', id));
+      document.getElementById('eluFormModal').classList.remove('show');
+      await loadElusData();
+    }catch(e){ document.getElementById('eluFormMsg').textContent = 'Erreur : ' + e.message; }
+  };
+  document.getElementById('eluFormPhotoInput').addEventListener('change', async function(e){
+    const file = e.target.files && e.target.files[0];
+    if(!file) return;
+    try{
+      let result = await compressImageFile(file, 500, 0.75);
+      if(result.dataUrl.length > 400000){ result = await compressImageFile(file, 350, 0.6); }
+      window._eluFormPhoto = result.dataUrl;
+      renderEluFormPhotoPreview();
+    }catch(err){ alert('Erreur lecture de la photo : ' + err.message); }
+    e.target.value = '';
+  });
+
+  // ---- Coordonnées & locaux CSE (config/cse_coordonnees) ----
+  function populateCoordLocalSiteOptions(){
+    const sel = document.getElementById('newLocalSite');
+    sel.innerHTML = '<option value="">Site…</option>' + (window._sitesList || []).map(function(s){ return '<option>' + esc(s) + '</option>'; }).join('');
+  }
+  function renderCoordUrls(){
+    const ul = document.getElementById('coordUrlsList');
+    ul.innerHTML = (window._coordUrls || []).length ? window._coordUrls.map(function(u, i){
+      return '<li><span class="ax-email">' + esc(u.nom || u.url) + ' — <a href="' + esc(u.url) + '" target="_blank" rel="noopener">' + esc(u.url) + '</a>' + (u.description ? ' <span style="color:var(--ink-soft);">(' + esc(u.description) + ')</span>' : '') + '</span><button type="button" class="ax-remove" onclick="removeCoordUrl(' + i + ')">Retirer</button></li>';
+    }).join('') : '<li class="access-empty">Aucun lien pour le moment.</li>';
+  }
+  window.addCoordUrl = function(){
+    const nom = document.getElementById('newUrlNom').value.trim();
+    const href = document.getElementById('newUrlHref').value.trim();
+    const desc = document.getElementById('newUrlDesc').value.trim();
+    const msg = document.getElementById('coordCseMsg');
+    if(!href){ msg.textContent = "L'URL est obligatoire."; return; }
+    window._coordUrls.push({ nom: nom || href, url: href, description: desc });
+    document.getElementById('newUrlNom').value = '';
+    document.getElementById('newUrlHref').value = '';
+    document.getElementById('newUrlDesc').value = '';
+    msg.textContent = '';
+    renderCoordUrls();
+  };
+  window.removeCoordUrl = function(i){ window._coordUrls.splice(i, 1); renderCoordUrls(); };
+  function renderCoordLocaux(){
+    const ul = document.getElementById('coordLocauxList');
+    ul.innerHTML = (window._coordLocaux || []).length ? window._coordLocaux.map(function(l, i){
+      return '<li>' + (l.photoBase64 ? '<img class="photo-preview-sm" style="width:36px;height:36px;margin-right:8px;" src="' + l.photoBase64 + '" alt="">' : '') + '<span class="ax-email">' + esc(l.site) + ' — ' + esc(l.emplacement) + '</span><button type="button" class="ax-remove" onclick="removeCoordLocal(' + i + ')">Retirer</button></li>';
+    }).join('') : '<li class="access-empty">Aucun local renseigné.</li>';
+  }
+  function renderNewLocalPhotoPreview(){
+    const box = document.getElementById('newLocalPhotoPreview');
+    box.innerHTML = window._newLocalPhoto
+      ? '<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;"><img class="photo-preview-sm" src="' + window._newLocalPhoto + '" alt=""><button type="button" class="ghost" onclick="window._newLocalPhoto=null;renderNewLocalPhotoPreview_();">Retirer</button></div>'
+      : '';
+  }
+  window.renderNewLocalPhotoPreview_ = renderNewLocalPhotoPreview;
+  document.getElementById('newLocalPhotoInput').addEventListener('change', async function(e){
+    const file = e.target.files && e.target.files[0];
+    if(!file) return;
+    try{
+      let result = await compressImageFile(file, 700, 0.75);
+      if(result.dataUrl.length > 400000){ result = await compressImageFile(file, 500, 0.6); }
+      window._newLocalPhoto = result.dataUrl;
+      renderNewLocalPhotoPreview();
+    }catch(err){ alert('Erreur lecture de la photo : ' + err.message); }
+    e.target.value = '';
+  });
+  window.addCoordLocal = function(){
+    const site = document.getElementById('newLocalSite').value;
+    const emplacement = document.getElementById('newLocalEmplacement').value.trim();
+    const msg = document.getElementById('coordCseMsg');
+    if(!site || !emplacement){ msg.textContent = 'Site et emplacement sont obligatoires.'; return; }
+    window._coordLocaux.push({ site: site, emplacement: emplacement, photoBase64: window._newLocalPhoto || null });
+    document.getElementById('newLocalEmplacement').value = '';
+    window._newLocalPhoto = null;
+    renderNewLocalPhotoPreview();
+    msg.textContent = '';
+    renderCoordLocaux();
+  };
+  window.removeCoordLocal = function(i){ window._coordLocaux.splice(i, 1); renderCoordLocaux(); };
+  window.openCoordCseModal = async function(){
+    document.getElementById('coordCseModal').classList.add('show');
+    populateCoordLocalSiteOptions();
+    window._newLocalPhoto = null;
+    renderNewLocalPhotoPreview();
+    const msg = document.getElementById('coordCseMsg');
+    msg.textContent = '';
+    try{
+      const snap = await getDoc(coordCseConfigRef);
+      const data = snap.exists() ? snap.data() : {};
+      document.getElementById('coordEmail').value = data.email || '';
+      document.getElementById('coordTel').value = data.tel || '';
+      document.getElementById('coordSiteWeb').value = data.siteWeb || '';
+      window._coordUrls = Array.isArray(data.urls) ? data.urls.slice() : [];
+      window._coordLocaux = Array.isArray(data.locaux) ? data.locaux.slice() : [];
+    }catch(e){
+      window._coordUrls = []; window._coordLocaux = [];
+    }
+    renderCoordUrls();
+    renderCoordLocaux();
+  };
+  window.saveCoordCse = async function(){
+    const msg = document.getElementById('coordCseMsg');
+    const payload = {
+      email: document.getElementById('coordEmail').value.trim(),
+      tel: document.getElementById('coordTel').value.trim(),
+      siteWeb: document.getElementById('coordSiteWeb').value.trim(),
+      urls: window._coordUrls || [],
+      locaux: window._coordLocaux || []
+    };
+    try{
+      await setDoc(coordCseConfigRef, payload);
+      msg.style.color = 'var(--teal-dark)';
+      msg.textContent = 'Enregistré ✓';
+    }catch(e){
+      msg.style.color = 'var(--danger)';
+      msg.textContent = 'Erreur : ' + e.message;
+    }
+  };
 </script>
 
 <script>
@@ -1137,6 +1706,7 @@ window.renderQR = function(){
   setupShareLink('signalement_collaborateur.html', 'qrCanvasCollab', 'qrUrlCollab', 'copyUrlBtnCollab');
   setupShareLink('expression_besoin.html', 'qrCanvasBesoin', 'qrUrlBesoin', 'copyUrlBtnBesoin');
   setupShareLink('portail.html', 'qrCanvasPortail', 'qrUrlPortail', 'copyUrlBtnPortail');
+  setupShareLink('annuaire_cse.html', 'qrCanvasAnnuaire', 'qrUrlAnnuaire', 'copyUrlBtnAnnuaire');
 };
 
 document.getElementById('ntfy-share-btn').addEventListener('click', showNtfyShareModal);
