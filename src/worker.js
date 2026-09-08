@@ -535,7 +535,7 @@ async function getAccessibleCRs(env) {
     if (it.fichierConfidentiel && it.fichierConfidentiel.accessible) fichiers.push(redactFile(it.fichierConfidentiel, 'confidentiel'));
     if (it.fichierNonConfidentiel && it.fichierNonConfidentiel.accessible) fichiers.push(redactFile(it.fichierNonConfidentiel, 'non-confidentiel'));
     (it.piecesJointes || []).forEach(function (p) { if (p.accessible) fichiers.push(redactAttachment(p)); });
-    if (fichiers.length) out.push({ id: it.id, titre: it.titre, date: it.date, fichiers: fichiers });
+    if (fichiers.length) out.push({ id: it.id, titre: it.titre, date: it.date, categorie: it.categorie || '', fichiers: fichiers });
   });
   out.sort(function (a, b) { return String(b.date || '').localeCompare(String(a.date || '')); });
   return out;
