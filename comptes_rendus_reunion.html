@@ -14,6 +14,13 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,500;8..60,600;8..60,700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
 <script src="https://unpkg.com/docx"></script>
+<script src="https://unpkg.com/pdfjs-dist@3.11.174/legacy/build/pdf.min.js"></script>
+<script src="https://unpkg.com/mammoth@1.7.1/mammoth.browser.min.js"></script>
+<script>
+  if (window.pdfjsLib) {
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://unpkg.com/pdfjs-dist@3.11.174/legacy/build/pdf.worker.min.js';
+  }
+</script>
 <style>
   :root{
     --teal:#019682; --teal-dark:#017162; --purple:#5A4570; --gold:#C6AB76;
@@ -181,6 +188,11 @@
   <h1>Comptes-rendus de réunion CSSCT</h1>
   <p class="subtitle">Ordre du jour, participants, décisions — historique complet du mandat.</p>
 
+  <div style="margin-bottom:14px;">
+    <input type="text" id="crSearchInput" oninput="renderSearchResults()" placeholder="🔎 Rechercher un mot dans tous les CR (fichiers confidentiels inclus)…" style="width:100%;padding:10px 14px;border:1px solid var(--line);border-radius:20px;font-size:13px;">
+    <div id="crSearchResults" style="display:none;flex-direction:column;gap:8px;margin-top:10px;"></div>
+  </div>
+
   <div class="list" id="list"><div style="font-size:13px;color:var(--ink-soft);">Chargement…</div></div>
 </div>
 
@@ -261,6 +273,7 @@
       <div class="admin-tabs">
         <button class="admin-tab active" data-tab="sections" onclick="switchAdminTab('sections')">Rubriques complémentaires</button>
         <button class="admin-tab" data-tab="prompt" onclick="switchAdminTab('prompt')">Prompt IA</button>
+        <button class="admin-tab" data-tab="acces" onclick="switchAdminTab('acces')">Accès collaborateurs</button>
       </div>
       <div class="admin-panel active" id="adminPanelSections">
         <p style="font-size:11.5px;color:var(--ink-soft);">Rubriques narratives libres, en plus de celles déjà prévues (ordre du jour, participants, points abordés, décisions, prochaine échéance).</p>
@@ -270,6 +283,13 @@
       <div class="admin-panel" id="adminPanelPrompt">
         <p style="font-size:11.5px;color:var(--ink-soft);">Repères disponibles : {{TITRE}}, {{DATE}}, {{PARTICIPANTS}}, {{ORDRE_JOUR}}, {{NOTE_BRUTE}}.</p>
         <textarea id="adminPromptText" style="width:100%;min-height:280px;font-size:12.5px;padding:10px;border:1px solid var(--line);border-radius:8px;"></textarea>
+      </div>
+      <div class="admin-panel" id="adminPanelAcces">
+        <p style="font-size:11.5px;color:var(--ink-soft);">Mot de passe demandé aux collaborateurs pour consulter, depuis <em>cr_reunion_collaborateurs.html</em>, les CR (ou pièces jointes) marqués « accessible ». Le mot de passe n'est jamais réaffiché en clair une fois enregistré — seule son empreinte est conservée. Pense à le changer régulièrement (par ex. une fois par an).</p>
+        <div id="crPasswordStatus" style="font-size:12px;margin-bottom:12px;"></div>
+        <div class="dfield"><label class="dlabel">Nouveau mot de passe (6 caractères minimum)</label><input type="text" id="crNewPassword" placeholder="Ex : cssct-2026"></div>
+        <button class="add-admin-btn" onclick="saveCrPassword()">Enregistrer le mot de passe</button>
+        <p style="font-size:11px;color:var(--ink-soft);margin-top:16px;">Page collaborateurs : <a href="cr_reunion_collaborateurs.html" target="_blank">cr_reunion_collaborateurs.html</a></p>
       </div>
     </div>
     <div class="modal-actions">
@@ -381,7 +401,10 @@
     async add(item){ return await addDoc(col, item); },
     async update(id, fields){ await updateDoc(doc(db,'comptes_rendus_reunion', id), fields); },
     async remove(id){ await deleteDoc(doc(db,'comptes_rendus_reunion', id)); },
-    async saveConfig(c){ await setDoc(configRef, c); window._config = c; }
+    async saveConfig(c){ await setDoc(configRef, c); window._config = c; },
+    async setPasswordHash(hash){ await setDoc(doc(db,'config','cr_password_hash'), { hash: hash, updatedAt: new Date().toISOString() }); },
+    async hasPasswordHash(){ const snap = await getDoc(doc(db,'config','cr_password_hash')); return snap.exists() && !!snap.data().hash; },
+    async getIdToken(){ return auth.currentUser ? await auth.currentUser.getIdToken() : null; }
   };
 
   document.getElementById('logoutBtn').addEventListener('click', () => {
@@ -427,10 +450,24 @@ window.openNewModal = function(){
   document.getElementById('newModal').classList.add('show');
 };
 
+function formatDateFr(iso){
+  if(!iso) return '';
+  const parts = iso.split('-');
+  if(parts.length !== 3) return iso;
+  return parts[2] + '/' + parts[1] + '/' + parts[0];
+}
+function titreAvecDate(titreBrut, date){
+  const suffixe = formatDateFr(date);
+  const titre = (titreBrut||'').trim();
+  if(!suffixe) return titre;
+  return titre.endsWith(suffixe) ? titre : (titre + ' - ' + suffixe);
+}
+
 window.createCR = async function(){
-  const titre = document.getElementById('newTitre').value.trim();
+  const titreBrut = document.getElementById('newTitre').value.trim();
   const date = document.getElementById('newDate').value;
-  if(!titre || !date){ showToast('Titre et date sont obligatoires.'); return; }
+  if(!titreBrut || !date){ showToast('Titre et date sont obligatoires.'); return; }
+  const titre = titreAvecDate(titreBrut, date);
   const C = cfg();
   const item = {
     titre: titre, date: date,
@@ -449,6 +486,303 @@ window.createCR = async function(){
 };
 
 function findCR(id){ return (window._crs||[]).find(function(x){ return x.id === id; }); }
+
+// ============================================================================
+// Fichiers du CR (PDF/Word confidentiel + non confidentiel + pièces jointes)
+// ============================================================================
+
+async function uploadCrFile(file){
+  const idToken = await window.CR_FIREBASE.getIdToken();
+  if(!idToken) throw new Error('Session expirée, reconnecte-toi.');
+  const resp = await fetch('/api/cr-file-upload', {
+    method: 'POST',
+    headers: { 'Authorization': 'Bearer ' + idToken, 'Content-Type': 'application/octet-stream' },
+    body: file
+  });
+  const data = await resp.json();
+  if(!resp.ok) throw new Error(data.error || 'Erreur upload');
+  return data;
+}
+
+window.openCrFile = async function(fileId, nom, page){
+  try{
+    const idToken = await window.CR_FIREBASE.getIdToken();
+    const resp = await fetch('/api/cr-file?fileId=' + encodeURIComponent(fileId) + '&nom=' + encodeURIComponent(nom||'fichier'), {
+      headers: { 'Authorization': 'Bearer ' + idToken }
+    });
+    if(!resp.ok){ const d = await resp.json().catch(function(){return {};}); showToast('Impossible d\'ouvrir le fichier' + (d.error?(' : '+d.error):'') + '.'); return; }
+    const blob = await resp.blob();
+    const url = URL.createObjectURL(blob);
+    window.open(url + (page ? ('#page=' + page) : ''), '_blank');
+  }catch(err){ showToast('Erreur : ' + err.message); }
+};
+
+async function extractPdfPages(file){
+  if(!window.pdfjsLib) return null;
+  try{
+    const buf = await file.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({ data: buf }).promise;
+    const pages = [];
+    for(let i=1;i<=pdf.numPages;i++){
+      const page = await pdf.getPage(i);
+      const content = await page.getTextContent();
+      let currentLine = '';
+      const lignes = [];
+      content.items.forEach(function(it){
+        currentLine += it.str;
+        if(it.hasEOL){ lignes.push(currentLine); currentLine = ''; }
+        else if(it.str){ currentLine += ' '; }
+      });
+      if(currentLine.trim()) lignes.push(currentLine);
+      pages.push({ page: i, lignes: lignes.map(function(l){return l.trim();}).filter(Boolean) });
+    }
+    return pages;
+  }catch(err){ console.error('Extraction PDF impossible', err); return null; }
+}
+
+async function extractWordLines(file){
+  if(!window.mammoth) return null;
+  try{
+    const buf = await file.arrayBuffer();
+    const result = await mammoth.extractRawText({ arrayBuffer: buf });
+    return (result.value || '').split('\n').map(function(l){ return l.trim(); }).filter(Boolean);
+  }catch(err){ console.error('Extraction Word impossible', err); return null; }
+}
+
+window.uploadCrSlot = async function(crId, slot, inputEl){
+  const file = inputEl.files[0];
+  inputEl.value = '';
+  if(!file) return;
+  const ext = file.name.split('.').pop().toLowerCase();
+  if(['pdf','doc','docx'].indexOf(ext) === -1){ showToast('Formats acceptés : PDF, DOC, DOCX.'); return; }
+  if(file.size > 25*1024*1024){ showToast('Fichier trop volumineux (25 Mo maximum).'); return; }
+  showToast('Envoi en cours…');
+  try{
+    const up = await uploadCrFile(file);
+    const pages = ext === 'pdf' ? await extractPdfPages(file) : null;
+    const lignes = ext !== 'pdf' ? await extractWordLines(file) : null;
+    const fichier = {
+      fileId: up.fileId, nomFichier: file.name, type: ext, taille: up.taille,
+      pages: pages, lignes: lignes, accessible: false, dateAjout: new Date().toISOString()
+    };
+    const field = slot === 'confidentiel' ? 'fichierConfidentiel' : 'fichierNonConfidentiel';
+    const fields = {}; fields[field] = fichier;
+    await window.CR_FIREBASE.update(crId, fields);
+    showToast('Fichier ajouté ✓');
+    openDrawer(crId);
+  }catch(err){ showToast('Erreur : ' + err.message); }
+};
+
+window.toggleFileAccessible = async function(crId, slot, val){
+  const it = findCR(crId);
+  const field = slot === 'confidentiel' ? 'fichierConfidentiel' : 'fichierNonConfidentiel';
+  if(!it || !it[field]) return;
+  const updated = Object.assign({}, it[field], { accessible: val });
+  const fields = {}; fields[field] = updated;
+  try{
+    await window.CR_FIREBASE.update(crId, fields);
+    showToast(val ? 'Rendu accessible aux collaborateurs' : 'Retiré de l\'accès collaborateurs');
+    openDrawer(crId);
+  }catch(err){ showToast('Erreur : ' + err.message); }
+};
+
+window.deleteFileSlot = async function(crId, slot){
+  if(!confirm('Supprimer ce fichier ?')) return;
+  const field = slot === 'confidentiel' ? 'fichierConfidentiel' : 'fichierNonConfidentiel';
+  const fields = {}; fields[field] = null;
+  try{
+    await window.CR_FIREBASE.update(crId, fields);
+    showToast('Fichier supprimé');
+    openDrawer(crId);
+  }catch(err){ showToast('Erreur : ' + err.message); }
+};
+
+window.addPieceJointeUrl = async function(crId){
+  const nom = prompt('Nom du lien :');
+  if(!nom) return;
+  const urlVal = prompt('URL complète (https://...) :');
+  if(!urlVal) return;
+  const it = findCR(crId);
+  const list = (it.piecesJointes||[]).slice();
+  list.push({ id: crypto.randomUUID(), nom: nom, type:'url', url: urlVal, accessible:false, dateAjout: new Date().toISOString() });
+  try{
+    await window.CR_FIREBASE.update(crId, { piecesJointes: list });
+    showToast('Lien ajouté ✓');
+    openDrawer(crId);
+  }catch(err){ showToast('Erreur : ' + err.message); }
+};
+
+window.addPieceJointeFile = async function(crId, inputEl){
+  const file = inputEl.files[0];
+  inputEl.value = '';
+  if(!file) return;
+  if(file.size > 25*1024*1024){ showToast('Fichier trop volumineux (25 Mo maximum).'); return; }
+  showToast('Envoi en cours…');
+  try{
+    const up = await uploadCrFile(file);
+    const ext = (file.name.split('.').pop()||'').toLowerCase();
+    const typeLabel = ['ppt','pptx'].indexOf(ext) !== -1 ? 'ppt' : (['jpg','jpeg','png','gif','webp'].indexOf(ext) !== -1 ? 'image' : 'doc');
+    const it = findCR(crId);
+    const list = (it.piecesJointes||[]).slice();
+    list.push({ id: crypto.randomUUID(), nom: file.name, type: typeLabel, fileId: up.fileId, accessible:false, dateAjout: new Date().toISOString() });
+    await window.CR_FIREBASE.update(crId, { piecesJointes: list });
+    showToast('Pièce jointe ajoutée ✓');
+    openDrawer(crId);
+  }catch(err){ showToast('Erreur : ' + err.message); }
+};
+
+window.togglePieceAccessible = async function(crId, pieceId, val){
+  const it = findCR(crId);
+  const list = (it.piecesJointes||[]).map(function(p){ return p.id===pieceId ? Object.assign({}, p, {accessible:val}) : p; });
+  try{
+    await window.CR_FIREBASE.update(crId, { piecesJointes: list });
+    openDrawer(crId);
+  }catch(err){ showToast('Erreur : ' + err.message); }
+};
+
+window.removePieceJointe = async function(crId, pieceId){
+  if(!confirm('Supprimer cette pièce jointe ?')) return;
+  const it = findCR(crId);
+  const list = (it.piecesJointes||[]).filter(function(p){ return p.id !== pieceId; });
+  try{
+    await window.CR_FIREBASE.update(crId, { piecesJointes: list });
+    showToast('Supprimée');
+    openDrawer(crId);
+  }catch(err){ showToast('Erreur : ' + err.message); }
+};
+
+function fileSlotHtml(it, id, slot, label){
+  const field = slot === 'confidentiel' ? 'fichierConfidentiel' : 'fichierNonConfidentiel';
+  const f = it[field];
+  if(!f){
+    return '<div class="admin-item"><div class="ai-top"><strong style="font-size:12.5px;">' + label + '</strong></div>' +
+      '<label class="add-admin-btn" style="display:inline-block;margin-top:6px;">📎 Ajouter un PDF/Word' +
+      '<input type="file" accept=".pdf,.doc,.docx" style="display:none;" onchange="uploadCrSlot(\'' + id + '\',\'' + slot + '\',this)"></label></div>';
+  }
+  const tailleKo = Math.round((f.taille||0)/1024);
+  const extraitInfo = f.pages ? (f.pages.length + ' page(s) indexée(s) pour la recherche (navigation par page disponible)')
+    : (f.lignes ? 'Texte indexé pour la recherche (pas de pagination fiable pour un fichier Word)' : 'Texte non indexé pour la recherche');
+  return '<div class="admin-item"><div class="ai-top">' +
+    '<div><strong style="font-size:12.5px;">' + label + '</strong><div style="font-size:11.5px;color:var(--ink-soft);">' + esc(f.nomFichier) + ' · ' + tailleKo + ' Ko</div>' +
+    '<div style="font-size:10.5px;color:var(--ink-soft);">' + extraitInfo + '</div></div>' +
+    '<button class="remove-x" onclick="deleteFileSlot(\'' + id + '\',\'' + slot + '\')" title="Supprimer">✕</button></div>' +
+    '<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:8px;">' +
+      '<button class="btn" onclick="openCrFile(\'' + f.fileId + '\',\'' + esc(f.nomFichier).replace(/'/g,"\\'") + '\')">🔍 Ouvrir</button>' +
+      '<label style="display:flex;align-items:center;gap:6px;font-size:11.5px;cursor:pointer;"><input type="checkbox" ' + (f.accessible?'checked':'') + ' onchange="toggleFileAccessible(\'' + id + '\',\'' + slot + '\',this.checked)" style="width:auto;"> Accessible aux collaborateurs</label>' +
+    '</div></div>';
+}
+
+function piecesJointesHtml(it, id){
+  const items = (it.piecesJointes||[]);
+  const rows = items.map(function(p){
+    const openBtn = p.type === 'url'
+      ? '<a class="btn" href="' + esc(p.url) + '" target="_blank" rel="noopener">🔗 Ouvrir le lien</a>'
+      : '<button class="btn" onclick="openCrFile(\'' + p.fileId + '\',\'' + esc(p.nom).replace(/'/g,"\\'") + '\')">🔍 Ouvrir</button>';
+    return '<div class="admin-item"><div class="ai-top">' +
+      '<div><strong style="font-size:12.5px;">' + esc(p.nom) + '</strong><div style="font-size:11px;color:var(--ink-soft);">' + esc(p.type) + '</div></div>' +
+      '<button class="remove-x" onclick="removePieceJointe(\'' + id + '\',\'' + p.id + '\')" title="Supprimer">✕</button></div>' +
+      '<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:8px;">' + openBtn +
+      '<label style="display:flex;align-items:center;gap:6px;font-size:11.5px;cursor:pointer;"><input type="checkbox" ' + (p.accessible?'checked':'') + ' onchange="togglePieceAccessible(\'' + id + '\',\'' + p.id + '\',this.checked)" style="width:auto;"> Accessible aux collaborateurs</label>' +
+      '</div></div>';
+  }).join('');
+  return '<div class="dsection"><h3>Pièces jointes <span style="display:flex;gap:8px;">' +
+    '<label class="btn" style="font-size:12px;cursor:pointer;">📎 Fichier<input type="file" style="display:none;" onchange="addPieceJointeFile(\'' + id + '\',this)"></label>' +
+    '<button class="btn" onclick="addPieceJointeUrl(\'' + id + '\')">🔗 Lien URL</button></span></h3>' +
+    (rows || '<p style="font-size:11.5px;color:var(--ink-soft);">Aucune pièce jointe.</p>') +
+  '</div>';
+}
+
+function crFilesSectionHtml(it, id){
+  return '<div class="dsection"><h3>Fichiers du CR (PDF / Word)</h3>' +
+    '<p style="font-size:11px;color:var(--ink-soft);margin:0 0 10px;">Par défaut, aucun fichier n\'est accessible aux collaborateurs — coche la case pour le rendre visible sur la page collaborateurs (protégée par mot de passe).</p>' +
+    fileSlotHtml(it, id, 'confidentiel', 'Version confidentielle') +
+    fileSlotHtml(it, id, 'nonConfidentiel', 'Version non confidentielle') +
+  '</div>' + piecesJointesHtml(it, id);
+}
+
+// ---- Recherche plein texte dans tous les CR (admin, confidentiel inclus) ----
+function searchAllCR(query){
+  const q = query.trim().toLowerCase();
+  if(!q) return [];
+  const results = [];
+  (window._crs||[]).forEach(function(it){
+    ['fichierConfidentiel','fichierNonConfidentiel'].forEach(function(field){
+      const f = it[field];
+      if(!f) return;
+      if(f.pages){
+        f.pages.forEach(function(pg){
+          (pg.lignes||[]).forEach(function(ligne, idx){
+            if(ligne.toLowerCase().indexOf(q) !== -1){
+              results.push({
+                crId: it.id, titre: it.titre, date: it.date, fileId: f.fileId, nomFichier: f.nomFichier, page: pg.page,
+                before: pg.lignes.slice(Math.max(0, idx-3), idx), match: ligne, after: pg.lignes.slice(idx+1, idx+4)
+              });
+            }
+          });
+        });
+      } else if(f.lignes){
+        f.lignes.forEach(function(ligne, idx){
+          if(ligne.toLowerCase().indexOf(q) !== -1){
+            results.push({
+              crId: it.id, titre: it.titre, date: it.date, fileId: f.fileId, nomFichier: f.nomFichier, page: null,
+              before: f.lignes.slice(Math.max(0, idx-3), idx), match: ligne, after: f.lignes.slice(idx+1, idx+4)
+            });
+          }
+        });
+      }
+    });
+  });
+  return results;
+}
+
+window.renderSearchResults = function(){
+  const q = document.getElementById('crSearchInput').value;
+  const box = document.getElementById('crSearchResults');
+  if(!q.trim()){ box.style.display = 'none'; box.innerHTML = ''; return; }
+  const results = searchAllCR(q);
+  box.style.display = 'flex';
+  if(!results.length){ box.innerHTML = '<p style="font-size:12.5px;color:var(--ink-soft);">Aucun résultat.</p>'; return; }
+  box.innerHTML = results.slice(0, 50).map(function(r){
+    const ctx = r.before.map(esc).join('<br>') +
+      (r.before.length ? '<br>' : '') +
+      '<mark>' + esc(r.match) + '</mark>' +
+      (r.after.length ? '<br>' : '') +
+      r.after.map(esc).join('<br>');
+    return '<div class="row" style="cursor:default;flex-direction:column;align-items:stretch;">' +
+      '<div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;">' +
+        '<div><strong style="font-size:12.5px;">' + esc(r.titre) + '</strong><div class="r-meta">' + esc(r.date) + (r.page ? (' · page ' + r.page) : '') + ' · ' + esc(r.nomFichier) + '</div></div>' +
+        '<div style="display:flex;gap:6px;flex:none;">' +
+          '<button class="btn" onclick="openDrawer(\'' + r.crId + '\')">📋 Voir le CR</button>' +
+          '<button class="btn" onclick="openCrFile(\'' + r.fileId + '\',\'' + esc(r.nomFichier).replace(/'/g,"\\'") + '\'' + (r.page ? (',' + r.page) : '') + ')">📄 Ouvrir' + (r.page ? (' (p.' + r.page + ')') : '') + '</button>' +
+        '</div>' +
+      '</div>' +
+      '<div style="font-size:12px;background:#FBFAF7;border:1px solid var(--line);border-radius:6px;padding:8px 10px;margin-top:6px;line-height:1.5;">' + ctx + '</div>' +
+    '</div>';
+  }).join('');
+};
+
+// ---- Mot de passe collaborateurs ----
+window.saveCrPassword = async function(){
+  const pwd = document.getElementById('crNewPassword').value.trim();
+  if(!pwd || pwd.length < 6){ showToast('6 caractères minimum.'); return; }
+  try{
+    const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(pwd));
+    const hash = Array.from(new Uint8Array(buf)).map(function(b){ return b.toString(16).padStart(2,'0'); }).join('');
+    await window.CR_FIREBASE.setPasswordHash(hash);
+    document.getElementById('crNewPassword').value = '';
+    showToast('Mot de passe enregistré ✓');
+    refreshCrPasswordStatus();
+  }catch(err){ showToast('Erreur : ' + err.message); }
+};
+async function refreshCrPasswordStatus(){
+  const el = document.getElementById('crPasswordStatus');
+  if(!el) return;
+  try{
+    const has = await window.CR_FIREBASE.hasPasswordHash();
+    el.textContent = has ? '✓ Un mot de passe est actuellement configuré.' : '⚠️ Aucun mot de passe configuré — les collaborateurs n\'ont pas encore accès aux CR.';
+    el.style.color = has ? 'var(--teal-dark)' : 'var(--danger)';
+  }catch(e){ el.textContent = ''; }
+}
 
 window.showInfoModal = function(title, body){
   alert(title + '\n\n' + body.replace(/<[^>]+>/g, ''));
@@ -486,6 +820,7 @@ window.openDrawer = function(id){
         {id:'participants', label:'Participants', value:it.participants, info:"Liste des personnes présentes à la réunion (noms, fonctions)."},
         {id:'ordreJour', label:'Ordre du jour', value:it.ordreJour, info:"Les points prévus à l'ordre du jour de la réunion, tels que définis à l'avance."}
       ]) +
+      crFilesSectionHtml(it, id) +
       sectionCard('Prise de notes brute', 2, id, [
         {id:'priseNoteBrute', label:'Notes / transcript', value:it.priseNoteBrute, info:"Colle ici tes notes prises pendant la réunion, ou un transcript brut. C'est à partir de ce texte que le prompt IA générera le compte-rendu structuré."}
       ]) +
@@ -671,6 +1006,7 @@ window.openAdminModal = function(){
   renderAdminSections();
   document.getElementById('adminPromptText').value = window._adminDraft.aiPromptTemplate;
   document.getElementById('adminModal').classList.add('show');
+  refreshCrPasswordStatus();
 };
 window.switchAdminTab = function(tab){
   document.querySelectorAll('.admin-tab').forEach(function(b){ b.classList.toggle('active', b.dataset.tab === tab); });

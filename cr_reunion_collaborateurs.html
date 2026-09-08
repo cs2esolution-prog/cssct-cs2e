@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Comptes-rendus CSE . CSSCT</title>
+<link rel="icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,500;8..60,600;8..60,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --teal:#019682; --teal-dark:#017162; --purple:#5A4570; --gold:#C6AB76;
+    --paper:#F7F5F1; --ink:#2B2A2E; --ink-soft:#6B6873; --line:#E4E0D8; --danger:#A85D45; --radius:12px;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0; background:var(--paper); color:var(--ink); font-family:'Inter',system-ui,sans-serif; line-height:1.5;}
+  .wrap{max-width:760px; margin:0 auto; padding:32px 20px 80px;}
+  .brand{display:flex; align-items:center; gap:12px; padding-bottom:20px; border-bottom:2px solid var(--ink); margin-bottom:24px;}
+  .brand-mark{width:38px; height:38px; border-radius:50%;
+    background:conic-gradient(var(--teal) 0deg 120deg, var(--gold) 120deg 240deg, var(--purple) 240deg 360deg); flex:none;}
+  .brand-text{font-family:'Source Serif 4', serif; font-weight:700; font-size:19px;}
+  .brand-text span{color:var(--teal);}
+
+  h1{font-family:'Source Serif 4',serif; font-size:20px; margin:0 0 4px;}
+  .subtitle{font-size:12.5px; color:var(--ink-soft); margin:0 0 20px;}
+
+  #gate{display:flex; align-items:center; justify-content:center; min-height:60vh;}
+  #gateBox{background:#fff; border:1px solid var(--line); border-radius:16px; padding:32px; max-width:360px; width:100%; text-align:center;}
+  #gateBox input{width:100%; padding:11px 14px; border:1px solid var(--line); border-radius:20px; font-size:14px; margin:14px 0 10px; text-align:center;}
+  #gateBox button{width:100%; background:var(--ink); color:#fff; border:none; padding:11px; border-radius:20px; font-weight:600; cursor:pointer; font-size:13.5px;}
+  #gateMsg{font-size:12px; color:var(--danger); min-height:16px; margin-top:8px;}
+
+  #app{display:none;}
+  #crSearchInput{width:100%; padding:11px 16px; border:1px solid var(--line); border-radius:22px; font-size:13.5px; margin-bottom:16px;}
+
+  .cr-card{background:#fff; border:1px solid var(--line); border-left:4px solid var(--teal); border-radius:var(--radius); padding:16px 18px; margin-bottom:12px;}
+  .cr-card .cr-titre{font-weight:700; font-size:14.5px;}
+  .cr-card .cr-date{font-size:11.5px; color:var(--ink-soft); margin-top:2px; margin-bottom:10px;}
+  .cr-files{display:flex; flex-direction:column; gap:6px;}
+  .cr-file-row{display:flex; align-items:center; justify-content:space-between; gap:10px; background:var(--paper); border:1px solid var(--line); border-radius:8px; padding:8px 12px;}
+  .cr-file-row .fname{font-size:12.5px; font-weight:600;}
+  .cr-file-row .ftype{font-size:10.5px; color:var(--ink-soft); text-transform:uppercase; letter-spacing:.04em;}
+  .cr-file-row button, .cr-file-row a{background:none; border:1px solid var(--line); color:var(--ink); font-size:12px; font-weight:600; padding:6px 12px; border-radius:16px; cursor:pointer; text-decoration:none; white-space:nowrap;}
+  .cr-file-row button:hover, .cr-file-row a:hover{border-color:var(--teal); color:var(--teal-dark);}
+
+  .search-results{display:flex; flex-direction:column; gap:8px; margin-bottom:20px;}
+  .sr-card{background:#fff; border:1px solid var(--line); border-radius:10px; padding:12px 14px;}
+  .sr-head{display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap; align-items:flex-start;}
+  .sr-ctx{font-size:12px; background:#FBFAF7; border:1px solid var(--line); border-radius:6px; padding:8px 10px; margin-top:8px; line-height:1.5;}
+  .sr-ctx mark{background:#FCEFC7;}
+
+  .empty-note{font-size:13px; color:var(--ink-soft); text-align:center; padding:30px 10px;}
+  .back-link{display:inline-block; margin-top:24px; font-size:12px; color:var(--ink-soft); text-decoration:none;}
+</style>
+</head>
+<body>
+
+<div id="gate">
+  <div id="gateBox">
+    <div class="brand" style="border:none; padding:0; margin:0 0 6px; justify-content:center;">
+      <div class="brand-mark" id="brandMark"></div>
+      <div class="brand-text">CS<span>2E</span> · CSSCT</div>
+    </div>
+    <p style="font-size:13px;color:var(--ink-soft);margin:10px 0 0;">Comptes-rendus de réunion du CSE mis à disposition par vos représentants.</p>
+    <input type="password" id="gatePassword" placeholder="Mot de passe">
+    <button onclick="checkPassword()">Accéder</button>
+    <div id="gateMsg"></div>
+  </div>
+</div>
+
+<div id="app">
+  <div class="wrap">
+    <div class="brand">
+      <div class="brand-mark" id="brandMark2"></div>
+      <div class="brand-text">CS<span>2E</span> · CSSCT</div>
+    </div>
+    <h1>Comptes-rendus de réunion du CSE</h1>
+    <p class="subtitle">Documents mis à disposition par vos représentants du personnel — triés du plus récent au plus ancien.</p>
+
+    <input type="text" id="crSearchInput" oninput="renderSearch()" placeholder="🔎 Rechercher un mot dans les comptes-rendus…">
+    <div id="searchResults" class="search-results" style="display:none;"></div>
+
+    <div id="listeCR"><p class="empty-note">Chargement…</p></div>
+
+    <a class="back-link" href="portail.html">‹ Retour au portail</a>
+  </div>
+</div>
+
+<script>
+  const TOKEN_KEY = 'cr_collab_token';
+  let CRS = [];
+
+  function esc(s){ return (s==null?'':String(s)).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+
+  function decodeTokenExp(token){
+    try{
+      const part = token.split('.')[0].replace(/-/g,'+').replace(/_/g,'/');
+      const pad = part + '='.repeat((4 - part.length % 4) % 4);
+      const payload = JSON.parse(atob(pad));
+      return payload.exp || 0;
+    }catch(e){ return 0; }
+  }
+
+  function getStoredToken(){
+    const t = localStorage.getItem(TOKEN_KEY);
+    if(!t) return null;
+    if(decodeTokenExp(t) < Math.floor(Date.now()/1000)) { localStorage.removeItem(TOKEN_KEY); return null; }
+    return t;
+  }
+
+  window.checkPassword = async function(){
+    const pwd = document.getElementById('gatePassword').value;
+    const msg = document.getElementById('gateMsg');
+    msg.textContent = '';
+    if(!pwd){ msg.textContent = 'Merci de saisir le mot de passe.'; return; }
+    try{
+      const resp = await fetch('/api/cr-password-check', {
+        method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ password: pwd })
+      });
+      const data = await resp.json();
+      if(!resp.ok){ msg.textContent = data.error || 'Erreur de connexion.'; return; }
+      localStorage.setItem(TOKEN_KEY, data.token);
+      unlockApp();
+    }catch(err){ msg.textContent = 'Erreur : ' + err.message; }
+  };
+
+  async function unlockApp(){
+    document.getElementById('gate').style.display = 'none';
+    document.getElementById('app').style.display = 'block';
+    await chargerListe();
+  }
+
+  async function chargerListe(){
+    const token = getStoredToken();
+    const listeEl = document.getElementById('listeCR');
+    try{
+      const resp = await fetch('/api/cr-liste-publique?session=' + encodeURIComponent(token));
+      const data = await resp.json();
+      if(!resp.ok){
+        localStorage.removeItem(TOKEN_KEY);
+        document.getElementById('app').style.display = 'none';
+        document.getElementById('gate').style.display = 'flex';
+        document.getElementById('gateMsg').textContent = 'Session expirée, merci de ressaisir le mot de passe.';
+        return;
+      }
+      CRS = data.crs || [];
+      renderListe();
+    }catch(err){
+      listeEl.innerHTML = '<p class="empty-note">Erreur de chargement : ' + esc(err.message) + '</p>';
+    }
+  }
+
+  function fileIcon(type){
+    if(type === 'confidentiel' || type === 'non-confidentiel') return '📄';
+    if(type === 'ppt') return '📊';
+    if(type === 'image') return '🖼️';
+    if(type === 'url') return '🔗';
+    return '📎';
+  }
+
+  function fileRowHtml(crId, f){
+    const label = (f.kind === 'confidentiel' || f.kind === 'non-confidentiel') ? (f.nomFichier || 'Compte-rendu') : (f.nom || f.nomFichier || 'Pièce jointe');
+    const openBtn = f.kind === 'piece-jointe' && f.url
+      ? '<a href="' + esc(f.url) + '" target="_blank" rel="noopener">Ouvrir ↗</a>'
+      : '<button onclick="openFile(\'' + esc(f.fileId) + '\',\'' + esc(label).replace(/'/g,"\\'") + '\')">Ouvrir</button>';
+    return '<div class="cr-file-row"><div><div class="fname">' + fileIcon(f.kind) + ' ' + esc(label) + '</div><div class="ftype">' + esc(f.type||f.kind) + '</div></div>' + openBtn + '</div>';
+  }
+
+  function renderListe(){
+    const el = document.getElementById('listeCR');
+    if(!CRS.length){ el.innerHTML = '<p class="empty-note">Aucun compte-rendu n\'est pour le moment mis à disposition.</p>'; return; }
+    el.innerHTML = CRS.map(function(cr){
+      return '<div class="cr-card"><div class="cr-titre">' + esc(cr.titre||'Sans titre') + '</div><div class="cr-date">' + esc(cr.date) + '</div>' +
+        '<div class="cr-files">' + cr.fichiers.map(function(f){ return fileRowHtml(cr.id, f); }).join('') + '</div></div>';
+    }).join('');
+  }
+
+  window.openFile = async function(fileId, nom){
+    try{
+      const token = getStoredToken();
+      const resp = await fetch('/api/cr-file?fileId=' + encodeURIComponent(fileId) + '&nom=' + encodeURIComponent(nom) + '&session=' + encodeURIComponent(token));
+      if(!resp.ok){ alert("Impossible d'ouvrir ce fichier."); return; }
+      const blob = await resp.blob();
+      const url = URL.createObjectURL(blob);
+      window.open(url, '_blank');
+    }catch(err){ alert('Erreur : ' + err.message); }
+  };
+
+  function searchAll(query){
+    const q = query.trim().toLowerCase();
+    if(!q) return [];
+    const results = [];
+    CRS.forEach(function(cr){
+      cr.fichiers.forEach(function(f){
+        if(f.pages){
+          f.pages.forEach(function(pg){
+            (pg.lignes||[]).forEach(function(ligne, idx){
+              if(ligne.toLowerCase().indexOf(q) !== -1){
+                results.push({ titre: cr.titre, date: cr.date, fileId: f.fileId, nom: f.nomFichier, page: pg.page,
+                  before: pg.lignes.slice(Math.max(0, idx-3), idx), match: ligne, after: pg.lignes.slice(idx+1, idx+4) });
+              }
+            });
+          });
+        } else if(f.texte){
+          const lignes = String(f.texte).split('\n');
+          lignes.forEach(function(ligne, idx){
+            if(ligne.toLowerCase().indexOf(q) !== -1){
+              results.push({ titre: cr.titre, date: cr.date, fileId: f.fileId, nom: f.nomFichier, page: null,
+                before: lignes.slice(Math.max(0, idx-3), idx), match: ligne, after: lignes.slice(idx+1, idx+4) });
+            }
+          });
+        }
+      });
+    });
+    return results;
+  }
+
+  window.renderSearch = function(){
+    const q = document.getElementById('crSearchInput').value;
+    const box = document.getElementById('searchResults');
+    if(!q.trim()){ box.style.display = 'none'; box.innerHTML=''; return; }
+    const results = searchAll(q);
+    box.style.display = 'flex';
+    if(!results.length){ box.innerHTML = '<p class="empty-note">Aucun résultat.</p>'; return; }
+    box.innerHTML = results.slice(0,50).map(function(r){
+      const ctx = r.before.map(esc).join('<br>') + (r.before.length?'<br>':'') + '<mark>' + esc(r.match) + '</mark>' + (r.after.length?'<br>':'') + r.after.map(esc).join('<br>');
+      return '<div class="sr-card"><div class="sr-head"><div><strong style="font-size:13px;">' + esc(r.titre) + '</strong><div style="font-size:11px;color:var(--ink-soft);">' + esc(r.date) + (r.page?(' · page '+r.page):'') + '</div></div>' +
+        '<button onclick="openFile(\'' + esc(r.fileId) + '\',\'' + esc(r.nom).replace(/'/g,"\\'") + '\')" style="background:none;border:1px solid var(--line);border-radius:16px;padding:6px 12px;font-size:12px;cursor:pointer;">Ouvrir' + (r.page?(' (p.'+r.page+')'):'') + '</button></div>' +
+        '<div class="sr-ctx">' + ctx + '</div></div>';
+    }).join('');
+  };
+
+  document.getElementById('gatePassword').addEventListener('keydown', function(e){ if(e.key === 'Enter') checkPassword(); });
+
+  // Logo (facultatif, identique aux autres pages publiques)
+  (async function applyBranding(){
+    try{
+      const resp = await fetch('https://firestore.googleapis.com/v1/projects/cssct-cs2e-c655b/databases/(default)/documents/config/branding');
+      if(!resp.ok) return;
+      const data = await resp.json();
+      const b64 = data.fields && data.fields.logoBase64 && data.fields.logoBase64.stringValue;
+      if(!b64) return;
+      document.querySelectorAll('.brand-mark').forEach(function(el){
+        el.style.background = 'none';
+        el.innerHTML = '<img src="data:image/png;base64,' + b64 + '" alt="Logo" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">';
+      });
+    }catch(e){}
+  })();
+
+  const existingToken = getStoredToken();
+  if(existingToken){ unlockApp(); }
+</script>
+</body>
+</html>
