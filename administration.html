@@ -3,1839 +3,355 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Administration . CSSCT</title>
-<link rel="manifest" href="manifest.json">
-<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<title>Annuaire CSE</title>
 <link rel="icon" href="icon-192.png">
-<meta name="apple-mobile-web-app-title" content="Mon appli CSSCT">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="theme-color" content="#2B2A2E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,500;8..60,600;8..60,700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,500;8..60,600;8..60,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
   :root{
     --teal:#019682; --teal-dark:#017162; --purple:#5A4570; --gold:#C6AB76;
-    --paper:#F7F5F1; --paper-raised:#fff; --ink:#2B2A2E; --ink-soft:#6B6873; --line:#E4E0D8; --danger:#A85D45; --radius:12px;
+    --paper:#F7F5F1; --ink:#2B2A2E; --ink-soft:#6B6873; --line:#E4E0D8; --radius:14px;
   }
   *{box-sizing:border-box;}
   body{margin:0; background:var(--paper); color:var(--ink); font-family:'Inter',system-ui,sans-serif; line-height:1.5;}
-  .wrap{max-width:720px; margin:0 auto; padding:32px 24px 90px;}
-  header.top{display:flex; align-items:center; justify-content:space-between; padding-bottom:20px; border-bottom:2px solid var(--ink); margin-bottom:24px;}
-  .brand{display:flex; align-items:center; gap:12px; cursor:pointer;}
+  .wrap{max-width:720px; margin:0 auto; padding:28px 18px 60px;}
+  .brand{display:flex; align-items:center; gap:12px; padding-bottom:16px; border-bottom:2px solid var(--ink); margin-bottom:18px;}
   .brand-mark{width:38px; height:38px; border-radius:50%;
     background:conic-gradient(var(--teal) 0deg 120deg, var(--gold) 120deg 240deg, var(--purple) 240deg 360deg); flex:none;}
   .brand-text{font-family:'Source Serif 4', serif; font-weight:700; font-size:19px;}
   .brand-text span{color:var(--teal);}
-  .back-link{font-size:12.5px; font-weight:600; color:var(--ink-soft); text-decoration:none; border:1px solid var(--line); padding:6px 14px; border-radius:20px;}
+  .back-link{margin-left:auto; font-size:12px; font-weight:600; color:var(--ink-soft); text-decoration:none; border:1px solid var(--line); padding:6px 12px; border-radius:20px;}
 
-  h1{font-family:'Source Serif 4',serif; font-size:20px; margin:0 0 4px;}
-  .subtitle{font-size:12.5px; color:var(--ink-soft); margin:0 0 24px;}
-  .section-lbl{font-size:11px; text-transform:uppercase; letter-spacing:.06em; color:var(--ink-soft); margin:26px 0 10px;}
-  .section-lbl:first-of-type{margin-top:0;}
+  h1{font-family:'Source Serif 4',serif; font-size:21px; margin:0 0 6px;}
+  .subtitle{font-size:13px; color:var(--ink-soft); margin:0 0 18px;}
 
-  .admin-card{display:flex; align-items:center; gap:14px; background:#fff; border:1px solid var(--line); border-radius:var(--radius); padding:16px 18px; margin-bottom:10px; text-decoration:none; color:var(--ink);}
-  .admin-card:hover{box-shadow:0 4px 14px rgba(0,0,0,.06);}
-  .admin-card .a-icon{font-size:22px; flex:none;}
-  .admin-card .a-title{font-weight:600; font-size:13.5px;}
-  .admin-card .a-desc{font-size:11.5px; color:var(--ink-soft); margin-top:2px;}
-  .admin-card .a-arrow{margin-left:auto; color:var(--ink-soft); flex:none;}
+  .search-row{display:flex; gap:8px; margin-bottom:14px; position:sticky; top:0; background:var(--paper); padding:8px 0; z-index:10;}
+  .search-row input[type="search"]{flex:1; padding:11px 14px; border:1px solid var(--line); border-radius:22px; font-size:14px; font-family:'Inter',sans-serif; background:#fff;}
+  .search-row select{padding:11px 12px; border:1px solid var(--line); border-radius:22px; font-size:13px; font-family:'Inter',sans-serif; background:#fff; max-width:150px;}
 
-  .sitemap-grid{display:grid; grid-template-columns:1fr 1fr; gap:8px;}
-  @media (max-width:560px){ .sitemap-grid{grid-template-columns:1fr;} }
-  .sitemap-link{display:block; background:#fff; border:1px solid var(--line); border-radius:10px; padding:10px 14px; font-size:12.5px; font-weight:600; color:var(--ink); text-decoration:none;}
-  .sitemap-link:hover{border-color:var(--teal);}
+  .tabs{display:flex; gap:6px; margin-bottom:18px; border-bottom:1px solid var(--line);}
+  .tab-btn{background:none; border:none; padding:10px 4px; margin-right:16px; font-size:13.5px; font-weight:600; color:var(--ink-soft); cursor:pointer; border-bottom:2px solid transparent; font-family:'Inter',sans-serif;}
+  .tab-btn.active{color:var(--ink); border-bottom-color:var(--teal);}
+  .panel{display:none;}
+  .panel.active{display:block;}
 
-  .qr-card{background:#fff; border:1px solid var(--line); border-radius:var(--radius); padding:24px; text-align:center;}
-  .qr-img{margin:0 auto 12px; display:block; width:180px; height:180px; border-radius:8px;}
-  .qr-url{font-family:'IBM Plex Mono',monospace; font-size:11.5px; color:var(--ink-soft); word-break:break-all;}
-  .copy-btn{margin-top:10px; background:var(--ink); color:#fff; border:none; padding:9px 18px; border-radius:20px; font-weight:600; font-size:12.5px; cursor:pointer;}
+  .empty-note{font-size:13px; color:var(--ink-soft); text-align:center; padding:30px 10px;}
 
-  button.admin-card{font-family:inherit; font-size:inherit; width:100%; text-align:left; cursor:pointer;}
-
-  .settings-card{background:#fff; border:1px solid var(--line); border-radius:var(--radius); padding:18px 20px; margin-bottom:10px;}
-  .settings-card .s-label{font-size:11.5px; font-weight:600; margin-bottom:4px; display:block;}
-  .settings-card .s-help{font-size:11px; color:var(--ink-soft); margin:0 0 8px;}
-  .settings-card input[type="text"], .settings-card input[type="email"]{
-    width:100%; padding:9px 12px; border:1px solid var(--line); border-radius:8px; font-size:13px; font-family:'Inter',sans-serif; margin-bottom:14px;
+  .elu-card{display:flex; gap:14px; background:#fff; border:1px solid var(--line); border-radius:var(--radius); padding:16px; margin-bottom:12px;}
+  .elu-photo{width:56px; height:56px; border-radius:50%; object-fit:cover; flex:none; background:var(--paper); border:1px solid var(--line);}
+  .elu-photo.placeholder{display:flex; align-items:center; justify-content:center; font-size:22px; color:var(--ink-soft);}
+  .elu-name{font-family:'Source Serif 4',serif; font-weight:700; font-size:15.5px; margin-bottom:2px;}
+  .elu-sub{font-size:12px; color:var(--ink-soft); margin-bottom:6px;}
+  .elu-fonctions{display:flex; flex-wrap:wrap; gap:6px; margin-bottom:6px;}
+  .role-badge{
+    display:inline-flex; align-items:center; gap:6px;
+    font-size:11px; font-weight:700; letter-spacing:.01em;
+    padding:3px 12px 3px 3px; border-radius:999px;
+    margin:0; cursor:pointer; border:none;
+    box-shadow:0 1px 3px rgba(43,42,46,.12), inset 0 0 0 1px rgba(43,42,46,.04);
+    transition:transform .1s ease, box-shadow .1s ease;
   }
-  .settings-card textarea{width:100%; padding:9px 12px; border:1px solid var(--line); border-radius:8px; font-size:13px; font-family:'Inter',sans-serif; margin-bottom:14px; resize:vertical; min-height:100px;}
-  .settings-save-btn{background:var(--ink); color:#fff; border:none; padding:9px 18px; border-radius:20px; font-weight:600; font-size:12.5px; cursor:pointer;}
-  .settings-reset-btn{background:#fff; color:var(--ink-soft); border:1px solid var(--line); padding:9px 14px; border-radius:20px; font-weight:600; font-size:12.5px; cursor:pointer; margin-left:8px;}
-  .settings-msg{font-size:11.5px; margin-top:8px; min-height:14px;}
-  .settings-subhead{font-size:12.5px; font-weight:700; margin:18px 0 8px;}
-  .settings-subhead:first-of-type{margin-top:0;}
+  .role-badge:hover{transform:translateY(-1px); box-shadow:0 3px 8px rgba(43,42,46,.16);}
+  .role-badge:active{transform:translateY(0);}
+  .role-badge-dot{width:9px; height:9px; margin:0 2px 0 5px; border-radius:50%; background:currentColor; flex:none; opacity:.7;}
+  .elu-insignes{display:flex; flex-wrap:wrap; gap:8px; margin:0 0 6px;}
+  .elu-insigne{width:32px; height:32px; border-radius:50%; object-fit:cover; cursor:pointer; box-shadow:0 1px 3px rgba(43,42,46,.2); border:1.5px solid #fff; transition:transform .1s ease;}
+  .elu-insigne:hover{transform:scale(1.08);}
+  .elu-msg{font-size:12.5px; color:var(--ink); margin:6px 0; line-height:1.5;}
+  .elu-emails{display:flex; flex-wrap:wrap; gap:6px; margin-top:4px;}
+  .elu-email-link{font-size:11.5px; font-weight:600; color:var(--teal-dark); text-decoration:none; background:#F2FBF9; padding:4px 10px; border-radius:12px;}
+  .elu-email-link:hover{text-decoration:underline;}
 
-  .modal-overlay{position:fixed; inset:0; background:rgba(30,28,32,.55); display:none; align-items:center; justify-content:center; z-index:150; padding:20px;}
-  .modal-overlay.show{display:flex;}
-  .modal{background:#fff; border-radius:14px; max-width:520px; width:100%; max-height:85vh; overflow-y:auto; box-shadow:0 10px 50px rgba(0,0,0,.3);}
-  .modal-head{position:sticky; top:0; background:#fff; display:flex; align-items:center; justify-content:space-between; padding:16px 20px; border-bottom:1px solid var(--line);}
-  .modal-head h3{font-family:'Source Serif 4',serif; font-size:15.5px; margin:0;}
-  .modal-close{background:none; border:none; font-size:20px; cursor:pointer; color:var(--ink-soft);}
-  .modal-body{padding:18px 20px;}
-  .tuto-step{border-left:3px solid var(--teal); padding:4px 0 4px 14px; margin-bottom:18px;}
-  .tuto-step h4{font-size:13px; margin:0 0 6px; font-family:'Source Serif 4',serif;}
-  .tuto-step ol{margin:0 0 8px; padding-left:18px; font-size:12.5px; line-height:1.6;}
-  .tuto-step .tuto-note{font-size:11.5px; color:var(--ink-soft); background:var(--paper); border-radius:8px; padding:8px 10px; margin-top:6px;}
-  .tuto-link{display:inline-block; margin-top:4px; font-size:12px; font-weight:600; color:var(--teal-dark); text-decoration:none;}
+  .role-card{background:#fff; border:1px solid var(--line); border-radius:var(--radius); padding:16px; margin-bottom:12px; display:flex; gap:14px;}
+  .role-img{width:56px; height:56px; border-radius:10px; object-fit:cover; flex:none; background:var(--paper); border:1px solid var(--line);}
+  .role-img.placeholder{display:flex; align-items:center; justify-content:center; font-size:22px; color:var(--ink-soft);}
+  .role-name{font-family:'Source Serif 4',serif; font-weight:700; font-size:15.5px; margin-bottom:4px;}
+  .role-desc{font-size:12.5px; color:var(--ink); margin-bottom:8px; line-height:1.5;}
+  .role-members{font-size:11.5px; color:var(--ink-soft);}
+  .member-link{background:none; border:none; color:var(--teal-dark); font-weight:600; font-size:11.5px; cursor:pointer; padding:0; text-decoration:underline;}
 
-  #authGate{position:fixed;inset:0;background:#2B2A2E;display:flex;align-items:center;justify-content:center;z-index:200;padding:20px;}
-  #authForm{display:none;background:#fff;border-radius:14px;padding:32px;max-width:360px;width:100%;text-align:center;}
+  .coord-card{background:#fff; border:1px solid var(--line); border-radius:var(--radius); padding:18px; margin-bottom:14px;}
+  .coord-card h3{font-family:'Source Serif 4',serif; font-size:14.5px; margin:0 0 10px;}
+  .coord-line{font-size:13px; margin-bottom:8px; display:flex; gap:8px; align-items:flex-start;}
+  .coord-line .ci{flex:none; width:20px;}
+  .coord-line a{color:var(--teal-dark); font-weight:600; text-decoration:none;}
+  .coord-line a:hover{text-decoration:underline;}
+  .coord-url-desc{color:var(--ink-soft); font-size:11.5px;}
+  .local-row{font-size:12.5px; padding:8px 0; border-bottom:1px solid var(--line); display:flex; align-items:center; gap:10px;}
+  .local-row:last-child{border-bottom:none;}
+  .local-row b{font-weight:700;}
+  .local-photo{width:48px; height:48px; border-radius:8px; object-fit:cover; flex:none; border:1px solid var(--line); cursor:pointer;}
 
-  .access-tabs{display:flex; gap:8px; margin-bottom:14px;}
-  .access-tab{background:#fff; border:1px solid var(--line); color:var(--ink-soft); font-weight:600; font-size:12px; padding:8px 14px; border-radius:16px; cursor:pointer;}
-  .access-tab.active{background:var(--ink); color:#fff; border-color:var(--ink);}
-  .access-panel{display:none;}
-  .access-panel.active{display:block;}
-  .access-list{list-style:none; margin:0 0 12px; padding:0;}
-  .access-list li{display:flex; align-items:center; gap:8px; padding:8px 0; border-bottom:1px solid var(--line); font-size:13px;}
-  .access-list li:last-child{border-bottom:none;}
-  .access-list .ax-email{flex:1; word-break:break-all;}
-  .access-list .ax-tag{font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.04em; color:var(--teal-dark); background:#E4F3EF; padding:2px 8px; border-radius:10px;}
-  .access-list .ax-remove{background:none; border:none; color:var(--danger); font-size:12px; font-weight:600; cursor:pointer; padding:2px 4px;}
-  .access-add-row{display:flex; gap:8px; margin-top:6px;}
-  .access-add-row input{flex:1; padding:9px 11px; border:1px solid var(--line); border-radius:8px; font-size:13px; font-family:'Inter',sans-serif;}
-  .access-add-row button{background:var(--teal); color:#fff; border:none; padding:9px 16px; border-radius:16px; font-weight:600; font-size:12.5px; cursor:pointer; white-space:nowrap;}
-  .access-msg{font-size:11.5px; margin-top:8px; min-height:14px;}
-  .access-empty{font-size:12.5px; color:var(--ink-soft); padding:6px 0;}
-  .bootstrap-banner{background:#FBF3F0; border:1px solid #E7D3CB; border-radius:8px; padding:10px 12px; font-size:12px; color:var(--danger); margin-bottom:12px;}
-  .modop-body{font-size:12.5px; line-height:1.7;}
-  .modop-body h4{font-family:'Source Serif 4',serif; font-size:13.5px; margin:16px 0 6px;}
-  .modop-body h4:first-child{margin-top:0;}
-  .modop-body ol, .modop-body ul{padding-left:18px; margin:0 0 10px;}
-  .modop-body code{background:var(--paper); padding:1px 5px; border-radius:4px; font-family:'IBM Plex Mono',monospace; font-size:11px;}
-  .modop-body pre{background:#2B2A2E; color:#F7F5F1; padding:10px 12px; border-radius:8px; font-size:11px; overflow-x:auto;}
-  .modop-note{background:var(--paper); border-left:3px solid var(--gold); padding:8px 10px; border-radius:6px; font-size:11.5px; margin:8px 0;}
+  .footer-note{font-size:11.5px; color:var(--ink-soft); text-align:center; margin-top:24px;}
 
-  .field{display:flex; flex-direction:column; gap:5px; margin-bottom:12px;}
-  .field label{font-size:12px; font-weight:600;}
-  .grid2{display:grid; grid-template-columns:1fr 1fr; gap:12px;}
-  .field input[type="text"], .field input[type="email"], .field input[type="tel"], .field input[type="url"], .field select, .field textarea{
-    width:100%; padding:9px 11px; border:1px solid var(--line); border-radius:7px; font-size:13.5px; font-family:'Inter',sans-serif;
-  }
-  .field textarea{resize:vertical; min-height:70px;}
-  .filebox-sm{display:inline-block; border:1.5px dashed var(--line); border-radius:8px; padding:10px 16px; font-size:12px; color:var(--ink-soft); cursor:pointer;}
-  .filebox-sm input{display:none;}
-  .photo-preview-sm{width:64px; height:64px; object-fit:cover; border-radius:8px; border:1px solid var(--line);}
-  .cat-checks{display:grid; grid-template-columns:1fr 1fr; gap:4px 14px; margin-bottom:4px;}
-  .cat-checks label{display:flex; align-items:center; gap:6px; font-size:12.5px; font-weight:400;}
-  .cat-checks input{width:auto;}
-  .modal-actions{display:flex; justify-content:space-between; align-items:center; padding:14px 20px; border-top:1px solid var(--line); position:sticky; bottom:0; background:#fff;}
-  button.primary{background:var(--ink); color:#fff; border:none; padding:9px 18px; border-radius:20px; font-weight:600; font-size:13px; cursor:pointer;}
-  button.ghost{background:none; border:1px solid var(--line); padding:9px 18px; border-radius:20px; font-weight:600; font-size:13px; cursor:pointer; color:var(--ink-soft);}
-  button.danger-link{background:none; border:none; color:var(--danger); font-size:12.5px; font-weight:600; cursor:pointer;}
-  .elu-row{display:flex; align-items:center; gap:10px; padding:9px 0; border-bottom:1px solid var(--line); cursor:pointer;}
-  .elu-row:last-child{border-bottom:none;}
-  .elu-row-photo{width:38px; height:38px; border-radius:50%; object-fit:cover; flex:none; background:var(--paper); border:1px solid var(--line);}
-  .elu-row-photo.placeholder{display:flex; align-items:center; justify-content:center; font-size:15px; color:var(--ink-soft);}
-  .elu-row-name{font-weight:600; font-size:13px;}
-  .elu-row-sub{font-size:11px; color:var(--ink-soft);}
-  .elu-row-inactive{opacity:.5;}
-  .role-row{display:flex; align-items:center; gap:10px; padding:9px 0; border-bottom:1px solid var(--line); cursor:pointer;}
-  .role-row:last-child{border-bottom:none;}
-  .role-row-name{font-weight:600; font-size:13px;}
-  .role-row-desc{font-size:11px; color:var(--ink-soft);}
+  .zoom-overlay{position:fixed; inset:0; background:rgba(30,28,32,.85); display:none; align-items:center; justify-content:center; z-index:200; padding:24px;}
+  .zoom-overlay.show{display:flex;}
+  .zoom-overlay img{max-width:100%; max-height:85vh; border-radius:10px;}
+  .zoom-close{position:absolute; top:18px; right:18px; background:rgba(255,255,255,.15); color:#fff; border:none; width:36px; height:36px; border-radius:50%; font-size:20px; cursor:pointer;}
 </style>
 </head>
 <body>
-
-<div id="authGate">
-  <div id="authChecking" style="color:#ffffffaa;font-size:13.5px;">Vérification de la connexion…</div>
-  <div id="authForm">
-    <div style="font-family:'Source Serif 4',serif;font-weight:700;font-size:18px;margin-bottom:6px;">CS<span style="color:#019682;">2E</span> · CSSCT</div>
-    <p style="font-size:13px;color:#6B6873;margin:0 0 18px;">Connecte-toi avec ton email professionnel.</p>
-    <input type="email" id="authEmail" placeholder="prenom.nom@entreprise.com" style="width:100%;padding:10px 12px;border:1px solid #E4E0D8;border-radius:8px;font-size:13.5px;margin-bottom:10px;">
-    <button id="authSendLink" style="width:100%;background:#2B2A2E;color:#fff;border:none;padding:11px;border-radius:20px;font-weight:600;cursor:pointer;">Recevoir un lien de connexion</button>
-    <div id="authMsg" style="font-size:12px;color:#A85D45;margin-top:10px;min-height:14px;"></div>
-    <div style="margin-top:16px;padding-top:14px;border-top:1px solid #E4E0D8;text-align:left;">
-      <p style="font-size:11px;color:#6B6873;margin:0 0 8px;">Le lien s'ouvre dans un autre navigateur au lieu de cette appli épinglée ? Copie-le depuis ton email et colle-le ici :</p>
-      <input type="text" id="pastedLinkInput" placeholder="Colle le lien reçu par email" style="width:100%;padding:9px 11px;border:1px solid #E4E0D8;border-radius:8px;font-size:12.5px;margin-bottom:8px;">
-      <button id="pastedLinkBtn" style="width:100%;background:#fff;color:#2B2A2E;border:1px solid #E4E0D8;padding:10px;border-radius:20px;font-weight:600;font-size:12.5px;cursor:pointer;">Se connecter avec ce lien</button>
-      <div id="pastedLinkMsg" style="font-size:11.5px;color:#A85D45;margin-top:8px;min-height:14px;"></div>
-    </div>
-  </div>
-</div>
-
 <div class="wrap">
-  <header class="top">
-    <div class="brand" onclick="window.location.href='index.html'">
-      <div class="brand-mark"></div>
-      <div class="brand-text">CS<span>2E</span> · CSSCT</div>
-    </div>
-    <a class="back-link" href="index.html">Retour à l'accueil</a>
-  </header>
-
-  <h1>Administration</h1>
-  <p class="subtitle">Accès rapide aux réglages techniques et à la gestion de l'application.</p>
-
-  <div class="section-lbl">Général</div>
-  <a class="admin-card" href="dashboard.html">
-    <div class="a-icon">📊</div>
-    <div><div class="a-title">Tableau de bord</div><div class="a-desc">Indicateurs, comparaison annuelle, bilan téléchargeable</div></div>
-    <div class="a-arrow">›</div>
-  </a>
-  <button type="button" class="admin-card" onclick="openAccessModal()">
-    <div class="a-icon">👤</div>
-    <div><div class="a-title">Comptes autorisés &amp; administrateurs</div><div class="a-desc">Ajouter / retirer des comptes et des administrateurs, directement depuis l'appli</div></div>
-    <div class="a-arrow">›</div>
-  </button>
-  <a class="admin-card" href="https://console.firebase.google.com/project/cssct-cs2e-c655b/firestore/data" target="_blank" rel="noopener">
-    <div class="a-icon">🗄️</div>
-    <div><div class="a-title">Base de données (Firestore)</div><div class="a-desc">Voir et modifier directement les données enregistrées</div></div>
-    <div class="a-arrow">↗</div>
-  </a>
-  <a class="admin-card" href="https://console.firebase.google.com/project/cssct-cs2e-c655b/authentication/users" target="_blank" rel="noopener">
-    <div class="a-icon">🔑</div>
-    <div><div class="a-title">Connexions (Firebase Authentication)</div><div class="a-desc">Historique des personnes s'étant déjà connectées</div></div>
-    <div class="a-arrow">↗</div>
-  </a>
-  <a class="admin-card" href="https://console.firebase.google.com/project/cssct-cs2e/overview" target="_blank" rel="noopener">
-    <div class="a-icon">🔥</div>
-    <div><div class="a-title">Console Firebase (vue d'ensemble)</div><div class="a-desc">Accès général au projet Firebase</div></div>
-    <div class="a-arrow">↗</div>
-  </a>
-  <a class="admin-card" href="https://github.com/cs2esolution-prog/cssct-cs2e-c655b" target="_blank" rel="noopener">
-    <div class="a-icon">💻</div>
-    <div><div class="a-title">Dépôt GitHub</div><div class="a-desc">Code source de l'application, historique des commits</div></div>
-    <div class="a-arrow">↗</div>
-  </a>
-  <a class="admin-card" href="https://dash.cloudflare.com" target="_blank" rel="noopener">
-    <div class="a-icon">☁️</div>
-    <div><div class="a-title">Tableau de bord Cloudflare</div><div class="a-desc">Déploiements, statut du site</div></div>
-    <div class="a-arrow">↗</div>
-  </a>
-  <button type="button" class="admin-card" onclick="document.getElementById('modopModal').classList.add('show')">
-    <div class="a-icon">🧭</div>
-    <div><div class="a-title">Créer une nouvelle instance CSSCT</div><div class="a-desc">Mode opératoire complet pour dupliquer l'appli pour un autre CSSCT</div></div>
-    <div class="a-arrow">›</div>
-  </button>
-
-  <div class="section-lbl">Listes partagées</div>
-  <button type="button" class="admin-card" onclick="openSitesModal()">
-    <div class="a-icon">📍</div>
-    <div><div class="a-title">Sites</div><div class="a-desc">Liste utilisée par le formulaire collaborateur, les inspections et les trousses de secours</div></div>
-    <div class="a-arrow">›</div>
-  </button>
-  <button type="button" class="admin-card" onclick="openEntreprisesModal()">
-    <div class="a-icon">🏢</div>
-    <div><div class="a-title">Entreprises / structures</div><div class="a-desc">Liste utilisée par le formulaire collaborateur et l'expression de besoin (public)</div></div>
-    <div class="a-arrow">›</div>
-  </button>
-
-  <div class="section-lbl">Annuaire CSE</div>
-  <button type="button" class="admin-card" onclick="openElusModal()">
-    <div class="a-icon">🧑‍🤝‍🧑</div>
-    <div><div class="a-title">Élus (fiches individuelles)</div><div class="a-desc">Nom, société, site, fonctions, email(s), photo, message de présentation</div></div>
-    <div class="a-arrow">›</div>
-  </button>
-  <button type="button" class="admin-card" onclick="openRolesModal()">
-    <div class="a-icon">🏷️</div>
-    <div><div class="a-title">Rôles &amp; instances</div><div class="a-desc">CSE, CSSCT, référent handicap, secrétaire, trésorier... — description consultée par les salariés</div></div>
-    <div class="a-arrow">›</div>
-  </button>
-  <button type="button" class="admin-card" onclick="openCoordCseModal()">
-    <div class="a-icon">📇</div>
-    <div><div class="a-title">Coordonnées &amp; locaux CSE</div><div class="a-desc">Email, téléphone, site web, liens utiles, emplacement des locaux par site</div></div>
-    <div class="a-arrow">›</div>
-  </button>
-  <p style="font-size:12px;color:var(--ink-soft);margin:14px 0 8px;">Page publique, sans connexion — annuaire des élus, coordonnées du CSE et rôles/instances, consultable par tous les salariés.</p>
-  <div class="qr-card">
-    <img class="qr-img" id="qrCanvasAnnuaire" alt="QR code">
-    <div class="qr-url" id="qrUrlAnnuaire"></div>
-    <button class="copy-btn" id="copyUrlBtnAnnuaire">Copier le lien</button>
+  <div class="brand">
+    <div class="brand-mark" id="brandMark"></div>
+    <div class="brand-text">CS<span>2E</span> · CSSCT</div>
+    <a class="back-link" href="portail.html">← Portail</a>
   </div>
 
-  <div class="section-lbl">Dossiers de signalement</div>
-  <div class="settings-card">
-    <p class="s-help" style="margin-top:0;">Destinataire et copie utilisés par le bouton "✉️ Mail de relance" dans un dossier de signalement.</p>
-    <label class="s-label" for="mrPresident">Destinataire — Président du CSE</label>
-    <input type="email" id="mrPresident" placeholder="alhermitte@smag.tech">
-    <label class="s-label" for="mrElus">Copie — Élus CSSCT (adresses séparées par ;)</label>
-    <input type="text" id="mrElus" placeholder="cdizien@agrosolutions.com;imariotti@smag.tech;choudayer@smag.tech">
-    <button class="settings-save-btn" id="mrSaveBtn">Enregistrer</button>
-    <div class="settings-msg" id="mrMsg"></div>
-  </div>
-  <button type="button" class="admin-card" onclick="openNotifSignalementModal()">
-    <div class="a-icon">📧</div>
-    <div><div class="a-title">Destinataires — nouveaux signalements</div><div class="a-desc">Adresses qui reçoivent un mail à chaque nouveau dossier créé par un collaborateur</div></div>
-    <div class="a-arrow">›</div>
-  </button>
-  <button type="button" class="admin-card" onclick="openTemplatesSignalementModal()">
-    <div class="a-icon">✉️</div>
-    <div><div class="a-title">Modèles d'email</div><div class="a-desc">Textes envoyés au collaborateur et à l'équipe CSSCT après un signalement</div></div>
-    <div class="a-arrow">›</div>
-  </button>
-  <p style="font-size:12px;color:var(--ink-soft);margin:14px 0 8px;">Formulaire public, sans connexion — partage-le librement à tous les collaborateurs (affichage, email, intranet...).</p>
-  <div class="qr-card">
-    <img class="qr-img" id="qrCanvasCollab" alt="QR code">
-    <div class="qr-url" id="qrUrlCollab"></div>
-    <button class="copy-btn" id="copyUrlBtnCollab">Copier le lien</button>
+  <h1>Annuaire CSE</h1>
+  <p class="subtitle">Les élus, les coordonnées du CSE et le rôle de chaque instance. Ouvert à tous, sans connexion.</p>
+
+  <div class="search-row">
+    <input type="search" id="searchInput" placeholder="Rechercher un nom, une société, un site, une fonction…">
+    <select id="siteFilter"><option value="">Tous les sites</option></select>
   </div>
 
-  <div class="section-lbl">Expression de besoin</div>
-  <button type="button" class="admin-card" onclick="openNotifBesoinModal()">
-    <div class="a-icon">📧</div>
-    <div><div class="a-title">Destinataires — expressions de besoin</div><div class="a-desc">Adresses qui reçoivent un mail à chaque nouvelle expression de besoin ou complément</div></div>
-    <div class="a-arrow">›</div>
-  </button>
-  <button type="button" class="admin-card" onclick="openTemplatesBesoinModal()">
-    <div class="a-icon">✉️</div>
-    <div><div class="a-title">Modèles d'email</div><div class="a-desc">Textes envoyés au salarié et à l'équipe CSSCT après une expression de besoin</div></div>
-    <div class="a-arrow">›</div>
-  </button>
-  <p style="font-size:12px;color:var(--ink-soft);margin:14px 0 8px;">Formulaire public, sans connexion — un salarié peut y rester anonyme.</p>
-  <div class="qr-card">
-    <img class="qr-img" id="qrCanvasBesoin" alt="QR code">
-    <div class="qr-url" id="qrUrlBesoin"></div>
-    <button class="copy-btn" id="copyUrlBtnBesoin">Copier le lien</button>
-  </div>
-  <p style="font-size:12px;color:var(--ink-soft);margin:14px 0 8px;">Portail d'entrée unique (signalement + besoin + suivi), si tu préfères ne diffuser qu'un seul lien.</p>
-  <div class="qr-card">
-    <img class="qr-img" id="qrCanvasPortail" alt="QR code">
-    <div class="qr-url" id="qrUrlPortail"></div>
-    <button class="copy-btn" id="copyUrlBtnPortail">Copier le lien</button>
+  <div class="tabs">
+    <button type="button" class="tab-btn active" id="tab-elus" onclick="switchTab('elus')">Élus</button>
+    <button type="button" class="tab-btn" id="tab-coord" onclick="switchTab('coord')">Coordonnées &amp; locaux</button>
+    <button type="button" class="tab-btn" id="tab-roles" onclick="switchTab('roles')">Rôles &amp; instances</button>
   </div>
 
-  <div class="section-lbl">Partage général &amp; notifications</div>
-  <p style="font-size:12px;color:var(--ink-soft);margin:0 0 8px;">Lien de l'application complète, réservé à l'équipe CSSCT (connexion requise).</p>
-  <div class="qr-card">
-    <img class="qr-img" id="qrCanvas" alt="QR code">
-    <div class="qr-url" id="qrUrl"></div>
-    <button class="copy-btn" id="copyUrlBtn">Copier le lien</button>
-  </div>
-        <button class="tile" id="ntfy-share-btn" style="border:none;width:100%;margin-top:14px;">
-        <div class="tile-icon">📲</div>
-        <div class="tile-title">Partager les notifs (QR)</div>
-      </button>
+  <div class="panel active" id="panel-elus"></div>
+  <div class="panel" id="panel-coord"></div>
+  <div class="panel" id="panel-roles"></div>
 
-  <div class="section-lbl">Toutes les pages de l'application</div>
-  <div class="sitemap-grid">
-    <a class="sitemap-link" href="index.html">Accueil</a>
-    <a class="sitemap-link" href="nouveau_signalement.html">Nouveau signalement</a>
-    <a class="sitemap-link" href="signalement_liste.html">Dossiers de signalement</a>
-    <a class="sitemap-link" href="inspections.html">Inspections</a>
-    <a class="sitemap-link" href="exercices_evacuation.html">Exercices d'évacuation</a>
-    <a class="sitemap-link" href="comptes_rendus_reunion.html">CR de réunion</a>
-    <a class="sitemap-link" href="trousses_secours.html">Trousses de secours</a>
-    <a class="sitemap-link" href="dashboard.html">Tableau de bord</a>
-    <a class="sitemap-link" href="import_excel.html">Import historique Excel</a>
-    <a class="sitemap-link" href="changelog.html">Notes de mise à jour</a>
-    <a class="sitemap-link" href="signalement_collaborateur.html">Signalement collaborateur (public)</a>
-    <a class="sitemap-link" href="expression_besoin.html">Expression de besoin (public)</a>
-    <a class="sitemap-link" href="suivi_demande.html">Suivre ma demande (public)</a>
-    <a class="sitemap-link" href="portail.html">Portail salariés (public)</a>
-    <a class="sitemap-link" href="annuaire_cse.html">Annuaire CSE (public)</a>
-    <a class="sitemap-link" href="expression_besoin_liste.html">Expressions de besoin (équipe)</a>
-    <a class="sitemap-link" href="a_propos.html">À propos</a>
-    <a class="sitemap-link" href="administration.html">Administration (ici)</a>
-  </div>
+  <p class="footer-note">Une information à corriger ? Contacte le CSE via les coordonnées de l'onglet dédié.</p>
 </div>
 
-<div class="modal-overlay" id="comptesTutoModal">
-  <div class="modal">
-    <div class="modal-head">
-      <h3>👤 Autoriser un nouveau compte (méthode manuelle)</h3>
-      <button class="modal-close" onclick="document.getElementById('comptesTutoModal').classList.remove('show')">×</button>
-    </div>
-    <div class="modal-body">
-      <p style="font-size:12.5px;color:var(--ink-soft);margin:0 0 16px;">Cette méthode manuelle reste utile en secours si l'ajout depuis l'appli (bouton "Comptes autorisés &amp; administrateurs") ne fonctionne pas, par exemple en cas d'erreur de permissions Firestore.</p>
-
-      <div class="tuto-step">
-        <h4>Étape 1 — Autoriser l'email dans Firestore (donne l'accès)</h4>
-        <ol>
-          <li>Ouvre la console Firebase → <strong>Firestore Database</strong> → collection <strong>authorized_emails</strong>.</li>
-          <li>Clique sur un document déjà existant dans la liste pour voir sa structure exacte (nom du/des champ(s), valeur), puis clique sur "Ajouter un document" et reproduis exactement la même structure.</li>
-          <li>Comme <strong>ID du document</strong>, saisis l'adresse email exacte de la personne (ex : prenom.nom@entreprise.com) — l'orthographe doit être identique à celle qu'elle utilisera pour se connecter.</li>
-          <li>Enregistre.</li>
-        </ol>
-        <div class="tuto-note">C'est cette étape qui donne réellement accès aux données. Sans elle, la personne peut recevoir un lien de connexion mais n'aura accès à aucun dossier (accès refusé).</div>
-        <a class="tuto-link" href="https://console.firebase.google.com/project/cssct-cs2e-c655b/firestore/data/~2Fauthorized_emails" target="_blank" rel="noopener">Ouvrir la collection authorized_emails ↗</a>
-      </div>
-
-      <div class="tuto-step">
-        <h4>Étape 2 — Vérifier la connexion dans Firebase Authentication</h4>
-        <ol>
-          <li>Demande à la personne d'ouvrir l'application et de saisir son email professionnel sur l'écran de connexion : elle reçoit alors un lien de connexion par email.</li>
-          <li>Dès son premier clic sur ce lien, son compte apparaît automatiquement dans Firebase → <strong>Authentication → Users</strong> (aucune création manuelle nécessaire de ton côté).</li>
-          <li>Tu peux vérifier ici que sa connexion a bien fonctionné, et voir la date de dernière connexion.</li>
-        </ol>
-        <div class="tuto-note">Cette étape ne fait qu'enregistrer que la personne s'est connectée — elle ne suffit pas seule à autoriser l'accès : c'est bien l'étape 1 (Firestore) qui l'autorise.</div>
-        <a class="tuto-link" href="https://console.firebase.google.com/project/cssct-cs2e-c655b/authentication/users" target="_blank" rel="noopener">Ouvrir Authentication → Users ↗</a>
-      </div>
-    </div>
-  </div>
-</div>
-
-<div class="modal-overlay" id="accessModal">
-  <div class="modal" style="max-width:560px;">
-    <div class="modal-head">
-      <h3>👤 Comptes autorisés &amp; administrateurs</h3>
-      <button class="modal-close" onclick="document.getElementById('accessModal').classList.remove('show')">×</button>
-    </div>
-    <div class="modal-body">
-      <div id="bootstrapBanner" class="bootstrap-banner" style="display:none;">
-        Aucun administrateur n'est encore défini pour cette instance ("mode bootstrap") : n'importe quel compte déjà autorisé peut se nommer lui-même premier administrateur ci-dessous. Fais-le en priorité pour sécuriser la gestion des comptes.
-      </div>
-
-      <div class="access-tabs">
-        <button type="button" class="access-tab active" id="tabAuthorized" onclick="switchAccessTab('authorized')">Comptes autorisés</button>
-        <button type="button" class="access-tab" id="tabAdmins" onclick="switchAccessTab('admins')">Administrateurs</button>
-      </div>
-
-      <div class="access-panel active" id="panelAuthorized">
-        <p class="s-help" style="margin:0 0 10px;">Un compte doit être dans cette liste pour pouvoir se connecter et voir des données. Le retirer d'ici bloque immédiatement son accès (et le retire aussi des administrateurs, le cas échéant).</p>
-        <ul class="access-list" id="authorizedList"></ul>
-        <div class="access-add-row" id="authorizedAddRow">
-          <input type="email" id="newAuthorizedEmail" placeholder="prenom.nom@entreprise.com">
-          <button type="button" onclick="addAuthorizedEmail()">Autoriser</button>
-        </div>
-      </div>
-
-      <div class="access-panel" id="panelAdmins">
-        <p class="s-help" style="margin:0 0 10px;">Les administrateurs sont les seuls à pouvoir gérer les comptes autorisés et les administrateurs depuis cet écran. Un administrateur doit d'abord être un compte autorisé.</p>
-        <ul class="access-list" id="adminsList"></ul>
-        <div class="access-add-row" id="adminsAddRow">
-          <select id="newAdminEmail" style="flex:1;padding:9px 11px;border:1px solid var(--line);border-radius:8px;font-size:13px;"></select>
-          <button type="button" onclick="addAdminEmail()">Nommer admin</button>
-        </div>
-        <div class="access-add-row" id="bootstrapAddRow" style="display:none;">
-          <button type="button" onclick="bootstrapSelfAsAdmin()" style="flex:1;">Me nommer premier administrateur</button>
-        </div>
-      </div>
-
-      <div class="access-msg" id="accessMsg"></div>
-    </div>
-  </div>
-</div>
-
-<div class="modal-overlay" id="entreprisesModal">
-  <div class="modal" style="max-width:480px;">
-    <div class="modal-head">
-      <h3>🏢 Entreprises / structures</h3>
-      <button class="modal-close" onclick="document.getElementById('entreprisesModal').classList.remove('show')">×</button>
-    </div>
-    <div class="modal-body">
-      <p class="s-help" style="margin:0 0 10px;">Cette liste alimente le champ "Entreprise" du formulaire de signalement collaborateur et du formulaire d'expression de besoin (tous deux publics, sans connexion). Chaque ajout/retrait est enregistré immédiatement.</p>
-      <ul class="access-list" id="entreprisesList"></ul>
-      <div class="access-add-row">
-        <input type="text" id="newEntrepriseName" placeholder="Nom de l'entreprise">
-        <button type="button" onclick="addEntreprise()">Ajouter</button>
-      </div>
-      <div class="access-msg" id="entreprisesMsg"></div>
-    </div>
-  </div>
-</div>
-
-<div class="modal-overlay" id="sitesModal">
-  <div class="modal" style="max-width:480px;">
-    <div class="modal-head">
-      <h3>📍 Sites</h3>
-      <button class="modal-close" onclick="document.getElementById('sitesModal').classList.remove('show')">×</button>
-    </div>
-    <div class="modal-body">
-      <p class="s-help" style="margin:0 0 10px;">Cette liste alimente le champ "Site" du formulaire de signalement collaborateur, des inspections et des trousses de secours. Chaque ajout/retrait est enregistré immédiatement.</p>
-      <ul class="access-list" id="sitesList"></ul>
-      <div class="access-add-row">
-        <input type="text" id="newSiteName" placeholder="Nom du site">
-        <button type="button" onclick="addSite()">Ajouter</button>
-      </div>
-      <div class="access-msg" id="sitesMsg"></div>
-    </div>
-  </div>
-</div>
-
-<div class="modal-overlay" id="notifSignalementModal">
-  <div class="modal" style="max-width:480px;">
-    <div class="modal-head">
-      <h3>📧 Destinataires — nouveaux signalements</h3>
-      <button class="modal-close" onclick="document.getElementById('notifSignalementModal').classList.remove('show')">×</button>
-    </div>
-    <div class="modal-body">
-      <p class="s-help" style="margin:0 0 10px;">Ces adresses reçoivent un mail à chaque nouveau dossier de signalement créé par un collaborateur (formulaire public), en plus du mail de confirmation envoyé au collaborateur lui-même. Ajoute ici les adresses des élus CSSCT et/ou CSE concernés. Chaque ajout/retrait est enregistré immédiatement.</p>
-      <ul class="access-list" id="notifSignalementList"></ul>
-      <div class="access-add-row">
-        <input type="email" id="newNotifSignalementEmail" placeholder="prenom.nom@entreprise.com">
-        <button type="button" onclick="addNotifSignalement()">Ajouter</button>
-      </div>
-      <div class="access-msg" id="notifSignalementMsg"></div>
-    </div>
-  </div>
-</div>
-
-<div class="modal-overlay" id="notifBesoinModal">
-  <div class="modal" style="max-width:480px;">
-    <div class="modal-head">
-      <h3>📧 Destinataires — expressions de besoin</h3>
-      <button class="modal-close" onclick="document.getElementById('notifBesoinModal').classList.remove('show')">×</button>
-    </div>
-    <div class="modal-body">
-      <p class="s-help" style="margin:0 0 10px;">Ces adresses reçoivent un mail à chaque nouvelle expression de besoin ou complément ajouté par un salarié (formulaire public), en plus du mail de confirmation envoyé au salarié lui-même s'il a laissé son email. Ajoute ici les adresses des élus CSSCT et/ou CSE concernés. Chaque ajout/retrait est enregistré immédiatement.</p>
-      <ul class="access-list" id="notifBesoinList"></ul>
-      <div class="access-add-row">
-        <input type="email" id="newNotifBesoinEmail" placeholder="prenom.nom@entreprise.com">
-        <button type="button" onclick="addNotifBesoin()">Ajouter</button>
-      </div>
-      <div class="access-msg" id="notifBesoinMsg"></div>
-    </div>
-  </div>
-</div>
-
-<div class="modal-overlay" id="templatesSignalementModal">
-  <div class="modal" style="max-width:640px;">
-    <div class="modal-head">
-      <h3>✉️ Modèles d'email — Dossiers de signalement</h3>
-      <button class="modal-close" onclick="document.getElementById('templatesSignalementModal').classList.remove('show')">×</button>
-    </div>
-    <div class="modal-body">
-      <p class="s-help" style="margin:0 0 14px;">Variables disponibles, remplacées automatiquement : <code>{{numero}}</code>, <code>{{rapporteur}}</code>, <code>{{site}}</code>, <code>{{nature}}</code>, <code>{{objet}}</code>.</p>
-
-      <div class="settings-card" style="padding:0;border:none;">
-        <div class="settings-subhead">Confirmation envoyée au collaborateur</div>
-        <label class="s-label" for="tplSigConfirmSubject">Sujet</label>
-        <input type="text" id="tplSigConfirmSubject">
-        <label class="s-label" for="tplSigConfirmBody">Message</label>
-        <textarea id="tplSigConfirmBody" rows="6"></textarea>
-
-        <div class="settings-subhead">Notification envoyée à l'équipe CSSCT</div>
-        <label class="s-label" for="tplSigNotifSubject">Sujet</label>
-        <input type="text" id="tplSigNotifSubject">
-        <label class="s-label" for="tplSigNotifBody">Message</label>
-        <textarea id="tplSigNotifBody" rows="6"></textarea>
-
-        <button class="settings-save-btn" onclick="saveTemplatesSignalement()">Enregistrer</button>
-        <button type="button" class="settings-reset-btn" onclick="resetTemplatesSignalement()">Réinitialiser aux valeurs par défaut</button>
-        <div class="settings-msg" id="tplSigMsg"></div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<div class="modal-overlay" id="templatesBesoinModal">
-  <div class="modal" style="max-width:640px;">
-    <div class="modal-head">
-      <h3>✉️ Modèles d'email — Expression de besoin</h3>
-      <button class="modal-close" onclick="document.getElementById('templatesBesoinModal').classList.remove('show')">×</button>
-    </div>
-    <div class="modal-body">
-      <p class="s-help" style="margin:0 0 14px;">Variables disponibles, remplacées automatiquement : <code>{{codeSuivi}}</code>, <code>{{theme}}</code>, <code>{{description}}</code>, <code>{{auteurLabel}}</code> (nom du salarié ou "anonyme"), <code>{{entrepriseLabel}}</code> (structure indiquée, ou vide).</p>
-
-      <div class="settings-card" style="padding:0;border:none;">
-        <div class="settings-subhead">Confirmation envoyée au salarié (s'il a laissé son email)</div>
-        <label class="s-label" for="tplBesConfirmSubject">Sujet</label>
-        <input type="text" id="tplBesConfirmSubject">
-        <label class="s-label" for="tplBesConfirmBody">Message</label>
-        <textarea id="tplBesConfirmBody" rows="6"></textarea>
-
-        <div class="settings-subhead">Notification envoyée à l'équipe CSSCT</div>
-        <label class="s-label" for="tplBesNotifSubject">Sujet</label>
-        <input type="text" id="tplBesNotifSubject">
-        <label class="s-label" for="tplBesNotifBody">Message</label>
-        <textarea id="tplBesNotifBody" rows="6"></textarea>
-
-        <button class="settings-save-btn" onclick="saveTemplatesBesoin()">Enregistrer</button>
-        <button type="button" class="settings-reset-btn" onclick="resetTemplatesBesoin()">Réinitialiser aux valeurs par défaut</button>
-        <div class="settings-msg" id="tplBesMsg"></div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<div class="modal-overlay" id="modopModal">
-  <div class="modal" style="max-width:680px;">
-    <div class="modal-head">
-      <h3>🧭 Créer une nouvelle instance CSSCT</h3>
-      <button class="modal-close" onclick="document.getElementById('modopModal').classList.remove('show')">×</button>
-    </div>
-    <div class="modal-body modop-body">
-      <p class="s-help" style="margin:0 0 12px;">Chaque CSSCT a sa propre instance complètement séparée (projet Firebase dédié + site Cloudflare dédié) : aucune donnée n'est jamais partagée entre CSSCT. Prévoir environ 45-60 minutes par nouvelle instance une fois la procédure rodée.</p>
-
-      <h4>Étape 1 — Projet Firebase</h4>
-      <ol>
-        <li>Sur <code>console.firebase.google.com</code>, crée un projet nommé par ex. <code>cssct-&lt;nom-entreprise&gt;</code>.</li>
-        <li>Authentication → Sign-in method → active <strong>Email/Password</strong>, puis dans ses paramètres avancés active <strong>"Lien de messagerie (connexion sans mot de passe)"</strong>.</li>
-        <li>Authentication → Settings → Authorized domains : ajoute le futur domaine Cloudflare (tu peux revenir compléter après l'étape 3).</li>
-        <li>Firestore Database → Créer une base → région proche (ex. <code>eur3</code>) → mode production.</li>
-        <li>Paramètres du projet → Général → "Vos applications" → icône <code>&lt;/&gt;</code> (Web) → n'active pas Firebase Hosting → copie l'objet <code>firebaseConfig</code> affiché (6 valeurs), il sert à l'étape 2.</li>
-      </ol>
-      <div class="modop-note">⚠️ Les règles de sécurité Firestore ne sont pas dans ce dépôt (console uniquement). Avant d'ouvrir l'instance à qui que ce soit, récupère les règles du projet existant et adapte-les au nouveau projet — demande à Claude si besoin d'aide pour les relire.</div>
-
-      <h4>Étape 2 — Dépôt Git dédié</h4>
-      <ol>
-        <li>Crée un nouveau dépôt GitHub vide, puis duplique le dépôt actuel dedans (clone --bare + push --mirror).</li>
-        <li>Remplace l'objet <code>firebaseConfig</code> dans tous les fichiers HTML qui le contiennent (recherche <code>apiKey: "AIzaSyACY8fyy8Rd9NyLJ855xsDyknuUMV-pAag"</code>).</li>
-        <li>Adapte l'identité visuelle : nom de l'appli (<code>CS2E · CSSCT</code> / <code>Mon appli CSSCT</code>) dans les titres et <code>manifest.json</code>. Le logo, lui, se change directement depuis Administration &gt; Identité visuelle une fois l'instance en ligne — pas besoin de toucher au code pour ça.</li>
-        <li>Icônes PWA (<code>manifest.json</code>, <code>apple-touch-icon.png</code>, <code>icon-192.png</code>, <code>icon-512.png</code>) : à remplacer manuellement, pas encore paramétrables depuis l'interface.</li>
-        <li>Adapte les valeurs par défaut de mail de relance (<code>MAIL_RELANCE_DEFAULTS</code>) et le nom dans <code>wrangler.jsonc</code>.</li>
-        <li>Commit et push.</li>
-      </ol>
-
-      <h4>Étape 3 — Site Cloudflare Workers</h4>
-      <ol>
-        <li><code>npx wrangler deploy</code> depuis le nouveau dépôt.</li>
-        <li>Ajoute l'URL <code>*.workers.dev</code> obtenue (ou ton domaine personnalisé) aux "Authorized domains" Firebase (étape 1.3).</li>
-      </ol>
-
-      <h4>Étape 3bis — Envoi d'email (Mailjet) &amp; notifications push (ntfy)</h4>
-      <div class="modop-note">⚠️ Étape facile à oublier : sans elle, l'instance fonctionne normalement mais n'envoie jamais aucun email ni notification push, sans erreur visible pour l'utilisateur.</div>
-      <ol>
-        <li>5 secrets à définir sur le Worker (jamais dans le code, pour ne pas les exposer dans Git) : <code>MAILJET_API_KEY</code>, <code>MAILJET_API_SECRET</code>, <code>MAILJET_FROM_EMAIL</code>, <code>MAILJET_FROM_NAME</code>, <code>NTFY_TOPIC</code> (choisis un nom de topic unique et difficile à deviner).</li>
-        <li>Depuis le dépôt : <code>npx wrangler secret put MAILJET_API_KEY</code> (idem pour les 4 autres) — ou depuis le tableau de bord Cloudflare : Workers &amp; Pages &gt; le Worker &gt; Settings &gt; Variables and Secrets &gt; "Add" (cocher "Encrypt").</li>
-        <li>Un redéploiement (<code>wrangler deploy</code>) n'écrase pas les secrets déjà définis.</li>
-        <li>À vérifier : crée un signalement ou une expression de besoin de test et confirme que l'email et la notification ntfy arrivent bien. En cas de souci, les logs du Worker (Cloudflare &gt; le Worker &gt; Logs, ou <code>npx wrangler tail</code>) affichent les erreurs Mailjet/ntfy.</li>
-      </ol>
-
-      <h4>Étape 4 — Premiers comptes</h4>
-      <ol>
-        <li>Ajoute ton email dans <code>authorized_emails</code> (console Firebase du nouveau projet).</li>
-        <li>Connecte-toi une première fois sur le site déployé.</li>
-        <li>Va dans Administration &gt; Comptes autorisés &amp; administrateurs : la liste d'administrateurs est vide au départ ("mode bootstrap"), nomme-toi premier administrateur en priorité.</li>
-        <li>Ajoute ensuite les comptes autorisés suivants et la config du mail de relance, toujours depuis Administration.</li>
-      </ol>
-
-      <div class="modop-note">Limite à connaître : le code est aujourd'hui dupliqué à l'identique entre chaque instance (pas de configuration centralisée), donc toute correction ou nouvelle fonctionnalité doit être reportée manuellement sur chaque dépôt. Les secrets Mailjet/ntfy (étape 3bis) sont eux aussi à reconfigurer à chaque instance — aucune interface d'administration pour les saisir depuis l'appli, ce sont des secrets d'infrastructure.</div>
-    </div>
-  </div>
-</div>
-
-<div class="modal-overlay" id="elusModal">
-  <div class="modal" style="max-width:560px;">
-    <div class="modal-head">
-      <h3>🧑‍🤝‍🧑 Élus (annuaire)</h3>
-      <button class="modal-close" onclick="document.getElementById('elusModal').classList.remove('show')">×</button>
-    </div>
-    <div class="modal-body">
-      <p class="s-help" style="margin:0 0 10px;">Consultable par les salariés depuis l'annuaire public, sans connexion. Clique sur une fiche pour la modifier.</p>
-      <button type="button" class="ghost" style="margin-bottom:12px;width:100%;" onclick="openEluFormModal()">+ Ajouter un élu</button>
-      <div id="elusList"></div>
-    </div>
-  </div>
-</div>
-
-<div class="modal-overlay" id="eluFormModal">
-  <div class="modal" style="max-width:560px;">
-    <div class="modal-head">
-      <h3 id="eluFormTitle">Ajouter un élu</h3>
-      <button class="modal-close" onclick="closeEluFormModal()">×</button>
-    </div>
-    <div class="modal-body">
-      <input type="hidden" id="eluFormId">
-      <div class="grid2">
-        <div class="field"><label>Prénom</label><input type="text" id="eluFormPrenom"></div>
-        <div class="field"><label>Nom</label><input type="text" id="eluFormNom"></div>
-      </div>
-      <div class="grid2">
-        <div class="field"><label>Société de rattachement</label><select id="eluFormSociete"></select></div>
-        <div class="field"><label>Site</label><select id="eluFormSite"></select></div>
-      </div>
-      <div class="field">
-        <label>Fonctions <span style="font-weight:400;color:var(--ink-soft);">(plusieurs possibles)</span></label>
-        <div class="cat-checks" id="eluFonctions"></div>
-      </div>
-      <div class="field">
-        <label>Email(s)</label>
-        <ul class="access-list" id="eluFormEmailsList"></ul>
-        <div class="access-add-row">
-          <input type="email" id="newEluEmail" placeholder="prenom.nom@entreprise.com">
-          <button type="button" onclick="addEluFormEmail()">Ajouter</button>
-        </div>
-      </div>
-      <div class="field">
-        <label>Photo</label>
-        <label class="filebox-sm" for="eluFormPhotoInput">📎 Ajouter / remplacer une photo<input type="file" id="eluFormPhotoInput" accept="image/*"></label>
-        <div id="eluFormPhotoPreview"></div>
-      </div>
-      <div class="field">
-        <label>Message de présentation <span style="font-weight:400;color:var(--ink-soft);">(en quoi cette personne peut aider, ou simple mot de présentation)</span></label>
-        <textarea id="eluFormMessage" placeholder="Ex : Élue CSSCT depuis 2023, je peux t'aider sur les sujets d'aménagement de poste et de conditions de travail."></textarea>
-      </div>
-      <div class="field">
-        <label><input type="checkbox" id="eluFormActif" style="width:auto;margin-right:6px;" checked> Actif — visible dans l'annuaire public</label>
-      </div>
-      <div class="access-msg" id="eluFormMsg"></div>
-    </div>
-    <div class="modal-actions">
-      <button type="button" class="danger-link" id="deleteEluBtn" style="display:none;" onclick="deleteElu()">Supprimer cette fiche</button>
-      <div style="margin-left:auto;display:flex;gap:8px;">
-        <button type="button" class="ghost" onclick="closeEluFormModal()">Annuler</button>
-        <button type="button" class="primary" onclick="saveElu()">Enregistrer</button>
-      </div>
-    </div>
-  </div>
-</div>
-
-<div class="modal-overlay" id="rolesModal">
-  <div class="modal" style="max-width:520px;">
-    <div class="modal-head">
-      <h3>🏷️ Rôles &amp; instances</h3>
-      <button class="modal-close" onclick="document.getElementById('rolesModal').classList.remove('show')">×</button>
-    </div>
-    <div class="modal-body">
-      <p class="s-help" style="margin:0 0 10px;">Cette liste sert à la fois de fonctions cochables sur une fiche élu et de contenu pour la page "Rôles &amp; instances" consultée par les salariés (description + image facultative).</p>
-      <button type="button" class="ghost" style="margin-bottom:12px;width:100%;" onclick="openRoleFormModal()">+ Ajouter un rôle / une instance</button>
-      <div id="rolesList"></div>
-    </div>
-  </div>
-</div>
-
-<div class="modal-overlay" id="roleFormModal">
-  <div class="modal" style="max-width:480px;">
-    <div class="modal-head">
-      <h3 id="roleFormTitle">Ajouter un rôle / instance</h3>
-      <button class="modal-close" onclick="document.getElementById('roleFormModal').classList.remove('show')">×</button>
-    </div>
-    <div class="modal-body">
-      <input type="hidden" id="roleFormId">
-      <div class="field"><label>Nom</label><input type="text" id="roleFormNom" placeholder="Ex : Référent handicap"></div>
-      <div class="field"><label>Description</label><textarea id="roleFormDesc" placeholder="À quoi sert ce rôle / cette instance, son périmètre..."></textarea></div>
-      <div class="field">
-        <label>Image / macaron <span style="font-weight:400;color:var(--ink-soft);">(facultatif — pour un rôle sans identité visuelle propre comme "Secrétaire" ou "Trésorier", laisse vide : une pastille colorée suffit)</span></label>
-        <label class="filebox-sm" for="roleFormImageInput">📎 Ajouter / remplacer une image<input type="file" id="roleFormImageInput" accept="image/*"></label>
-        <div id="roleFormImagePreview"></div>
-      </div>
-      <div class="access-msg" id="roleFormMsg"></div>
-    </div>
-    <div class="modal-actions">
-      <button type="button" class="danger-link" id="deleteRoleBtn" style="display:none;" onclick="deleteRole()">Supprimer ce rôle</button>
-      <div style="margin-left:auto;display:flex;gap:8px;">
-        <button type="button" class="ghost" onclick="document.getElementById('roleFormModal').classList.remove('show')">Annuler</button>
-        <button type="button" class="primary" onclick="saveRole()">Enregistrer</button>
-      </div>
-    </div>
-  </div>
-</div>
-
-<div class="modal-overlay" id="cropModal">
-  <div class="modal" style="max-width:360px;">
-    <div class="modal-head">
-      <h3>Recadrer l'image</h3>
-      <button class="modal-close" onclick="cancelCrop()">×</button>
-    </div>
-    <div class="modal-body" style="text-align:center;">
-      <div style="position:relative;width:280px;height:280px;margin:0 auto 14px;border-radius:12px;overflow:hidden;background:#111;touch-action:none;">
-        <canvas id="cropCanvas" width="280" height="280" style="display:block;cursor:grab;touch-action:none;"></canvas>
-        <div style="position:absolute;inset:0;pointer-events:none;border-radius:50%;box-shadow:0 0 0 9999px rgba(17,17,17,.6), inset 0 0 0 2px rgba(255,255,255,.85);"></div>
-      </div>
-      <label style="font-size:11.5px;color:var(--ink-soft);display:block;margin-bottom:6px;">Zoom</label>
-      <input type="range" id="cropZoom" min="100" max="300" value="100" style="width:100%;margin-bottom:14px;">
-      <p class="s-help" style="margin:0;">Seule la zone à l'intérieur du cercle sera visible. Fais glisser l'image pour la repositionner, ajuste le zoom, puis valide.</p>
-    </div>
-    <div class="modal-actions">
-      <button type="button" class="ghost" onclick="cancelCrop()">Annuler</button>
-      <button type="button" class="primary" onclick="confirmCrop()">Valider le recadrage</button>
-    </div>
-  </div>
-</div>
-
-<div class="modal-overlay" id="coordCseModal">
-  <div class="modal" style="max-width:520px;">
-    <div class="modal-head">
-      <h3>📇 Coordonnées &amp; locaux CSE</h3>
-      <button class="modal-close" onclick="document.getElementById('coordCseModal').classList.remove('show')">×</button>
-    </div>
-    <div class="modal-body">
-      <div class="grid2">
-        <div class="field"><label>Email</label><input type="email" id="coordEmail" placeholder="cse@entreprise.com"></div>
-        <div class="field"><label>Téléphone</label><input type="tel" id="coordTel" placeholder="Facultatif"></div>
-      </div>
-      <div class="field"><label>Site web</label><input type="url" id="coordSiteWeb" placeholder="https://..."></div>
-
-      <div class="field">
-        <label>Liens utiles</label>
-        <ul class="access-list" id="coordUrlsList"></ul>
-        <div class="grid2" style="margin-bottom:6px;">
-          <input type="text" id="newUrlNom" placeholder="Nom (ex : Site du CSE)">
-          <input type="url" id="newUrlHref" placeholder="https://...">
-        </div>
-        <input type="text" id="newUrlDesc" placeholder="Description (facultatif)" style="margin-bottom:6px;">
-        <button type="button" class="ghost" style="width:100%;" onclick="addCoordUrl()">+ Ajouter le lien</button>
-      </div>
-
-      <div class="field">
-        <label>Locaux CSE par site</label>
-        <ul class="access-list" id="coordLocauxList"></ul>
-        <div class="grid2" style="margin-bottom:6px;">
-          <select id="newLocalSite"></select>
-          <input type="text" id="newLocalEmplacement" placeholder="Emplacement (ex : Bâtiment B, bureau 12)">
-        </div>
-        <label class="filebox-sm" for="newLocalPhotoInput" style="margin-bottom:8px;">📎 Photo du local (facultatif)<input type="file" id="newLocalPhotoInput" accept="image/*"></label>
-        <div id="newLocalPhotoPreview"></div>
-        <button type="button" class="ghost" style="width:100%;" onclick="addCoordLocal()">+ Ajouter le local</button>
-      </div>
-
-      <button class="settings-save-btn" onclick="saveCoordCse()">Enregistrer</button>
-      <div class="settings-msg" id="coordCseMsg"></div>
-    </div>
-  </div>
+<div class="zoom-overlay" id="zoomOverlay" onclick="closePhotoZoom()">
+  <button class="zoom-close" onclick="closePhotoZoom(); event.stopPropagation();">×</button>
+  <img id="zoomImg" src="" alt="Photo du local">
 </div>
 
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js";
-  import { getAuth, sendSignInLinkToEmail, isSignInWithEmailLink, signInWithEmailLink, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js";
-  import { getFirestore, doc, getDoc, setDoc, collection, getDocs, addDoc, deleteDoc, updateDoc, arrayUnion, arrayRemove, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
+  import { getFirestore, doc, getDoc, collection, getDocs } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
 
-const firebaseConfig = {
-  apiKey: "AIzaSyACY8fyy8Rd9NyLJ855xsDyknuUMV-pAag",
-  authDomain: "cssct-cs2e-c655b.firebaseapp.com",
-  projectId: "cssct-cs2e-c655b",
-  storageBucket: "cssct-cs2e-c655b.firebasestorage.app",
-  messagingSenderId: "277603883255",
-  appId: "1:277603883255:web:b3b7a5c3097a60caac1bf2"
-};
+  const firebaseConfig = {
+    apiKey: "AIzaSyACY8fyy8Rd9NyLJ855xsDyknuUMV-pAag",
+    authDomain: "cssct-cs2e-c655b.firebaseapp.com",
+    projectId: "cssct-cs2e-c655b",
+    storageBucket: "cssct-cs2e-c655b.firebasestorage.app",
+    messagingSenderId: "277603883255",
+    appId: "1:277603883255:web:b3b7a5c3097a60caac1bf2"
+  };
   const app = initializeApp(firebaseConfig);
-  const auth = getAuth(app);
   const db = getFirestore(app);
-  const mailRelanceConfigRef = doc(db, "config", "mail_relance");
-  const adminsConfigRef = doc(db, "config", "admins");
-  const authorizedEmailsCol = collection(db, "authorized_emails");
-  const entreprisesConfigRef = doc(db, "config", "entreprises");
-  const DEFAULT_ENTREPRISES = ["Smag","Agrinovex","Fermes Leader","Be API","Agrosolutions","Carbon & Co"];
-  const sitesConfigRef = doc(db, "config", "sites");
-  const DEFAULT_SITES = ["Bezannes","Chalons-en-Champagne","Evreux","Milly-la-Forêt","Montpellier","Nancy","Paris","Poitiers","Reims","Télétravail","Wavre"];
-  const notifSignalementConfigRef = doc(db, "config", "notifications_signalement");
-  const notifBesoinConfigRef = doc(db, "config", "notifications_besoin");
-  const emailTemplatesConfigRef = doc(db, "config", "email_templates");
-  const elusCol = collection(db, "elus");
-  const rolesConfigRef = doc(db, "config", "roles_instances");
-  const coordCseConfigRef = doc(db, "config", "cse_coordonnees");
+
   function esc(s){ return (s==null?'':String(s)).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
-  function compressImageFile(file, maxDim, quality){
-    return new Promise(function(resolve, reject){
-      const reader = new FileReader();
-      reader.onload = function(e){
-        const img = new Image();
-        img.onload = function(){
-          let w = img.width, h = img.height;
-          if(w > h && w > maxDim){ h = Math.round(h * maxDim / w); w = maxDim; }
-          else if(h >= w && h > maxDim){ w = Math.round(w * maxDim / h); h = maxDim; }
-          const canvas = document.createElement('canvas');
-          canvas.width = w; canvas.height = h;
-          canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-          resolve({ dataUrl: canvas.toDataURL('image/jpeg', quality), width: w, height: h });
-        };
-        img.onerror = reject;
-        img.src = e.target.result;
-      };
-      reader.onerror = reject;
-      reader.readAsDataURL(file);
+  function norm(s){ return (s||'').toString().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,''); }
+
+  let ELUS = [];
+  let ROLES = [];
+  let COORD = {};
+
+  getDoc(doc(db, 'config', 'branding')).then(function(snap){
+    const data = snap.exists() ? snap.data() : {};
+    if(!data.logoBase64) return;
+    document.querySelectorAll('.brand-mark').forEach(function(el){
+      el.style.background = 'none';
+      el.innerHTML = '<img src="data:image/png;base64,' + data.logoBase64 + '" alt="Logo" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">';
+    });
+  }).catch(function(){});
+
+  function eluNomComplet(el){ return ((el.prenom ? el.prenom + ' ' : '') + (el.nom || '')).trim(); }
+
+  function roleNomById(id){
+    const r = ROLES.find(function(x){ return x.id === id; });
+    return r ? r.nom : null;
+  }
+  function sortedFonctionIds(fonctions){
+    return (fonctions || []).slice().sort(function(a, b){
+      return String(roleNomById(a) || '').localeCompare(String(roleNomById(b) || ''), 'fr');
     });
   }
 
-  // ---- Recadrage d'image (déplacer / zoomer) avant enregistrement, utilisé pour les images de rôle/instance ----
-  const CROP_SIZE = 280;
-  const CROP_OUTPUT = 320;
-  let cropState = null; // { img, scale0, zoom, offsetX, offsetY, onDone }
-  let cropDragging = false, cropDragStart = null;
+  // Palette de couleurs pastel, une par rôle (attribuée de façon stable via un hash de l'id)
+  // pour que chaque badge de fonction soit visuellement distinct, comme un pin/une pastille de couleur.
+  const BADGE_PALETTE = [
+    { bg:'#E4F3EF', fg:'#017162' },
+    { bg:'#F3E9D9', fg:'#8A6A2F' },
+    { bg:'#EFE6F2', fg:'#5A4570' },
+    { bg:'#FBEAE5', fg:'#A85D45' },
+    { bg:'#E6EEF7', fg:'#2E5C8A' },
+    { bg:'#EAF2E2', fg:'#4C7A2E' },
+    { bg:'#F7E6EF', fg:'#8A3F63' },
+    { bg:'#F0EDE4', fg:'#6B6873' }
+  ];
+  function roleColor(id){
+    let hash = 0;
+    const s = String(id || '');
+    for(let i = 0; i < s.length; i++){ hash = (hash * 31 + s.charCodeAt(i)) >>> 0; }
+    return BADGE_PALETTE[hash % BADGE_PALETTE.length];
+  }
+  function roleBadgeHtml(fid){
+    const r = ROLES.find(function(x){ return x.id === fid; });
+    if(!r) return '';
+    const col = roleColor(fid);
+    return '<button type="button" class="role-badge" style="background:' + col.bg + ';color:' + col.fg + ';" onclick="goToRole(\'' + fid + '\')"><span class="role-badge-dot"></span>' + esc(r.nom) + '</button>';
+  }
+  // Petite rangée d'insignes/macarons (image officielle du rôle), séparée des pastilles colorées :
+  // uniquement pour les rôles qui ont une image, invisible sinon (ex : Secrétaire, Trésorier n'en ont pas).
+  function eluInsignesHtml(el){
+    const html = sortedFonctionIds(el.fonctions).map(function(fid){
+      const r = ROLES.find(function(x){ return x.id === fid; });
+      if(!r || !r.imageBase64) return '';
+      return '<img class="elu-insigne" src="' + r.imageBase64 + '" alt="" title="' + esc(r.nom) + '" onclick="goToRole(\'' + fid + '\')">';
+    }).filter(Boolean).join('');
+    return html ? '<div class="elu-insignes">' + html + '</div>' : '';
+  }
 
-  function cropClampOffset(){
-    const s = cropState.scale0 * cropState.zoom;
-    const halfExtentX = Math.max(0, (cropState.img.width * s - CROP_SIZE) / 2);
-    const halfExtentY = Math.max(0, (cropState.img.height * s - CROP_SIZE) / 2);
-    cropState.offsetX = Math.max(-halfExtentX, Math.min(halfExtentX, cropState.offsetX));
-    cropState.offsetY = Math.max(-halfExtentY, Math.min(halfExtentY, cropState.offsetY));
-  }
-  function cropDraw(){
-    const canvas = document.getElementById('cropCanvas');
-    const ctx = canvas.getContext('2d');
-    ctx.clearRect(0, 0, CROP_SIZE, CROP_SIZE);
-    const s = cropState.scale0 * cropState.zoom;
-    const w = cropState.img.width * s, h = cropState.img.height * s;
-    const x = (CROP_SIZE - w) / 2 + cropState.offsetX;
-    const y = (CROP_SIZE - h) / 2 + cropState.offsetY;
-    ctx.drawImage(cropState.img, x, y, w, h);
-  }
-  function openCropModal(file, onDone){
-    const reader = new FileReader();
-    reader.onload = function(e){
-      const img = new Image();
-      img.onload = function(){
-        const scale0 = Math.max(CROP_SIZE / img.width, CROP_SIZE / img.height);
-        cropState = { img: img, scale0: scale0, zoom: 1, offsetX: 0, offsetY: 0, onDone: onDone };
-        document.getElementById('cropZoom').value = 100;
-        cropDraw();
-        document.getElementById('cropModal').classList.add('show');
-      };
-      img.onerror = function(){ alert("Impossible de lire cette image."); };
-      img.src = e.target.result;
-    };
-    reader.readAsDataURL(file);
-  }
-  window.cancelCrop = function(){
-    document.getElementById('cropModal').classList.remove('show');
-    cropState = null;
+  window.switchTab = function(name){
+    ['elus','coord','roles'].forEach(function(t){
+      document.getElementById('tab-' + t).classList.toggle('active', t === name);
+      document.getElementById('panel-' + t).classList.toggle('active', t === name);
+    });
+    if(name === 'elus') renderElus();
+    if(name === 'roles') renderRoles();
   };
-  window.confirmCrop = function(){
-    if(!cropState) return;
-    const out = document.createElement('canvas');
-    out.width = CROP_OUTPUT; out.height = CROP_OUTPUT;
-    const octx = out.getContext('2d');
-    const factor = CROP_OUTPUT / CROP_SIZE;
-    const s = cropState.scale0 * cropState.zoom * factor;
-    const w = cropState.img.width * s, h = cropState.img.height * s;
-    const x = (CROP_OUTPUT - w) / 2 + cropState.offsetX * factor;
-    const y = (CROP_OUTPUT - h) / 2 + cropState.offsetY * factor;
-    octx.drawImage(cropState.img, x, y, w, h);
-    const dataUrl = out.toDataURL('image/jpeg', 0.85);
-    const done = cropState.onDone;
-    document.getElementById('cropModal').classList.remove('show');
-    cropState = null;
-    if(done) done(dataUrl);
-  };
-  (function initCropDrag(){
-    const canvas = document.getElementById('cropCanvas');
-    canvas.addEventListener('pointerdown', function(e){
-      if(!cropState) return;
-      cropDragging = true;
-      cropDragStart = { x: e.clientX, y: e.clientY, offsetX: cropState.offsetX, offsetY: cropState.offsetY };
-      canvas.setPointerCapture(e.pointerId);
-      canvas.style.cursor = 'grabbing';
-    });
-    canvas.addEventListener('pointermove', function(e){
-      if(!cropDragging || !cropState) return;
-      cropState.offsetX = cropDragStart.offsetX + (e.clientX - cropDragStart.x);
-      cropState.offsetY = cropDragStart.offsetY + (e.clientY - cropDragStart.y);
-      cropClampOffset();
-      cropDraw();
-    });
-    ['pointerup', 'pointercancel', 'pointerleave'].forEach(function(evt){
-      canvas.addEventListener(evt, function(){ cropDragging = false; canvas.style.cursor = 'grab'; });
-    });
-    document.getElementById('cropZoom').addEventListener('input', function(){
-      if(!cropState) return;
-      cropState.zoom = this.value / 100;
-      cropClampOffset();
-      cropDraw();
-    });
-  })();
 
-  const DEFAULT_TEMPLATES = {
-    signalementConfirmation: {
-      subject: 'Confirmation de votre signalement CSSCT - {{numero}}',
-      body: 'Bonjour,\n\nVous venez de réaliser une demande de suivi auprès du CSSCT. Merci pour votre message. Nous allons étudier votre demande qui porte le numéro "{{numero}}" qu\'il faudra systématiquement intégrer dans nos échanges.\n\nSi des photos doivent être transmises, vous pouvez les envoyer en réponse à ce mail.\n\nNous vous souhaitons une bonne journée.'
-    },
-    signalementNotifCSSCT: {
-      subject: 'Formulaire CSSCT - {{nature}} - {{numero}}',
-      body: 'Bonjour,\n\nUn nouveau signalement a été réalisé par {{rapporteur}} sur le site de {{site}} et concerne un {{nature}} : {{objet}}\nLe suivi se fera sous le numéro {{numero}}\n\n\nCe message a été envoyé automatiquement de l\'application CSSCT.'
-    },
-    besoinConfirmation: {
-      subject: 'Confirmation de votre demande CSSCT - {{codeSuivi}}',
-      body: 'Bonjour,\n\nNous avons bien reçu votre expression de besoin auprès du CSSCT. Merci pour votre message.\n\nVotre code de suivi est : {{codeSuivi}}\nConservez-le précieusement : il vous permettra de suivre l\'avancement de votre demande et d\'ajouter un complément si besoin, depuis la page "Suivre ma demande".\n\nNous vous souhaitons une bonne journée.'
-    },
-    besoinNotifCSSCT: {
-      subject: 'Formulaire CSSCT - Expression de besoin - {{theme}}',
-      body: 'Bonjour,\n\nUne nouvelle expression de besoin a été déposée ({{auteurLabel}}{{entrepriseLabel}}).\nThème : {{theme}}\nDescription : {{description}}\n\nLe suivi se fera sous le code {{codeSuivi}}\n\nCe message a été envoyé automatiquement de l\'application CSSCT.'
+  window.goToRole = function(roleId){
+    const nom = roleNomById(roleId);
+    document.getElementById('searchInput').value = nom || '';
+    window.switchTab('roles');
+  };
+  window.openPhotoZoom = function(localIndex){
+    const l = (COORD.locaux || [])[localIndex];
+    if(!l || !l.photoBase64) return;
+    document.getElementById('zoomImg').src = l.photoBase64;
+    document.getElementById('zoomOverlay').classList.add('show');
+  };
+  window.closePhotoZoom = function(){
+    document.getElementById('zoomOverlay').classList.remove('show');
+  };
+  window.goToElu = function(nomComplet){
+    document.getElementById('searchInput').value = nomComplet;
+    document.getElementById('siteFilter').value = '';
+    window.switchTab('elus');
+  };
+
+  function renderElus(){
+    const wrap = document.getElementById('panel-elus');
+    const term = norm(document.getElementById('searchInput').value.trim());
+    const siteF = document.getElementById('siteFilter').value;
+    const actifs = ELUS.filter(function(el){ return el.actif !== false; });
+    const filtered = actifs.filter(function(el){
+      if(siteF && el.site !== siteF) return false;
+      if(!term) return true;
+      const fonctionsNoms = (el.fonctions || []).map(roleNomById).filter(Boolean).join(' ');
+      const haystack = norm([eluNomComplet(el), el.societe, el.site, fonctionsNoms, el.message].filter(Boolean).join(' '));
+      return haystack.indexOf(term) !== -1;
+    });
+    if(!filtered.length){
+      wrap.innerHTML = '<div class="empty-note">' + (actifs.length ? 'Aucun élu ne correspond à cette recherche.' : "L'annuaire n'a pas encore été renseigné.") + '</div>';
+      return;
     }
-  };
-  const MAIL_RELANCE_DEFAULTS = {
-    presidentCSE: "alhermitte@smag.tech",
-    elusCSSCT: "cdizien@agrosolutions.com;imariotti@smag.tech;choudayer@smag.tech"
-  };
-  const actionCodeSettings = { url: window.location.origin + window.location.pathname, handleCodeInApp: true };
-
-  if (isSignInWithEmailLink(auth, window.location.href)) {
-    let email = window.prompt("Confirme ton adresse email pour terminer la connexion :");
-    signInWithEmailLink(auth, email, window.location.href)
-      .then(() => window.history.replaceState({}, document.title, window.location.pathname))
-      .catch(err => alert("Connexion impossible : " + err.message));
-  }
-
-  onAuthStateChanged(auth, (user) => {
-    document.getElementById('authChecking').style.display = 'none';
-    if (user) {
-      document.getElementById('authGate').style.display = 'none';
-      window.renderQR();
-      loadMailRelanceConfig();
-      window._currentUserEmail = (user.email || '').toLowerCase();
-      loadAccessData();
-      loadEntreprisesData();
-      loadSitesData();
-      loadNotifSignalementData();
-      loadNotifBesoinData();
-      loadRolesData();
-      loadElusData();
-    } else {
-      document.getElementById('authGate').style.display = 'flex';
-      document.getElementById('authForm').style.display = 'block';
-    }
-  });
-
-  document.getElementById('pastedLinkBtn').addEventListener('click', () => {
-    const link = document.getElementById('pastedLinkInput').value.trim();
-    const msg = document.getElementById('pastedLinkMsg');
-    if (!link) { msg.textContent = "Colle d'abord le lien recu par email."; return; }
-    if (!isSignInWithEmailLink(auth, link)) { msg.textContent = "Ce lien ne semble pas valide."; return; }
-    let email = window.prompt("Confirme ton adresse email pour terminer la connexion :");
-    if (!email) return;
-    signInWithEmailLink(auth, email, link)
-      .then(() => { msg.style.color = '#019682'; msg.textContent = "Connexion reussie !"; })
-      .catch(err => { msg.textContent = "Erreur : " + err.message; });
-  });
-
-  document.getElementById('authSendLink').addEventListener('click', () => {
-    const email = document.getElementById('authEmail').value.trim();
-    const msg = document.getElementById('authMsg');
-    if (!email) { msg.textContent = "Merci de saisir ton email."; return; }
-    sendSignInLinkToEmail(auth, email, actionCodeSettings)
-      .then(() => { msg.style.color = '#019682'; msg.textContent = "Lien envoyé, vérifie ta boîte mail."; })
-      .catch(err => { msg.textContent = "Erreur : " + err.message; });
-  });
-
-  function loadMailRelanceConfig(){
-    getDoc(mailRelanceConfigRef).then((snap) => {
-      const data = snap.exists() ? snap.data() : {};
-      document.getElementById('mrPresident').value = data.presidentCSE || MAIL_RELANCE_DEFAULTS.presidentCSE;
-      document.getElementById('mrElus').value = data.elusCSSCT || MAIL_RELANCE_DEFAULTS.elusCSSCT;
-    }).catch(() => {
-      document.getElementById('mrPresident').value = MAIL_RELANCE_DEFAULTS.presidentCSE;
-      document.getElementById('mrElus').value = MAIL_RELANCE_DEFAULTS.elusCSSCT;
-    });
-  }
-
-  document.getElementById('mrSaveBtn').addEventListener('click', () => {
-    const msg = document.getElementById('mrMsg');
-    const presidentCSE = document.getElementById('mrPresident').value.trim();
-    const elusCSSCT = document.getElementById('mrElus').value.trim();
-    if(!presidentCSE){ msg.style.color = '#A85D45'; msg.textContent = "L'email du président du CSE est obligatoire."; return; }
-    setDoc(mailRelanceConfigRef, { presidentCSE: presidentCSE, elusCSSCT: elusCSSCT })
-      .then(() => { msg.style.color = '#019682'; msg.textContent = "Enregistré ✓"; })
-      .catch((err) => { msg.style.color = '#A85D45'; msg.textContent = "Erreur : " + err.message; });
-  });
-
-  // ---- Comptes autorisés & administrateurs ----
-  function friendlyAccessError(err){
-    if(err && (err.code === 'permission-denied' || /insufficient permissions/i.test(err.message||''))){
-      return "Permissions Firestore insuffisantes pour cette action. Les règles de sécurité côté Firebase doivent autoriser l'écriture sur authorized_emails / config/admins pour un administrateur (ou en mode bootstrap tant qu'il n'y a aucun administrateur). Utilise en attendant la méthode manuelle (bouton en bas de cette fenêtre) et signale ce blocage — la règle Firestore exacte à ajouter dépend des règles déjà en place dans la console.";
-    }
-    return "Erreur : " + (err && err.message ? err.message : err);
-  }
-
-  window.loadAccessData = async function(){
-    const msg = document.getElementById('accessMsg');
-    msg.style.color = '#A85D45';
-    try{
-      const [adminsSnap, authorizedSnap] = await Promise.all([getDoc(adminsConfigRef), getDocs(authorizedEmailsCol)]);
-      window._adminsList = adminsSnap.exists() ? (adminsSnap.data().emails || []) : [];
-      window._authorizedList = authorizedSnap.docs.map(d => d.id).sort((a,b) => a.localeCompare(b,'fr'));
-      renderAccessLists();
-      msg.textContent = '';
-    }catch(err){
-      msg.textContent = friendlyAccessError(err);
-    }
-  };
-
-  function isCurrentUserAdmin(){
-    const admins = window._adminsList || [];
-    const me = window._currentUserEmail || '';
-    return admins.length === 0 || admins.map(e => (e||'').toLowerCase()).includes(me);
-  }
-
-  function renderAccessLists(){
-    const admins = window._adminsList || [];
-    const authorized = window._authorizedList || [];
-    const bootstrap = admins.length === 0;
-    const canManage = isCurrentUserAdmin();
-
-    document.getElementById('bootstrapBanner').style.display = bootstrap ? 'block' : 'none';
-
-    const authList = document.getElementById('authorizedList');
-    if(!authorized.length){
-      authList.innerHTML = '<li class="access-empty">Aucun compte autorisé pour le moment.</li>';
-    } else {
-      authList.innerHTML = authorized.map(email => {
-        const isAdmin = admins.map(e => (e||'').toLowerCase()).includes(email.toLowerCase());
-        return '<li><span class="ax-email">' + escAdmin(email) + '</span>' +
-          (isAdmin ? '<span class="ax-tag">Admin</span>' : '') +
-          (canManage ? '<button type="button" class="ax-remove" onclick="removeAuthorizedEmail(\'' + escAdmin(email).replace(/'/g,"\\'") + '\')">Retirer</button>' : '') +
-        '</li>';
+    wrap.innerHTML = filtered.map(function(el){
+      const badges = sortedFonctionIds(el.fonctions).map(roleBadgeHtml).join('');
+      const emails = (el.emails || []).map(function(em){
+        return '<a class="elu-email-link" href="mailto:' + esc(em) + '">✉️ ' + esc(em) + '</a>';
       }).join('');
-    }
-    document.getElementById('authorizedAddRow').style.display = canManage ? 'flex' : 'none';
-
-    const adminsListEl = document.getElementById('adminsList');
-    if(!admins.length){
-      adminsListEl.innerHTML = '<li class="access-empty">Aucun administrateur défini — mode bootstrap actif.</li>';
-    } else {
-      adminsListEl.innerHTML = admins.map(email => {
-        return '<li><span class="ax-email">' + escAdmin(email) + '</span>' +
-          (canManage && admins.length > 1 ? '<button type="button" class="ax-remove" onclick="removeAdminEmail(\'' + escAdmin(email).replace(/'/g,"\\'") + '\')">Retirer</button>' : '') +
-        '</li>';
-      }).join('');
-    }
-
-    const sel = document.getElementById('newAdminEmail');
-    const nonAdminAuthorized = authorized.filter(e => !admins.map(a => (a||'').toLowerCase()).includes(e.toLowerCase()));
-    sel.innerHTML = nonAdminAuthorized.length
-      ? nonAdminAuthorized.map(e => '<option value="' + escAdmin(e) + '">' + escAdmin(e) + '</option>').join('')
-      : '<option value="">Aucun compte autorisé disponible</option>';
-
-    document.getElementById('adminsAddRow').style.display = (canManage && !bootstrap && nonAdminAuthorized.length) ? 'flex' : 'none';
-    document.getElementById('bootstrapAddRow').style.display = bootstrap ? 'flex' : 'none';
-  }
-
-  function escAdmin(s){ return (s||'').toString().replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
-
-  // ---- Entreprises / structures (liste partagée avec les formulaires publics) ----
-  function renderEntreprisesList(){
-    const list = window._entreprisesList || [];
-    const el = document.getElementById('entreprisesList');
-    if(!list.length){
-      el.innerHTML = '<li class="access-empty">Aucune entreprise enregistrée.</li>';
-    } else {
-      el.innerHTML = list.map(function(name){
-        return '<li><span class="ax-email">' + escAdmin(name) + '</span>' +
-          '<button type="button" class="ax-remove" onclick="removeEntreprise(\'' + escAdmin(name).replace(/'/g,"\\'") + '\')">Retirer</button></li>';
-      }).join('');
-    }
-  }
-
-  window.loadEntreprisesData = async function(){
-    const msg = document.getElementById('entreprisesMsg');
-    if(msg) msg.textContent = '';
-    try{
-      const snap = await getDoc(entreprisesConfigRef);
-      const data = snap.exists() ? snap.data() : {};
-      window._entreprisesList = (Array.isArray(data.list) && data.list.length)
-        ? data.list.slice().sort((a,b) => a.localeCompare(b,'fr'))
-        : DEFAULT_ENTREPRISES.slice();
-      renderEntreprisesList();
-    }catch(err){
-      window._entreprisesList = DEFAULT_ENTREPRISES.slice();
-      renderEntreprisesList();
-      if(msg){ msg.style.color = '#A85D45'; msg.textContent = "Erreur de chargement : " + err.message; }
-    }
-  };
-
-  window.openEntreprisesModal = function(){
-    document.getElementById('entreprisesModal').classList.add('show');
-    loadEntreprisesData();
-  };
-
-  window.addEntreprise = async function(){
-    const input = document.getElementById('newEntrepriseName');
-    const msg = document.getElementById('entreprisesMsg');
-    const name = input.value.trim();
-    if(!name){ msg.style.color = '#A85D45'; msg.textContent = "Saisis un nom d'entreprise."; return; }
-    const current = window._entreprisesList || [];
-    if(current.some(function(e){ return e.toLowerCase() === name.toLowerCase(); })){
-      msg.style.color = '#A85D45'; msg.textContent = "Cette entreprise est déjà dans la liste."; return;
-    }
-    const list = current.concat([name]).sort(function(a,b){ return a.localeCompare(b,'fr'); });
-    try{
-      await setDoc(entreprisesConfigRef, { list: list });
-      window._entreprisesList = list;
-      input.value = '';
-      msg.style.color = '#019682'; msg.textContent = 'Ajouté ✓';
-      renderEntreprisesList();
-    }catch(err){ msg.style.color = '#A85D45'; msg.textContent = "Erreur : " + err.message; }
-  };
-
-  window.removeEntreprise = async function(name){
-    const msg = document.getElementById('entreprisesMsg');
-    const list = (window._entreprisesList || []).filter(function(e){ return e !== name; });
-    try{
-      await setDoc(entreprisesConfigRef, { list: list });
-      window._entreprisesList = list;
-      msg.style.color = '#019682'; msg.textContent = 'Retiré ✓';
-      renderEntreprisesList();
-    }catch(err){ msg.style.color = '#A85D45'; msg.textContent = "Erreur : " + err.message; }
-  };
-
-  // ---- Sites (liste partagée avec les formulaires publics et internes) ----
-  function renderSitesList(){
-    const list = window._sitesList || [];
-    const el = document.getElementById('sitesList');
-    if(!list.length){
-      el.innerHTML = '<li class="access-empty">Aucun site enregistré.</li>';
-    } else {
-      el.innerHTML = list.map(function(name){
-        return '<li><span class="ax-email">' + escAdmin(name) + '</span>' +
-          '<button type="button" class="ax-remove" onclick="removeSite(\'' + escAdmin(name).replace(/'/g,"\\'") + '\')">Retirer</button></li>';
-      }).join('');
-    }
-  }
-
-  window.loadSitesData = async function(){
-    const msg = document.getElementById('sitesMsg');
-    if(msg) msg.textContent = '';
-    try{
-      const snap = await getDoc(sitesConfigRef);
-      const data = snap.exists() ? snap.data() : {};
-      window._sitesList = (Array.isArray(data.list) && data.list.length)
-        ? data.list.slice().sort((a,b) => a.localeCompare(b,'fr'))
-        : DEFAULT_SITES.slice();
-      renderSitesList();
-    }catch(err){
-      window._sitesList = DEFAULT_SITES.slice();
-      renderSitesList();
-      if(msg){ msg.style.color = '#A85D45'; msg.textContent = "Erreur de chargement : " + err.message; }
-    }
-  };
-
-  window.openSitesModal = function(){
-    document.getElementById('sitesModal').classList.add('show');
-    loadSitesData();
-  };
-
-  window.addSite = async function(){
-    const input = document.getElementById('newSiteName');
-    const msg = document.getElementById('sitesMsg');
-    const name = input.value.trim();
-    if(!name){ msg.style.color = '#A85D45'; msg.textContent = 'Saisis un nom de site.'; return; }
-    const current = window._sitesList || [];
-    if(current.some(function(e){ return e.toLowerCase() === name.toLowerCase(); })){
-      msg.style.color = '#A85D45'; msg.textContent = 'Ce site est déjà dans la liste.'; return;
-    }
-    const list = current.concat([name]).sort(function(a,b){ return a.localeCompare(b,'fr'); });
-    try{
-      await setDoc(sitesConfigRef, { list: list });
-      window._sitesList = list;
-      input.value = '';
-      msg.style.color = '#019682'; msg.textContent = 'Ajouté ✓';
-      renderSitesList();
-    }catch(err){ msg.style.color = '#A85D45'; msg.textContent = "Erreur : " + err.message; }
-  };
-
-  window.removeSite = async function(name){
-    const msg = document.getElementById('sitesMsg');
-    const list = (window._sitesList || []).filter(function(e){ return e !== name; });
-    try{
-      await setDoc(sitesConfigRef, { list: list });
-      window._sitesList = list;
-      msg.style.color = '#019682'; msg.textContent = 'Retiré ✓';
-      renderSitesList();
-    }catch(err){ msg.style.color = '#A85D45'; msg.textContent = "Erreur : " + err.message; }
-  };
-
-  // ---- Destinataires des notifications par mail (une liste par formulaire public) ----
-  function renderNotifList(listVarName, elId){
-    const list = window[listVarName] || [];
-    const el = document.getElementById(elId);
-    if(!list.length){
-      el.innerHTML = '<li class="access-empty">Aucun destinataire enregistré — un destinataire par défaut est utilisé en interne tant que cette liste est vide.</li>';
-    } else {
-      el.innerHTML = list.map(function(email){
-        return '<li><span class="ax-email">' + escAdmin(email) + '</span>' +
-          '<button type="button" class="ax-remove" onclick="removeNotifEmail(\'' + listVarName + '\',\'' + escAdmin(email).replace(/'/g,"\\'") + '\')">Retirer</button></li>';
-      }).join('');
-    }
-  }
-
-  async function loadNotifData(configRef, listVarName, elId, msgId){
-    const msg = document.getElementById(msgId);
-    if(msg) msg.textContent = '';
-    try{
-      const snap = await getDoc(configRef);
-      const data = snap.exists() ? snap.data() : {};
-      window[listVarName] = Array.isArray(data.list) ? data.list.slice().sort((a,b) => a.localeCompare(b,'fr')) : [];
-      renderNotifList(listVarName, elId);
-    }catch(err){
-      window[listVarName] = [];
-      renderNotifList(listVarName, elId);
-      if(msg){ msg.style.color = '#A85D45'; msg.textContent = "Erreur de chargement : " + err.message; }
-    }
-  }
-
-  window.loadNotifSignalementData = function(){ return loadNotifData(notifSignalementConfigRef, '_notifSignalementList', 'notifSignalementList', 'notifSignalementMsg'); };
-  window.loadNotifBesoinData = function(){ return loadNotifData(notifBesoinConfigRef, '_notifBesoinList', 'notifBesoinList', 'notifBesoinMsg'); };
-
-  window.openNotifSignalementModal = function(){
-    document.getElementById('notifSignalementModal').classList.add('show');
-    window.loadNotifSignalementData();
-  };
-  window.openNotifBesoinModal = function(){
-    document.getElementById('notifBesoinModal').classList.add('show');
-    window.loadNotifBesoinData();
-  };
-
-  async function addNotifEmail(configRef, listVarName, elId, inputId, msgId){
-    const input = document.getElementById(inputId);
-    const msg = document.getElementById(msgId);
-    const email = input.value.trim();
-    if(!email){ msg.style.color = '#A85D45'; msg.textContent = 'Saisis une adresse email.'; return; }
-    const current = window[listVarName] || [];
-    if(current.some(function(e){ return e.toLowerCase() === email.toLowerCase(); })){
-      msg.style.color = '#A85D45'; msg.textContent = 'Cette adresse est déjà dans la liste.'; return;
-    }
-    const list = current.concat([email]).sort(function(a,b){ return a.localeCompare(b,'fr'); });
-    try{
-      await setDoc(configRef, { list: list });
-      window[listVarName] = list;
-      input.value = '';
-      msg.style.color = '#019682'; msg.textContent = 'Ajouté ✓';
-      renderNotifList(listVarName, elId);
-    }catch(err){ msg.style.color = '#A85D45'; msg.textContent = "Erreur : " + err.message; }
-  }
-
-  window.addNotifSignalement = function(){ return addNotifEmail(notifSignalementConfigRef, '_notifSignalementList', 'notifSignalementList', 'newNotifSignalementEmail', 'notifSignalementMsg'); };
-  window.addNotifBesoin = function(){ return addNotifEmail(notifBesoinConfigRef, '_notifBesoinList', 'notifBesoinList', 'newNotifBesoinEmail', 'notifBesoinMsg'); };
-
-  window.removeNotifEmail = async function(listVarName, email){
-    const isSignalement = listVarName === '_notifSignalementList';
-    const configRef = isSignalement ? notifSignalementConfigRef : notifBesoinConfigRef;
-    const elId = isSignalement ? 'notifSignalementList' : 'notifBesoinList';
-    const msgId = isSignalement ? 'notifSignalementMsg' : 'notifBesoinMsg';
-    const msg = document.getElementById(msgId);
-    const list = (window[listVarName] || []).filter(function(e){ return e !== email; });
-    try{
-      await setDoc(configRef, { list: list });
-      window[listVarName] = list;
-      msg.style.color = '#019682'; msg.textContent = 'Retiré ✓';
-      renderNotifList(listVarName, elId);
-    }catch(err){ msg.style.color = '#A85D45'; msg.textContent = "Erreur : " + err.message; }
-  };
-
-  // ---- Modèles d'email (textes des mails envoyés après un signalement ou une expression de besoin) ----
-  async function loadEmailTemplates(){
-    try{
-      const snap = await getDoc(emailTemplatesConfigRef);
-      window._emailTemplates = snap.exists() ? snap.data() : {};
-    }catch(err){
-      window._emailTemplates = {};
-    }
-  }
-
-  function fillTemplateField(fieldKey, subjectId, bodyId){
-    const t = (window._emailTemplates || {})[fieldKey] || {};
-    const d = DEFAULT_TEMPLATES[fieldKey];
-    document.getElementById(subjectId).value = t.subject || d.subject;
-    document.getElementById(bodyId).value = t.body || d.body;
-  }
-
-  window.openTemplatesSignalementModal = async function(){
-    document.getElementById('templatesSignalementModal').classList.add('show');
-    await loadEmailTemplates();
-    fillTemplateField('signalementConfirmation', 'tplSigConfirmSubject', 'tplSigConfirmBody');
-    fillTemplateField('signalementNotifCSSCT', 'tplSigNotifSubject', 'tplSigNotifBody');
-  };
-
-  window.openTemplatesBesoinModal = async function(){
-    document.getElementById('templatesBesoinModal').classList.add('show');
-    await loadEmailTemplates();
-    fillTemplateField('besoinConfirmation', 'tplBesConfirmSubject', 'tplBesConfirmBody');
-    fillTemplateField('besoinNotifCSSCT', 'tplBesNotifSubject', 'tplBesNotifBody');
-  };
-
-  window.saveTemplatesSignalement = async function(){
-    const msg = document.getElementById('tplSigMsg');
-    const data = {
-      signalementConfirmation: {
-        subject: document.getElementById('tplSigConfirmSubject').value.trim(),
-        body: document.getElementById('tplSigConfirmBody').value
-      },
-      signalementNotifCSSCT: {
-        subject: document.getElementById('tplSigNotifSubject').value.trim(),
-        body: document.getElementById('tplSigNotifBody').value
-      }
-    };
-    try{
-      await setDoc(emailTemplatesConfigRef, data, { merge: true });
-      Object.assign((window._emailTemplates = window._emailTemplates || {}), data);
-      msg.style.color = '#019682'; msg.textContent = 'Enregistré ✓';
-    }catch(err){ msg.style.color = '#A85D45'; msg.textContent = "Erreur : " + err.message; }
-  };
-
-  window.saveTemplatesBesoin = async function(){
-    const msg = document.getElementById('tplBesMsg');
-    const data = {
-      besoinConfirmation: {
-        subject: document.getElementById('tplBesConfirmSubject').value.trim(),
-        body: document.getElementById('tplBesConfirmBody').value
-      },
-      besoinNotifCSSCT: {
-        subject: document.getElementById('tplBesNotifSubject').value.trim(),
-        body: document.getElementById('tplBesNotifBody').value
-      }
-    };
-    try{
-      await setDoc(emailTemplatesConfigRef, data, { merge: true });
-      Object.assign((window._emailTemplates = window._emailTemplates || {}), data);
-      msg.style.color = '#019682'; msg.textContent = 'Enregistré ✓';
-    }catch(err){ msg.style.color = '#A85D45'; msg.textContent = "Erreur : " + err.message; }
-  };
-
-  window.resetTemplatesSignalement = function(){
-    document.getElementById('tplSigConfirmSubject').value = DEFAULT_TEMPLATES.signalementConfirmation.subject;
-    document.getElementById('tplSigConfirmBody').value = DEFAULT_TEMPLATES.signalementConfirmation.body;
-    document.getElementById('tplSigNotifSubject').value = DEFAULT_TEMPLATES.signalementNotifCSSCT.subject;
-    document.getElementById('tplSigNotifBody').value = DEFAULT_TEMPLATES.signalementNotifCSSCT.body;
-  };
-
-  window.resetTemplatesBesoin = function(){
-    document.getElementById('tplBesConfirmSubject').value = DEFAULT_TEMPLATES.besoinConfirmation.subject;
-    document.getElementById('tplBesConfirmBody').value = DEFAULT_TEMPLATES.besoinConfirmation.body;
-    document.getElementById('tplBesNotifSubject').value = DEFAULT_TEMPLATES.besoinNotifCSSCT.subject;
-    document.getElementById('tplBesNotifBody').value = DEFAULT_TEMPLATES.besoinNotifCSSCT.body;
-  };
-
-  window.openAccessModal = function(){
-    document.getElementById('accessModal').classList.add('show');
-    loadAccessData();
-  };
-
-  window.switchAccessTab = function(tab){
-    document.getElementById('tabAuthorized').classList.toggle('active', tab === 'authorized');
-    document.getElementById('tabAdmins').classList.toggle('active', tab === 'admins');
-    document.getElementById('panelAuthorized').classList.toggle('active', tab === 'authorized');
-    document.getElementById('panelAdmins').classList.toggle('active', tab === 'admins');
-  };
-
-  window.addAuthorizedEmail = async function(){
-    const input = document.getElementById('newAuthorizedEmail');
-    const email = input.value.trim().toLowerCase();
-    const msg = document.getElementById('accessMsg');
-    if(!email || !email.includes('@')){ msg.style.color = '#A85D45'; msg.textContent = "Saisis une adresse email valide."; return; }
-    msg.style.color = '#A85D45'; msg.textContent = '';
-    try{
-      await setDoc(doc(db, 'authorized_emails', email), { addedBy: window._currentUserEmail || '', addedAt: serverTimestamp() });
-      input.value = '';
-      msg.style.color = '#019682'; msg.textContent = 'Compte autorisé ✓';
-      await loadAccessData();
-    }catch(err){ msg.textContent = friendlyAccessError(err); }
-  };
-
-  window.removeAuthorizedEmail = async function(email){
-    const msg = document.getElementById('accessMsg');
-    const admins = window._adminsList || [];
-    const isAdmin = admins.map(e => (e||'').toLowerCase()).includes(email.toLowerCase());
-    const warn = isAdmin ? " Cette personne est aussi administrateur : elle sera retirée des deux listes." : "";
-    if(!confirm('Retirer l\'accès de ' + email + ' ?' + warn)) return;
-    msg.style.color = '#A85D45'; msg.textContent = '';
-    try{
-      await deleteDoc(doc(db, 'authorized_emails', email));
-      if(isAdmin){ await updateDoc(adminsConfigRef, { emails: arrayRemove(email) }); }
-      msg.style.color = '#019682'; msg.textContent = 'Accès retiré ✓';
-      await loadAccessData();
-    }catch(err){ msg.textContent = friendlyAccessError(err); }
-  };
-
-  window.addAdminEmail = async function(){
-    const sel = document.getElementById('newAdminEmail');
-    const email = sel.value;
-    const msg = document.getElementById('accessMsg');
-    if(!email){ msg.style.color = '#A85D45'; msg.textContent = "Choisis un compte autorisé à nommer administrateur."; return; }
-    msg.style.color = '#A85D45'; msg.textContent = '';
-    try{
-      const snap = await getDoc(adminsConfigRef);
-      if(snap.exists()){ await updateDoc(adminsConfigRef, { emails: arrayUnion(email) }); }
-      else { await setDoc(adminsConfigRef, { emails: [email] }); }
-      msg.style.color = '#019682'; msg.textContent = 'Administrateur ajouté ✓';
-      await loadAccessData();
-    }catch(err){ msg.textContent = friendlyAccessError(err); }
-  };
-
-  window.removeAdminEmail = async function(email){
-    if(!confirm('Retirer les droits administrateur de ' + email + ' ? (le compte reste autorisé à se connecter)')) return;
-    const msg = document.getElementById('accessMsg');
-    msg.style.color = '#A85D45'; msg.textContent = '';
-    try{
-      await updateDoc(adminsConfigRef, { emails: arrayRemove(email) });
-      msg.style.color = '#019682'; msg.textContent = 'Retiré des administrateurs ✓';
-      await loadAccessData();
-    }catch(err){ msg.textContent = friendlyAccessError(err); }
-  };
-
-  window.bootstrapSelfAsAdmin = async function(){
-    const me = window._currentUserEmail;
-    const msg = document.getElementById('accessMsg');
-    if(!me){ return; }
-    msg.style.color = '#A85D45'; msg.textContent = '';
-    try{
-      const authorizedSnap = await getDocs(authorizedEmailsCol);
-      const isSelfAuthorized = authorizedSnap.docs.some(d => d.id.toLowerCase() === me);
-      if(!isSelfAuthorized){
-        await setDoc(doc(db, 'authorized_emails', me), { addedBy: me, addedAt: serverTimestamp() });
-      }
-      await setDoc(adminsConfigRef, { emails: [me] });
-      msg.style.color = '#019682'; msg.textContent = 'Tu es maintenant administrateur ✓';
-      await loadAccessData();
-    }catch(err){ msg.textContent = friendlyAccessError(err); }
-  };
-
-  // ---- Rôles & instances (config/roles_instances) ----
-  function slugifyRole(nom){
-    return (nom||'').toString().trim().toLowerCase()
-      .normalize('NFD').replace(/[̀-ͯ]/g,'')
-      .replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,'');
-  }
-  window.loadRolesData = async function(){
-    try{
-      const snap = await getDoc(rolesConfigRef);
-      window._roles = (snap.exists() && Array.isArray(snap.data().list)) ? snap.data().list : [];
-    }catch(e){ window._roles = []; }
-    renderRolesList();
-    populateEluFonctionsChecks();
-  };
-  function renderRolesList(){
-    const wrap = document.getElementById('rolesList');
-    if(!wrap) return;
-    if(!window._roles.length){ wrap.innerHTML = '<div class="access-empty">Aucun rôle défini pour le moment.</div>'; return; }
-    wrap.innerHTML = window._roles.map(function(r){
-      return '<div class="role-row" onclick="openRoleFormModal(\'' + r.id + '\')">'
-        + (r.imageBase64 ? '<img class="elu-row-photo" src="' + r.imageBase64 + '" alt="">' : '<div class="elu-row-photo placeholder">🏷️</div>')
-        + '<div style="flex:1;"><div class="role-row-name">' + esc(r.nom) + '</div><div class="role-row-desc">' + esc((r.description||'').slice(0,90)) + '</div></div>'
-        + '<div class="a-arrow">›</div></div>';
+      return '<div class="elu-card">'
+        + (el.photoBase64 ? '<img class="elu-photo" src="' + el.photoBase64 + '" alt="">' : '<div class="elu-photo placeholder">👤</div>')
+        + '<div style="flex:1;min-width:0;">'
+        + '<div class="elu-name">' + esc(eluNomComplet(el)) + '</div>'
+        + '<div class="elu-sub">' + esc([el.societe, el.site].filter(Boolean).join(' · ')) + '</div>'
+        + (badges ? '<div class="elu-fonctions">' + badges + '</div>' : '')
+        + eluInsignesHtml(el)
+        + (el.message ? '<div class="elu-msg">' + esc(el.message).replace(/\n/g, '<br>') + '</div>' : '')
+        + (emails ? '<div class="elu-emails">' + emails + '</div>' : '')
+        + '</div></div>';
     }).join('');
   }
-  window.openRolesModal = function(){
-    document.getElementById('rolesModal').classList.add('show');
-    loadRolesData();
-  };
-  window.openRoleFormModal = function(id){
-    const r = id ? window._roles.find(function(x){ return x.id === id; }) : null;
-    document.getElementById('roleFormTitle').textContent = r ? 'Modifier le rôle' : 'Ajouter un rôle / instance';
-    document.getElementById('roleFormId').value = r ? r.id : '';
-    document.getElementById('roleFormNom').value = r ? r.nom : '';
-    document.getElementById('roleFormDesc').value = r ? (r.description || '') : '';
-    window._roleFormImage = r ? (r.imageBase64 || null) : null;
-    renderRoleFormImagePreview();
-    document.getElementById('deleteRoleBtn').style.display = r ? 'inline-block' : 'none';
-    document.getElementById('roleFormMsg').textContent = '';
-    document.getElementById('roleFormModal').classList.add('show');
-  };
-  function renderRoleFormImagePreview(){
-    const box = document.getElementById('roleFormImagePreview');
-    box.innerHTML = window._roleFormImage
-      ? '<div style="display:flex;align-items:center;gap:10px;margin-top:6px;"><img class="photo-preview-sm" src="' + window._roleFormImage + '" alt=""><button type="button" class="ghost" onclick="window._roleFormImage=null;renderRoleFormImagePreview_();">Retirer</button></div>'
-      : '';
-  }
-  window.renderRoleFormImagePreview_ = renderRoleFormImagePreview;
-  window.saveRole = async function(){
-    const nom = document.getElementById('roleFormNom').value.trim();
-    const msg = document.getElementById('roleFormMsg');
-    if(!nom){ msg.textContent = 'Le nom est obligatoire.'; return; }
-    let id = document.getElementById('roleFormId').value;
-    if(!id){
-      id = slugifyRole(nom) || ('role-' + Date.now().toString(36));
-      if(window._roles.some(function(r){ return r.id === id; })){ id = id + '-' + Date.now().toString(36); }
-    }
-    const entry = { id: id, nom: nom, description: document.getElementById('roleFormDesc').value.trim(), imageBase64: window._roleFormImage || null };
-    const list = window._roles.filter(function(r){ return r.id !== id; });
-    list.push(entry);
-    list.sort(function(a,b){ return a.nom.localeCompare(b.nom, 'fr'); });
-    try{
-      await setDoc(rolesConfigRef, { list: list });
-      window._roles = list;
-      renderRolesList();
-      populateEluFonctionsChecks();
-      document.getElementById('roleFormModal').classList.remove('show');
-    }catch(e){ msg.textContent = 'Erreur : ' + e.message; }
-  };
-  window.deleteRole = async function(){
-    const id = document.getElementById('roleFormId').value;
-    if(!id) return;
-    if(!confirm("Supprimer ce rôle ? Les élus qui l'ont coché le perdront simplement de leur fiche.")) return;
-    const list = window._roles.filter(function(r){ return r.id !== id; });
-    try{
-      await setDoc(rolesConfigRef, { list: list });
-      window._roles = list;
-      renderRolesList();
-      populateEluFonctionsChecks();
-      document.getElementById('roleFormModal').classList.remove('show');
-    }catch(e){ document.getElementById('roleFormMsg').textContent = 'Erreur : ' + e.message; }
-  };
-  document.getElementById('roleFormImageInput').addEventListener('change', function(e){
-    const file = e.target.files && e.target.files[0];
-    if(!file) return;
-    openCropModal(file, function(dataUrl){
-      window._roleFormImage = dataUrl;
-      renderRoleFormImagePreview();
-    });
-    e.target.value = '';
-  });
 
-  // ---- Élus (collection "elus") ----
-  function populateEluFonctionsChecks(){
-    const wrap = document.getElementById('eluFonctions');
-    if(!wrap) return;
-    wrap.innerHTML = (window._roles && window._roles.length)
-      ? window._roles.map(function(r){ return '<label><input type="checkbox" class="elu-fonction-check" value="' + r.id + '"> ' + esc(r.nom) + '</label>'; }).join('')
-      : '<span class="access-empty">Ajoute d\'abord des rôles/instances.</span>';
-  }
-  function populateEluSocieteOptions(){
-    const sel = document.getElementById('eluFormSociete');
-    sel.innerHTML = '<option value="">—</option>' + (window._entreprisesList || []).map(function(s){ return '<option>' + esc(s) + '</option>'; }).join('');
-  }
-  function populateEluSiteOptions(){
-    const sel = document.getElementById('eluFormSite');
-    sel.innerHTML = '<option value="">—</option>' + (window._sitesList || []).map(function(s){ return '<option>' + esc(s) + '</option>'; }).join('');
-  }
-  window.loadElusData = async function(){
-    try{
-      const snap = await getDocs(elusCol);
-      const list = [];
-      snap.forEach(function(d){ list.push(Object.assign({ id: d.id }, d.data())); });
-      list.sort(function(a,b){ return (a.nom||'').localeCompare(b.nom||'', 'fr'); });
-      window._elus = list;
-    }catch(e){ window._elus = []; }
-    renderElusList();
-  };
-  function renderElusList(){
-    const wrap = document.getElementById('elusList');
-    if(!wrap) return;
-    if(!window._elus.length){ wrap.innerHTML = '<div class="access-empty">Aucun élu enregistré pour le moment.</div>'; return; }
-    wrap.innerHTML = window._elus.map(function(el){
-      const fonctionsLbl = (el.fonctions || []).map(function(fid){
-        const r = (window._roles || []).find(function(x){ return x.id === fid; });
-        return r ? r.nom : null;
-      }).filter(Boolean).join(', ');
-      const nomComplet = ((el.prenom ? el.prenom + ' ' : '') + (el.nom || '')).trim();
-      return '<div class="elu-row' + (el.actif === false ? ' elu-row-inactive' : '') + '" onclick="openEluFormModal(\'' + el.id + '\')">'
-        + (el.photoBase64 ? '<img class="elu-row-photo" src="' + el.photoBase64 + '" alt="">' : '<div class="elu-row-photo placeholder">👤</div>')
-        + '<div style="flex:1;"><div class="elu-row-name">' + esc(nomComplet) + (el.actif === false ? ' (inactif)' : '') + '</div><div class="elu-row-sub">' + esc([el.societe, el.site, fonctionsLbl].filter(Boolean).join(' · ')) + '</div></div>'
-        + '<div class="a-arrow">›</div></div>';
+  function renderRoles(){
+    const wrap = document.getElementById('panel-roles');
+    const term = norm(document.getElementById('searchInput').value.trim());
+    const filtered = ROLES.filter(function(r){
+      if(!term) return true;
+      return norm(r.nom + ' ' + (r.description || '')).indexOf(term) !== -1;
+    });
+    if(!filtered.length){
+      wrap.innerHTML = '<div class="empty-note">' + (ROLES.length ? 'Aucun rôle ne correspond à cette recherche.' : 'Aucun rôle/instance renseigné pour le moment.') + '</div>';
+      return;
+    }
+    const actifs = ELUS.filter(function(el){ return el.actif !== false; });
+    wrap.innerHTML = filtered.map(function(r){
+      const membres = actifs.filter(function(el){ return (el.fonctions || []).indexOf(r.id) !== -1; });
+      const membresHtml = membres.length
+        ? membres.map(function(el){
+            const nomComplet = eluNomComplet(el);
+            return '<button type="button" class="member-link" onclick="goToElu(\'' + esc(nomComplet).replace(/'/g, "\\'") + '\')">' + esc(nomComplet) + '</button>';
+          }).join(', ')
+        : 'Personne n\'occupe ce rôle pour le moment.';
+      return '<div class="role-card">'
+        + (r.imageBase64 ? '<img class="role-img" src="' + r.imageBase64 + '" alt="">' : '<div class="role-img placeholder">🏷️</div>')
+        + '<div style="flex:1;min-width:0;">'
+        + '<div class="role-name">' + esc(r.nom) + '</div>'
+        + (r.description ? '<div class="role-desc">' + esc(r.description).replace(/\n/g, '<br>') + '</div>' : '')
+        + '<div class="role-members">' + membresHtml + '</div>'
+        + '</div></div>';
     }).join('');
   }
-  window.openElusModal = function(){
-    document.getElementById('elusModal').classList.add('show');
-    loadElusData();
-  };
-  window.openEluFormModal = function(id){
-    const el = id ? window._elus.find(function(x){ return x.id === id; }) : null;
-    document.getElementById('eluFormTitle').textContent = el ? "Modifier l'élu" : 'Ajouter un élu';
-    document.getElementById('eluFormId').value = el ? el.id : '';
-    document.getElementById('eluFormNom').value = el ? (el.nom || '') : '';
-    document.getElementById('eluFormPrenom').value = el ? (el.prenom || '') : '';
-    populateEluSocieteOptions();
-    populateEluSiteOptions();
-    document.getElementById('eluFormSociete').value = el ? (el.societe || '') : '';
-    document.getElementById('eluFormSite').value = el ? (el.site || '') : '';
-    document.getElementById('eluFormMessage').value = el ? (el.message || '') : '';
-    document.getElementById('eluFormActif').checked = el ? (el.actif !== false) : true;
-    populateEluFonctionsChecks();
-    const fonctions = el ? (el.fonctions || []) : [];
-    document.querySelectorAll('.elu-fonction-check').forEach(function(cb){ cb.checked = fonctions.indexOf(cb.value) !== -1; });
-    window._eluFormEmails = el ? (el.emails || []).slice() : [];
-    renderEluFormEmails();
-    window._eluFormPhoto = el ? (el.photoBase64 || null) : null;
-    renderEluFormPhotoPreview();
-    document.getElementById('deleteEluBtn').style.display = el ? 'inline-block' : 'none';
-    document.getElementById('eluFormMsg').textContent = '';
-    document.getElementById('eluFormModal').classList.add('show');
-  };
-  window.closeEluFormModal = function(){ document.getElementById('eluFormModal').classList.remove('show'); };
-  function renderEluFormEmails(){
-    const ul = document.getElementById('eluFormEmailsList');
-    ul.innerHTML = (window._eluFormEmails || []).map(function(em){
-      return '<li><span class="ax-email">' + esc(em) + '</span><button type="button" class="ax-remove" onclick="removeEluFormEmail(\'' + esc(em).replace(/'/g, "\\'") + '\')">Retirer</button></li>';
-    }).join('');
-  }
-  window.addEluFormEmail = function(){
-    const input = document.getElementById('newEluEmail');
-    const val = input.value.trim();
-    const msg = document.getElementById('eluFormMsg');
-    if(!val) return;
-    if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val)){ msg.textContent = 'Email invalide.'; return; }
-    if(window._eluFormEmails.indexOf(val) === -1) window._eluFormEmails.push(val);
-    input.value = '';
-    msg.textContent = '';
-    renderEluFormEmails();
-  };
-  window.removeEluFormEmail = function(email){
-    window._eluFormEmails = window._eluFormEmails.filter(function(e){ return e !== email; });
-    renderEluFormEmails();
-  };
-  function renderEluFormPhotoPreview(){
-    const box = document.getElementById('eluFormPhotoPreview');
-    box.innerHTML = window._eluFormPhoto
-      ? '<div style="display:flex;align-items:center;gap:10px;margin-top:6px;"><img class="photo-preview-sm" style="border-radius:50%;" src="' + window._eluFormPhoto + '" alt=""><button type="button" class="ghost" onclick="window._eluFormPhoto=null;renderEluFormPhotoPreview_();">Retirer</button></div>'
-      : '';
-  }
-  window.renderEluFormPhotoPreview_ = renderEluFormPhotoPreview;
-  window.saveElu = async function(){
-    const nom = document.getElementById('eluFormNom').value.trim();
-    const msg = document.getElementById('eluFormMsg');
-    if(!nom){ msg.textContent = 'Le nom est obligatoire.'; return; }
-    const fonctions = Array.from(document.querySelectorAll('.elu-fonction-check:checked')).map(function(cb){ return cb.value; });
-    const payload = {
-      nom: nom,
-      prenom: document.getElementById('eluFormPrenom').value.trim(),
-      societe: document.getElementById('eluFormSociete').value,
-      site: document.getElementById('eluFormSite').value,
-      fonctions: fonctions,
-      emails: (window._eluFormEmails || []).slice(),
-      photoBase64: window._eluFormPhoto || null,
-      message: document.getElementById('eluFormMessage').value.trim(),
-      actif: document.getElementById('eluFormActif').checked
-    };
-    const id = document.getElementById('eluFormId').value;
-    try{
-      if(id){ await updateDoc(doc(db, 'elus', id), payload); }
-      else { await addDoc(elusCol, payload); }
-      document.getElementById('eluFormModal').classList.remove('show');
-      await loadElusData();
-    }catch(e){ msg.textContent = 'Erreur : ' + e.message; }
-  };
-  window.deleteElu = async function(){
-    const id = document.getElementById('eluFormId').value;
-    if(!id) return;
-    if(!confirm('Supprimer définitivement cette fiche élu ?')) return;
-    try{
-      await deleteDoc(doc(db, 'elus', id));
-      document.getElementById('eluFormModal').classList.remove('show');
-      await loadElusData();
-    }catch(e){ document.getElementById('eluFormMsg').textContent = 'Erreur : ' + e.message; }
-  };
-  document.getElementById('eluFormPhotoInput').addEventListener('change', function(e){
-    const file = e.target.files && e.target.files[0];
-    if(!file) return;
-    openCropModal(file, function(dataUrl){
-      window._eluFormPhoto = dataUrl;
-      renderEluFormPhotoPreview();
-    });
-    e.target.value = '';
-  });
 
-  // ---- Coordonnées & locaux CSE (config/cse_coordonnees) ----
-  function populateCoordLocalSiteOptions(){
-    const sel = document.getElementById('newLocalSite');
-    sel.innerHTML = '<option value="">Site…</option>' + (window._sitesList || []).map(function(s){ return '<option>' + esc(s) + '</option>'; }).join('');
-  }
-  function renderCoordUrls(){
-    const ul = document.getElementById('coordUrlsList');
-    ul.innerHTML = (window._coordUrls || []).length ? window._coordUrls.map(function(u, i){
-      return '<li><span class="ax-email">' + esc(u.nom || u.url) + ' — <a href="' + esc(u.url) + '" target="_blank" rel="noopener">' + esc(u.url) + '</a>' + (u.description ? ' <span style="color:var(--ink-soft);">(' + esc(u.description) + ')</span>' : '') + '</span><button type="button" class="ax-remove" onclick="removeCoordUrl(' + i + ')">Retirer</button></li>';
-    }).join('') : '<li class="access-empty">Aucun lien pour le moment.</li>';
-  }
-  window.addCoordUrl = function(){
-    const nom = document.getElementById('newUrlNom').value.trim();
-    const href = document.getElementById('newUrlHref').value.trim();
-    const desc = document.getElementById('newUrlDesc').value.trim();
-    const msg = document.getElementById('coordCseMsg');
-    if(!href){ msg.textContent = "L'URL est obligatoire."; return; }
-    window._coordUrls.push({ nom: nom || href, url: href, description: desc });
-    document.getElementById('newUrlNom').value = '';
-    document.getElementById('newUrlHref').value = '';
-    document.getElementById('newUrlDesc').value = '';
-    msg.textContent = '';
-    renderCoordUrls();
-  };
-  window.removeCoordUrl = function(i){ window._coordUrls.splice(i, 1); renderCoordUrls(); };
-  function renderCoordLocaux(){
-    const ul = document.getElementById('coordLocauxList');
-    ul.innerHTML = (window._coordLocaux || []).length ? window._coordLocaux.map(function(l, i){
-      return '<li>' + (l.photoBase64 ? '<img class="photo-preview-sm" style="width:36px;height:36px;margin-right:8px;" src="' + l.photoBase64 + '" alt="">' : '') + '<span class="ax-email">' + esc(l.site) + ' — ' + esc(l.emplacement) + '</span><button type="button" class="ax-remove" onclick="removeCoordLocal(' + i + ')">Retirer</button></li>';
-    }).join('') : '<li class="access-empty">Aucun local renseigné.</li>';
-  }
-  function renderNewLocalPhotoPreview(){
-    const box = document.getElementById('newLocalPhotoPreview');
-    box.innerHTML = window._newLocalPhoto
-      ? '<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;"><img class="photo-preview-sm" src="' + window._newLocalPhoto + '" alt=""><button type="button" class="ghost" onclick="window._newLocalPhoto=null;renderNewLocalPhotoPreview_();">Retirer</button></div>'
-      : '';
-  }
-  window.renderNewLocalPhotoPreview_ = renderNewLocalPhotoPreview;
-  document.getElementById('newLocalPhotoInput').addEventListener('change', async function(e){
-    const file = e.target.files && e.target.files[0];
-    if(!file) return;
-    try{
-      let result = await compressImageFile(file, 700, 0.75);
-      if(result.dataUrl.length > 400000){ result = await compressImageFile(file, 500, 0.6); }
-      window._newLocalPhoto = result.dataUrl;
-      renderNewLocalPhotoPreview();
-    }catch(err){ alert('Erreur lecture de la photo : ' + err.message); }
-    e.target.value = '';
-  });
-  window.addCoordLocal = function(){
-    const site = document.getElementById('newLocalSite').value;
-    const emplacement = document.getElementById('newLocalEmplacement').value.trim();
-    const msg = document.getElementById('coordCseMsg');
-    if(!site || !emplacement){ msg.textContent = 'Site et emplacement sont obligatoires.'; return; }
-    window._coordLocaux.push({ site: site, emplacement: emplacement, photoBase64: window._newLocalPhoto || null });
-    document.getElementById('newLocalEmplacement').value = '';
-    window._newLocalPhoto = null;
-    renderNewLocalPhotoPreview();
-    msg.textContent = '';
-    renderCoordLocaux();
-  };
-  window.removeCoordLocal = function(i){ window._coordLocaux.splice(i, 1); renderCoordLocaux(); };
-  window.openCoordCseModal = async function(){
-    document.getElementById('coordCseModal').classList.add('show');
-    populateCoordLocalSiteOptions();
-    window._newLocalPhoto = null;
-    renderNewLocalPhotoPreview();
-    const msg = document.getElementById('coordCseMsg');
-    msg.textContent = '';
-    try{
-      const snap = await getDoc(coordCseConfigRef);
-      const data = snap.exists() ? snap.data() : {};
-      document.getElementById('coordEmail').value = data.email || '';
-      document.getElementById('coordTel').value = data.tel || '';
-      document.getElementById('coordSiteWeb').value = data.siteWeb || '';
-      window._coordUrls = Array.isArray(data.urls) ? data.urls.slice() : [];
-      window._coordLocaux = Array.isArray(data.locaux) ? data.locaux.slice() : [];
-    }catch(e){
-      window._coordUrls = []; window._coordLocaux = [];
+  function renderCoord(){
+    const wrap = document.getElementById('panel-coord');
+    const hasContact = COORD.email || COORD.tel || COORD.siteWeb || (COORD.urls && COORD.urls.length);
+    const hasLocaux = COORD.locaux && COORD.locaux.length;
+    if(!hasContact && !hasLocaux){
+      wrap.innerHTML = '<div class="empty-note">Les coordonnées du CSE n\'ont pas encore été renseignées.</div>';
+      return;
     }
-    renderCoordUrls();
-    renderCoordLocaux();
-  };
-  window.saveCoordCse = async function(){
-    const msg = document.getElementById('coordCseMsg');
-    const payload = {
-      email: document.getElementById('coordEmail').value.trim(),
-      tel: document.getElementById('coordTel').value.trim(),
-      siteWeb: document.getElementById('coordSiteWeb').value.trim(),
-      urls: window._coordUrls || [],
-      locaux: window._coordLocaux || []
-    };
-    try{
-      await setDoc(coordCseConfigRef, payload);
-      msg.style.color = 'var(--teal-dark)';
-      msg.textContent = 'Enregistré ✓';
-    }catch(e){
-      msg.style.color = 'var(--danger)';
-      msg.textContent = 'Erreur : ' + e.message;
-    }
-  };
-</script>
-
-<script>
-function qrImgUrl(text){
-  return 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&margin=8&data=' + encodeURIComponent(text);
-}
-
-function setupShareLink(page, canvasId, urlId, btnId){
-  const url = window.location.origin + '/' + page;
-  const img = document.getElementById(canvasId);
-  img.src = qrImgUrl(url);
-  document.getElementById(urlId).textContent = url;
-  document.getElementById(btnId).addEventListener('click', function(){
-    navigator.clipboard.writeText(url).then(function(){
-      const btn = document.getElementById(btnId);
-      const old = btn.textContent;
-      btn.textContent = 'Copié ✓';
-      setTimeout(function(){ btn.textContent = old; }, 1500);
+    let html = '<div class="coord-card"><h3>Contact</h3>';
+    if(COORD.email) html += '<div class="coord-line"><span class="ci">✉️</span><a href="mailto:' + esc(COORD.email) + '">' + esc(COORD.email) + '</a></div>';
+    if(COORD.tel) html += '<div class="coord-line"><span class="ci">📞</span><a href="tel:' + esc(COORD.tel.replace(/\s+/g,'')) + '">' + esc(COORD.tel) + '</a></div>';
+    if(COORD.siteWeb) html += '<div class="coord-line"><span class="ci">🌐</span><a href="' + esc(COORD.siteWeb) + '" target="_blank" rel="noopener">' + esc(COORD.siteWeb) + '</a></div>';
+    (COORD.urls || []).forEach(function(u){
+      html += '<div class="coord-line"><span class="ci">🔗</span><div><a href="' + esc(u.url) + '" target="_blank" rel="noopener">' + esc(u.nom || u.url) + '</a>' + (u.description ? '<div class="coord-url-desc">' + esc(u.description) + '</div>' : '') + '</div></div>';
     });
+    html += '</div>';
+    if(hasLocaux){
+      html += '<div class="coord-card"><h3>Locaux CSE par site</h3>';
+      COORD.locaux.forEach(function(l, i){
+        html += '<div class="local-row">'
+          + (l.photoBase64 ? '<img class="local-photo" src="' + l.photoBase64 + '" alt="" onclick="openPhotoZoom(' + i + ')">' : '')
+          + '<div><b>' + esc(l.site) + '</b> — ' + esc(l.emplacement) + '</div></div>';
+      });
+      html += '</div>';
+    }
+    wrap.innerHTML = html;
+  }
+
+  function populateSiteFilter(){
+    const sel = document.getElementById('siteFilter');
+    const sites = Array.from(new Set(ELUS.map(function(el){ return el.site; }).filter(Boolean))).sort(function(a,b){ return a.localeCompare(b,'fr'); });
+    sel.innerHTML = '<option value="">Tous les sites</option>' + sites.map(function(s){ return '<option>' + esc(s) + '</option>'; }).join('');
+  }
+
+  document.getElementById('searchInput').addEventListener('input', function(){
+    const active = document.querySelector('.tab-btn.active').id;
+    if(active === 'tab-elus') renderElus();
+    if(active === 'tab-roles') renderRoles();
   });
-}
+  document.getElementById('siteFilter').addEventListener('change', renderElus);
 
-window.renderQR = function(){
-  setupShareLink('index.html', 'qrCanvas', 'qrUrl', 'copyUrlBtn');
-  setupShareLink('signalement_collaborateur.html', 'qrCanvasCollab', 'qrUrlCollab', 'copyUrlBtnCollab');
-  setupShareLink('expression_besoin.html', 'qrCanvasBesoin', 'qrUrlBesoin', 'copyUrlBtnBesoin');
-  setupShareLink('portail.html', 'qrCanvasPortail', 'qrUrlPortail', 'copyUrlBtnPortail');
-  setupShareLink('annuaire_cse.html', 'qrCanvasAnnuaire', 'qrUrlAnnuaire', 'copyUrlBtnAnnuaire');
-};
-
-document.getElementById('ntfy-share-btn').addEventListener('click', showNtfyShareModal);
-
-function showNtfyShareModal() {
-  const topic = 'cse-invivoag-cssct';
-  const subscribeUrl = `https://ntfy.sh/${topic}`;
-  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(subscribeUrl)}`;
-
-  const overlay = document.createElement('div');
-  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.8);z-index:999;display:flex;align-items:center;justify-content:center;padding:16px;';
-  overlay.innerHTML = `
-    <div style="background:#163C74;border-radius:16px;padding:20px;width:100%;max-width:340px;text-align:center;">
-      <div style="color:#fff;font-size:16px;font-weight:600;margin-bottom:6px;">📲 Recevoir les notifications</div>
-      <div style="color:#9FB3D6;font-size:12px;margin-bottom:12px;">La personne doit installer l'app gratuite "ntfy" (App Store/Play Store), puis scanner ce code pour s'abonner.</div>
-      <img src="${qrUrl}" alt="QR code" style="border-radius:10px;background:#fff;padding:10px;">
-      <div style="color:#9FB3D6;font-size:11px;margin-top:10px;word-break:break-all;">${subscribeUrl}</div>
-      <button class="detail-action-btn" id="ntfy-share-close" style="margin-top:14px;">Fermer</button>
-    </div>
-  `;
-  document.body.appendChild(overlay);
-  overlay.querySelector('#ntfy-share-close').addEventListener('click', () => overlay.remove());
-}
+  Promise.all([
+    getDocs(collection(db, 'elus')).catch(function(){ return { forEach: function(){} }; }),
+    getDoc(doc(db, 'config', 'roles_instances')).catch(function(){ return { exists: function(){ return false; } }; }),
+    getDoc(doc(db, 'config', 'cse_coordonnees')).catch(function(){ return { exists: function(){ return false; } }; })
+  ]).then(function(results){
+    const elusSnap = results[0], rolesSnap = results[1], coordSnap = results[2];
+    ELUS = [];
+    elusSnap.forEach(function(d){ ELUS.push(Object.assign({ id: d.id }, d.data())); });
+    ELUS.sort(function(a,b){ return (a.nom||'').localeCompare(b.nom||'','fr'); });
+    ROLES = (rolesSnap.exists && rolesSnap.exists() && Array.isArray(rolesSnap.data().list)) ? rolesSnap.data().list : [];
+    COORD = (coordSnap.exists && coordSnap.exists()) ? coordSnap.data() : {};
+    populateSiteFilter();
+    renderElus();
+    renderCoord();
+    renderRoles();
+  });
 </script>
 </body>
 </html>
