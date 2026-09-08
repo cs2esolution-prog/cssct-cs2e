@@ -596,9 +596,17 @@
         <li>Sur <code>console.cloud.google.com</code>, sélectionne le même projet que le projet Firebase de cette instance.</li>
         <li>IAM et administration → Comptes de service → Créer un compte de service (ex. <code>worker-cr-access</code>), rôle <strong>Cloud Datastore User</strong> (<code>roles/datastore.user</code>).</li>
         <li>Onglet Clés → Ajouter une clé → JSON → télécharge le fichier (jamais dans Git, non re-téléchargeable ensuite).</li>
-        <li>Ajoute son contenu complet en secret Cloudflare : <code>npx wrangler secret put GOOGLE_SERVICE_ACCOUNT_KEY</code>.</li>
-        <li>Ajoute un second secret <code>CR_ACCESS_SECRET</code> (chaîne aléatoire, ex. <code>openssl rand -hex 32</code>) : <code>npx wrangler secret put CR_ACCESS_SECRET</code>.</li>
-        <li>Crée le namespace KV qui stockera les fichiers : <code>npx wrangler kv namespace create CR_FILES</code>, copie l'<code>id</code> retourné dans <code>wrangler.jsonc</code> (<code>kv_namespaces</code>), puis <code>npx wrangler deploy</code>.</li>
+        <li>Ajoute ces deux secrets <strong>depuis le tableau de bord Cloudflare</strong> (pas besoin de terminal) : <code>dash.cloudflare.com</code> → Workers &amp; Pages → le Worker de cette instance → Settings → Variables and Secrets → Add → type "Secret" :
+          <ul>
+            <li>Variable name <code>GOOGLE_SERVICE_ACCOUNT_KEY</code> → Value : colle tout le contenu du fichier JSON téléchargé à l'étape précédente.</li>
+            <li>Variable name <code>CR_ACCESS_SECRET</code> → Value : une chaîne aléatoire (un générateur de mot de passe/UUID en ligne convient).</li>
+          </ul>
+          Clique "Deploy" pour valider. <em>(Équivalent en ligne de commande : <code>npx wrangler secret put GOOGLE_SERVICE_ACCOUNT_KEY</code> / <code>npx wrangler secret put CR_ACCESS_SECRET</code>.)</em>
+        </li>
+        <li>Crée le namespace, toujours depuis le tableau de bord : menu de gauche → Storage &amp; Databases → KV → Create instance → nomme-le <code>CR_FILES</code> → Create.</li>
+        <li>Lie-le au Worker : reviens sur le Worker de cette instance → Settings → Bindings → Add binding → KV namespace → Variable name <code>CR_FILES</code> → sélectionne le namespace créé → Add binding → Deploy.
+          <div class="modop-note">⚠️ À ne pas oublier : contrairement aux secrets (protégés par <code>keep_vars</code>), ce binding KV n'est pas préservé automatiquement par un déploiement en ligne de commande — un futur <code>wrangler deploy</code> sans mise à jour du fichier pourrait le casser. Copie l'<code>id</code> du namespace (visible sur sa page dans le tableau de bord) dans <code>wrangler.jsonc</code> de cette instance (<code>kv_namespaces</code>, à la place de <code>REMPLACER_PAR_ID_NAMESPACE</code>) et committe ce changement sur le dépôt.</div>
+        </li>
         <li>À vérifier : Administration &gt; CR réunion &gt; Accès collaborateurs, définis un mot de passe test, ouvre <code>cr_reunion_collaborateurs.html</code> en navigation privée et confirme que le mot de passe est accepté.</li>
       </ol>
 
