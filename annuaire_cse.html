@@ -53,8 +53,10 @@
   }
   .role-badge:hover{transform:translateY(-1px); box-shadow:0 3px 8px rgba(43,42,46,.16);}
   .role-badge:active{transform:translateY(0);}
-  .role-badge img{width:20px; height:20px; border-radius:50%; object-fit:cover; flex:none; box-shadow:0 0 0 1.5px #fff;}
   .role-badge-dot{width:9px; height:9px; margin:0 2px 0 5px; border-radius:50%; background:currentColor; flex:none; opacity:.7;}
+  .elu-insignes{display:flex; flex-wrap:wrap; gap:8px; margin:0 0 6px;}
+  .elu-insigne{width:32px; height:32px; border-radius:50%; object-fit:cover; cursor:pointer; box-shadow:0 1px 3px rgba(43,42,46,.2); border:1.5px solid #fff; transition:transform .1s ease;}
+  .elu-insigne:hover{transform:scale(1.08);}
   .elu-msg{font-size:12.5px; color:var(--ink); margin:6px 0; line-height:1.5;}
   .elu-emails{display:flex; flex-wrap:wrap; gap:6px; margin-top:4px;}
   .elu-email-link{font-size:11.5px; font-weight:600; color:var(--teal-dark); text-decoration:none; background:#F2FBF9; padding:4px 10px; border-radius:12px;}
@@ -182,8 +184,17 @@
     const r = ROLES.find(function(x){ return x.id === fid; });
     if(!r) return '';
     const col = roleColor(fid);
-    const icon = r.imageBase64 ? '<img src="' + r.imageBase64 + '" alt="">' : '<span class="role-badge-dot"></span>';
-    return '<button type="button" class="role-badge" style="background:' + col.bg + ';color:' + col.fg + ';" onclick="goToRole(\'' + fid + '\')">' + icon + esc(r.nom) + '</button>';
+    return '<button type="button" class="role-badge" style="background:' + col.bg + ';color:' + col.fg + ';" onclick="goToRole(\'' + fid + '\')"><span class="role-badge-dot"></span>' + esc(r.nom) + '</button>';
+  }
+  // Petite rangée d'insignes/macarons (image officielle du rôle), séparée des pastilles colorées :
+  // uniquement pour les rôles qui ont une image, invisible sinon (ex : Secrétaire, Trésorier n'en ont pas).
+  function eluInsignesHtml(el){
+    const html = (el.fonctions || []).map(function(fid){
+      const r = ROLES.find(function(x){ return x.id === fid; });
+      if(!r || !r.imageBase64) return '';
+      return '<img class="elu-insigne" src="' + r.imageBase64 + '" alt="" title="' + esc(r.nom) + '" onclick="goToRole(\'' + fid + '\')">';
+    }).filter(Boolean).join('');
+    return html ? '<div class="elu-insignes">' + html + '</div>' : '';
   }
 
   window.switchTab = function(name){
@@ -242,6 +253,7 @@
         + '<div class="elu-name">' + esc(eluNomComplet(el)) + '</div>'
         + '<div class="elu-sub">' + esc([el.societe, el.site].filter(Boolean).join(' · ')) + '</div>'
         + (badges ? '<div class="elu-fonctions">' + badges + '</div>' : '')
+        + eluInsignesHtml(el)
         + (el.message ? '<div class="elu-msg">' + esc(el.message).replace(/\n/g, '<br>') + '</div>' : '')
         + (emails ? '<div class="elu-emails">' + emails + '</div>' : '')
         + '</div></div>';

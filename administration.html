@@ -688,7 +688,7 @@
       <div class="field"><label>Nom</label><input type="text" id="roleFormNom" placeholder="Ex : Référent handicap"></div>
       <div class="field"><label>Description</label><textarea id="roleFormDesc" placeholder="À quoi sert ce rôle / cette instance, son périmètre..."></textarea></div>
       <div class="field">
-        <label>Image <span style="font-weight:400;color:var(--ink-soft);">(facultatif)</span></label>
+        <label>Image / macaron <span style="font-weight:400;color:var(--ink-soft);">(facultatif — pour un rôle sans identité visuelle propre comme "Secrétaire" ou "Trésorier", laisse vide : une pastille colorée suffit)</span></label>
         <label class="filebox-sm" for="roleFormImageInput">📎 Ajouter / remplacer une image<input type="file" id="roleFormImageInput" accept="image/*"></label>
         <div id="roleFormImagePreview"></div>
       </div>
@@ -700,6 +700,27 @@
         <button type="button" class="ghost" onclick="document.getElementById('roleFormModal').classList.remove('show')">Annuler</button>
         <button type="button" class="primary" onclick="saveRole()">Enregistrer</button>
       </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="cropModal">
+  <div class="modal" style="max-width:360px;">
+    <div class="modal-head">
+      <h3>Recadrer l'image</h3>
+      <button class="modal-close" onclick="cancelCrop()">×</button>
+    </div>
+    <div class="modal-body" style="text-align:center;">
+      <div style="width:280px;height:280px;margin:0 auto 14px;border-radius:12px;overflow:hidden;background:#111;touch-action:none;">
+        <canvas id="cropCanvas" width="280" height="280" style="display:block;cursor:grab;touch-action:none;"></canvas>
+      </div>
+      <label style="font-size:11.5px;color:var(--ink-soft);display:block;margin-bottom:6px;">Zoom</label>
+      <input type="range" id="cropZoom" min="100" max="300" value="100" style="width:100%;margin-bottom:14px;">
+      <p class="s-help" style="margin:0;">Fais glisser l'image pour la repositionner, ajuste le zoom, puis valide.</p>
+    </div>
+    <div class="modal-actions">
+      <button type="button" class="ghost" onclick="cancelCrop()">Annuler</button>
+      <button type="button" class="primary" onclick="confirmCrop()">Valider le recadrage</button>
     </div>
   </div>
 </div>
@@ -797,6 +818,94 @@ const firebaseConfig = {
       reader.readAsDataURL(file);
     });
   }
+
+  // ---- Recadrage d'image (déplacer / zoomer) avant enregistrement, utilisé pour les images de rôle/instance ----
+  const CROP_SIZE = 280;
+  const CROP_OUTPUT = 320;
+  let cropState = null; // { img, scale0, zoom, offsetX, offsetY, onDone }
+  let cropDragging = false, cropDragStart = null;
+
+  function cropClampOffset(){
+    const s = cropState.scale0 * cropState.zoom;
+    const halfExtentX = Math.max(0, (cropState.img.width * s - CROP_SIZE) / 2);
+    const halfExtentY = Math.max(0, (cropState.img.height * s - CROP_SIZE) / 2);
+    cropState.offsetX = Math.max(-halfExtentX, Math.min(halfExtentX, cropState.offsetX));
+    cropState.offsetY = Math.max(-halfExtentY, Math.min(halfExtentY, cropState.offsetY));
+  }
+  function cropDraw(){
+    const canvas = document.getElementById('cropCanvas');
+    const ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, CROP_SIZE, CROP_SIZE);
+    const s = cropState.scale0 * cropState.zoom;
+    const w = cropState.img.width * s, h = cropState.img.height * s;
+    const x = (CROP_SIZE - w) / 2 + cropState.offsetX;
+    const y = (CROP_SIZE - h) / 2 + cropState.offsetY;
+    ctx.drawImage(cropState.img, x, y, w, h);
+  }
+  function openCropModal(file, onDone){
+    const reader = new FileReader();
+    reader.onload = function(e){
+      const img = new Image();
+      img.onload = function(){
+        const scale0 = Math.max(CROP_SIZE / img.width, CROP_SIZE / img.height);
+        cropState = { img: img, scale0: scale0, zoom: 1, offsetX: 0, offsetY: 0, onDone: onDone };
+        document.getElementById('cropZoom').value = 100;
+        cropDraw();
+        document.getElementById('cropModal').classList.add('show');
+      };
+      img.onerror = function(){ alert("Impossible de lire cette image."); };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  }
+  window.cancelCrop = function(){
+    document.getElementById('cropModal').classList.remove('show');
+    cropState = null;
+  };
+  window.confirmCrop = function(){
+    if(!cropState) return;
+    const out = document.createElement('canvas');
+    out.width = CROP_OUTPUT; out.height = CROP_OUTPUT;
+    const octx = out.getContext('2d');
+    const factor = CROP_OUTPUT / CROP_SIZE;
+    const s = cropState.scale0 * cropState.zoom * factor;
+    const w = cropState.img.width * s, h = cropState.img.height * s;
+    const x = (CROP_OUTPUT - w) / 2 + cropState.offsetX * factor;
+    const y = (CROP_OUTPUT - h) / 2 + cropState.offsetY * factor;
+    octx.drawImage(cropState.img, x, y, w, h);
+    const dataUrl = out.toDataURL('image/jpeg', 0.85);
+    const done = cropState.onDone;
+    document.getElementById('cropModal').classList.remove('show');
+    cropState = null;
+    if(done) done(dataUrl);
+  };
+  (function initCropDrag(){
+    const canvas = document.getElementById('cropCanvas');
+    canvas.addEventListener('pointerdown', function(e){
+      if(!cropState) return;
+      cropDragging = true;
+      cropDragStart = { x: e.clientX, y: e.clientY, offsetX: cropState.offsetX, offsetY: cropState.offsetY };
+      canvas.setPointerCapture(e.pointerId);
+      canvas.style.cursor = 'grabbing';
+    });
+    canvas.addEventListener('pointermove', function(e){
+      if(!cropDragging || !cropState) return;
+      cropState.offsetX = cropDragStart.offsetX + (e.clientX - cropDragStart.x);
+      cropState.offsetY = cropDragStart.offsetY + (e.clientY - cropDragStart.y);
+      cropClampOffset();
+      cropDraw();
+    });
+    ['pointerup', 'pointercancel', 'pointerleave'].forEach(function(evt){
+      canvas.addEventListener(evt, function(){ cropDragging = false; canvas.style.cursor = 'grab'; });
+    });
+    document.getElementById('cropZoom').addEventListener('input', function(){
+      if(!cropState) return;
+      cropState.zoom = this.value / 100;
+      cropClampOffset();
+      cropDraw();
+    });
+  })();
+
   const DEFAULT_TEMPLATES = {
     signalementConfirmation: {
       subject: 'Confirmation de votre signalement CSSCT - {{numero}}',
@@ -1422,15 +1531,13 @@ const firebaseConfig = {
       document.getElementById('roleFormModal').classList.remove('show');
     }catch(e){ document.getElementById('roleFormMsg').textContent = 'Erreur : ' + e.message; }
   };
-  document.getElementById('roleFormImageInput').addEventListener('change', async function(e){
+  document.getElementById('roleFormImageInput').addEventListener('change', function(e){
     const file = e.target.files && e.target.files[0];
     if(!file) return;
-    try{
-      let result = await compressImageFile(file, 500, 0.75);
-      if(result.dataUrl.length > 400000){ result = await compressImageFile(file, 350, 0.6); }
-      window._roleFormImage = result.dataUrl;
+    openCropModal(file, function(dataUrl){
+      window._roleFormImage = dataUrl;
       renderRoleFormImagePreview();
-    }catch(err){ alert('Erreur lecture image : ' + err.message); }
+    });
     e.target.value = '';
   });
 
