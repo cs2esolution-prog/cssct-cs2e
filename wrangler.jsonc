@@ -20,7 +20,14 @@
   "assets": {
     "directory": "./",
     "binding": "ASSETS",
-    "not_found_handling": "404-page"
+    "not_found_handling": "404-page",
+    // Par défaut (false), Cloudflare sert les fichiers statiques (toutes les pages .html)
+    // directement depuis son cache, SANS exécuter worker.js. Résultat découvert en vérifiant le
+    // déploiement en production : les en-têtes de sécurité et la CSP (voir plus bas) n'étaient
+    // appliqués qu'aux endpoints /api/... et jamais aux pages elles-mêmes. Mis à true pour que
+    // CHAQUE requête passe par le fetch() de worker.js (qui renvoie ensuite les pages via
+    // env.ASSETS.fetch comme avant) et reçoive bien les en-têtes de sécurité.
+    "run_worker_first": true
   },
   // Stockage des fichiers PDF/Word des comptes-rendus de réunion (voir
   // claude/mode-operatoire-multi-cssct.md). À créer une fois avec :
