@@ -52,6 +52,17 @@
   .cat-badge{display:inline-block; padding:4px 10px; border-radius:12px; font-size:10.5px; font-weight:700; white-space:nowrap;}
   .acc-badge{display:inline-flex; align-items:center; gap:3px; padding:4px 9px; border-radius:12px; font-size:10.5px; font-weight:600; white-space:nowrap; background:#E4F3EF; color:#017162;}
 
+  .sr-group{background:#fff; border:1px solid var(--line); border-radius:var(--radius); overflow:hidden;}
+  .sr-group-head{display:flex; align-items:center; justify-content:space-between; gap:10px; padding:12px 16px; cursor:pointer;}
+  .sr-group-head:hover{background:#FBFAF7;}
+  .sr-group-head .r-meta{margin-top:2px;}
+  .sr-count{font-size:11px; color:var(--ink-soft); background:#F0EDE4; border-radius:10px; padding:3px 9px; white-space:nowrap;}
+  .sr-chevron{font-size:11px; color:var(--ink-soft); flex-shrink:0; margin-left:4px;}
+  .sr-group-body{display:flex; flex-direction:column; gap:8px; padding:0 16px 14px;}
+  .sr-item{font-size:12px; background:#FBFAF7; border:1px solid var(--line); border-radius:6px; padding:8px 10px;}
+  .sr-item-head{display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-bottom:6px;}
+  .sr-item-ctx{line-height:1.5;}
+
   .drawer-overlay{position:fixed; inset:0; background:rgba(30,28,32,.5); display:none; z-index:150; justify-content:center; align-items:flex-start;}
   .drawer-overlay.show{display:flex;}
   .drawer{width:min(1150px, 78vw); max-width:1150px; margin-top:72px; max-height:calc(100vh - 90px); background:var(--paper); overflow-y:auto; border-radius:16px 16px 0 0; box-shadow:0 -10px 50px rgba(0,0,0,.3);}
@@ -816,23 +827,56 @@ window.renderSearchResults = function(){
   const results = searchAllCR(q);
   box.style.display = 'flex';
   if(!results.length){ box.innerHTML = '<p style="font-size:12.5px;color:var(--ink-soft);">Aucun résultat.</p>'; return; }
-  box.innerHTML = results.slice(0, 50).map(function(r){
-    const ctx = r.before.map(esc).join('<br>') +
-      (r.before.length ? '<br>' : '') +
-      '<mark>' + esc(r.match) + '</mark>' +
-      (r.after.length ? '<br>' : '') +
-      r.after.map(esc).join('<br>');
-    return '<div class="row" style="cursor:default;flex-direction:column;align-items:stretch;">' +
-      '<div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;">' +
-        '<div><strong style="font-size:12.5px;">' + esc(r.titre) + '</strong><div class="r-meta">' + esc(r.date) + (r.page ? (' · page ' + r.page) : '') + ' · ' + esc(r.nomFichier) + '</div></div>' +
-        '<div style="display:flex;gap:6px;flex:none;">' +
-          '<button class="btn" onclick="openDrawer(\'' + r.crId + '\')">📋 Voir le CR</button>' +
-          '<button class="btn" onclick="openCrFile(\'' + r.fileId + '\',\'' + esc(r.nomFichier).replace(/'/g,"\\'") + '\'' + (r.page ? (',' + r.page) : '') + ')">📄 Ouvrir' + (r.page ? (' (p.' + r.page + ')') : '') + '</button>' +
+
+  // Regroupement par CR (déjà triés par date décroissante par searchAllCR)
+  const groups = [];
+  const byId = {};
+  results.slice(0, 200).forEach(function(r){
+    if(!byId[r.crId]){ byId[r.crId] = { crId:r.crId, titre:r.titre, date:r.date, items:[] }; groups.push(byId[r.crId]); }
+    byId[r.crId].items.push(r);
+  });
+
+  box.innerHTML = groups.map(function(g, gi){
+    const gid = 'srg' + gi;
+    const itemsHtml = g.items.map(function(r){
+      const ctx = r.before.map(esc).join('<br>') +
+        (r.before.length ? '<br>' : '') +
+        '<mark>' + esc(r.match) + '</mark>' +
+        (r.after.length ? '<br>' : '') +
+        r.after.map(esc).join('<br>');
+      return '<div class="sr-item">' +
+        '<div class="sr-item-head">' +
+          '<div class="r-meta">' + (r.page ? ('page ' + r.page + ' · ') : '') + esc(r.nomFichier) + '</div>' +
+          '<div style="display:flex;gap:6px;flex:none;">' +
+            '<button class="btn" onclick="event.stopPropagation();openDrawer(\'' + r.crId + '\')">📋 Voir le CR</button>' +
+            '<button class="btn" onclick="event.stopPropagation();openCrFile(\'' + r.fileId + '\',\'' + esc(r.nomFichier).replace(/'/g,"\\'") + '\'' + (r.page ? (',' + r.page) : '') + ')">📄 Ouvrir' + (r.page ? (' (p.' + r.page + ')') : '') + '</button>' +
+          '</div>' +
+        '</div>' +
+        '<div class="sr-item-ctx">' + ctx + '</div>' +
+      '</div>';
+    }).join('');
+    return '<div class="sr-group">' +
+      '<div class="sr-group-head" onclick="toggleSearchGroup(\'' + gid + '\')">' +
+        '<div><strong style="font-size:12.5px;">' + esc(g.titre) + '</strong><div class="r-meta">' + esc(g.date) + '</div></div>' +
+        '<div style="display:flex;align-items:center;">' +
+          '<span class="sr-count">' + g.items.length + ' résultat' + (g.items.length > 1 ? 's' : '') + '</span>' +
+          '<span class="sr-chevron" id="chev-' + gid + '">▸</span>' +
         '</div>' +
       '</div>' +
-      '<div style="font-size:12px;background:#FBFAF7;border:1px solid var(--line);border-radius:6px;padding:8px 10px;margin-top:6px;line-height:1.5;">' + ctx + '</div>' +
+      '<div class="sr-group-body" id="' + gid + '" style="display:none;">' + itemsHtml + '</div>' +
     '</div>';
   }).join('');
+
+  // Premier groupe ouvert par défaut, replie-le pour passer au suivant
+  if(groups.length) window.toggleSearchGroup('srg0');
+};
+window.toggleSearchGroup = function(gid){
+  const body = document.getElementById(gid);
+  const chev = document.getElementById('chev-' + gid);
+  if(!body) return;
+  const isOpen = body.style.display !== 'none';
+  body.style.display = isOpen ? 'none' : 'flex';
+  if(chev) chev.textContent = isOpen ? '▸' : '▾';
 };
 
 // Note : la gestion du mot de passe collaborateurs (config/cr_password_hash) a été déplacée
