@@ -49,7 +49,7 @@
   .row .r-title{font-weight:600; font-size:14px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:420px;}
   .row .r-meta{font-size:11.5px; color:var(--ink-soft); margin-top:2px;}
 
-  .drawer-overlay{position:fixed; inset:0; background:rgba(30,28,32,.5); display:none; z-index:80; justify-content:center; align-items:flex-start;}
+  .drawer-overlay{position:fixed; inset:0; background:rgba(30,28,32,.5); display:none; z-index:150; justify-content:center; align-items:flex-start;}
   .drawer-overlay.show{display:flex;}
   .drawer{width:min(1150px, 78vw); max-width:1150px; margin-top:72px; max-height:calc(100vh - 90px); background:var(--paper); overflow-y:auto; border-radius:16px 16px 0 0; box-shadow:0 -10px 50px rgba(0,0,0,.3);}
   @media (max-width:900px){ .drawer{ width:96vw; margin-top:56px; max-height:calc(100vh - 60px); } }
@@ -273,7 +273,6 @@
       <div class="admin-tabs">
         <button class="admin-tab active" data-tab="sections" onclick="switchAdminTab('sections')">Rubriques complémentaires</button>
         <button class="admin-tab" data-tab="prompt" onclick="switchAdminTab('prompt')">Prompt IA</button>
-        <button class="admin-tab" data-tab="acces" onclick="switchAdminTab('acces')">Accès collaborateurs</button>
       </div>
       <div class="admin-panel active" id="adminPanelSections">
         <p style="font-size:11.5px;color:var(--ink-soft);">Rubriques narratives libres, en plus de celles déjà prévues (ordre du jour, participants, points abordés, décisions, prochaine échéance).</p>
@@ -283,13 +282,6 @@
       <div class="admin-panel" id="adminPanelPrompt">
         <p style="font-size:11.5px;color:var(--ink-soft);">Repères disponibles : {{TITRE}}, {{DATE}}, {{PARTICIPANTS}}, {{ORDRE_JOUR}}, {{NOTE_BRUTE}}.</p>
         <textarea id="adminPromptText" style="width:100%;min-height:280px;font-size:12.5px;padding:10px;border:1px solid var(--line);border-radius:8px;"></textarea>
-      </div>
-      <div class="admin-panel" id="adminPanelAcces">
-        <p style="font-size:11.5px;color:var(--ink-soft);">Mot de passe demandé aux collaborateurs pour consulter, depuis <em>cr_reunion_collaborateurs.html</em>, les CR (ou pièces jointes) marqués « accessible ». Le mot de passe n'est jamais réaffiché en clair une fois enregistré — seule son empreinte est conservée. Pense à le changer régulièrement (par ex. une fois par an).</p>
-        <div id="crPasswordStatus" style="font-size:12px;margin-bottom:12px;"></div>
-        <div class="dfield"><label class="dlabel">Nouveau mot de passe (6 caractères minimum)</label><input type="text" id="crNewPassword" placeholder="Ex : cssct-2026"></div>
-        <button class="add-admin-btn" onclick="saveCrPassword()">Enregistrer le mot de passe</button>
-        <p style="font-size:11px;color:var(--ink-soft);margin-top:16px;">Page collaborateurs : <a href="cr_reunion_collaborateurs.html" target="_blank">cr_reunion_collaborateurs.html</a></p>
       </div>
     </div>
     <div class="modal-actions">
@@ -402,8 +394,6 @@
     async update(id, fields){ await updateDoc(doc(db,'comptes_rendus_reunion', id), fields); },
     async remove(id){ await deleteDoc(doc(db,'comptes_rendus_reunion', id)); },
     async saveConfig(c){ await setDoc(configRef, c); window._config = c; },
-    async setPasswordHash(hash){ await setDoc(doc(db,'config','cr_password_hash'), { hash: hash, updatedAt: new Date().toISOString() }); },
-    async hasPasswordHash(){ const snap = await getDoc(doc(db,'config','cr_password_hash')); return snap.exists() && !!snap.data().hash; },
     async getIdToken(){ return auth.currentUser ? await auth.currentUser.getIdToken() : null; }
   };
 
@@ -490,6 +480,20 @@ function findCR(id){ return (window._crs||[]).find(function(x){ return x.id === 
 // ============================================================================
 // Fichiers du CR (PDF/Word confidentiel + non confidentiel + pièces jointes)
 // ============================================================================
+
+async function deleteCrFileFromKV(fileId){
+  if(!fileId) return;
+  const idToken = await window.CR_FIREBASE.getIdToken();
+  if(!idToken) throw new Error('Session expirée, reconnecte-toi.');
+  const resp = await fetch('/api/cr-file?fileId=' + encodeURIComponent(fileId), {
+    method: 'DELETE',
+    headers: { 'Authorization': 'Bearer ' + idToken }
+  });
+  if(!resp.ok){
+    const d = await resp.json().catch(function(){ return {}; });
+    throw new Error(d.error || 'Suppression du fichier impossible.');
+  }
+}
 
 async function uploadCrFile(file){
   const idToken = await window.CR_FIREBASE.getIdToken();
@@ -587,14 +591,17 @@ window.toggleFileAccessible = async function(crId, slot, val){
 };
 
 window.deleteFileSlot = async function(crId, slot){
-  if(!confirm('Supprimer ce fichier ?')) return;
+  if(!confirm('Supprimer définitivement ce fichier ? Cette action est irréversible, aucune trace ne sera conservée.')) return;
+  const it = findCR(crId);
   const field = slot === 'confidentiel' ? 'fichierConfidentiel' : 'fichierNonConfidentiel';
-  const fields = {}; fields[field] = null;
+  const f = it && it[field];
   try{
+    if(f && f.fileId) await deleteCrFileFromKV(f.fileId);
+    const fields = {}; fields[field] = null;
     await window.CR_FIREBASE.update(crId, fields);
-    showToast('Fichier supprimé');
+    showToast('Fichier supprimé définitivement');
     openDrawer(crId);
-  }catch(err){ showToast('Erreur : ' + err.message); }
+  }catch(err){ showToast('Erreur pendant la suppression : ' + err.message); }
 };
 
 window.addPieceJointeUrl = async function(crId){
@@ -641,14 +648,16 @@ window.togglePieceAccessible = async function(crId, pieceId, val){
 };
 
 window.removePieceJointe = async function(crId, pieceId){
-  if(!confirm('Supprimer cette pièce jointe ?')) return;
+  if(!confirm('Supprimer définitivement cette pièce jointe ? Cette action est irréversible, aucune trace ne sera conservée.')) return;
   const it = findCR(crId);
-  const list = (it.piecesJointes||[]).filter(function(p){ return p.id !== pieceId; });
+  const piece = (it.piecesJointes||[]).find(function(p){ return p.id === pieceId; });
   try{
+    if(piece && piece.fileId) await deleteCrFileFromKV(piece.fileId);
+    const list = (it.piecesJointes||[]).filter(function(p){ return p.id !== pieceId; });
     await window.CR_FIREBASE.update(crId, { piecesJointes: list });
-    showToast('Supprimée');
+    showToast('Supprimée définitivement');
     openDrawer(crId);
-  }catch(err){ showToast('Erreur : ' + err.message); }
+  }catch(err){ showToast('Erreur pendant la suppression : ' + err.message); }
 };
 
 function fileSlotHtml(it, id, slot, label){
@@ -761,28 +770,8 @@ window.renderSearchResults = function(){
   }).join('');
 };
 
-// ---- Mot de passe collaborateurs ----
-window.saveCrPassword = async function(){
-  const pwd = document.getElementById('crNewPassword').value.trim();
-  if(!pwd || pwd.length < 6){ showToast('6 caractères minimum.'); return; }
-  try{
-    const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(pwd));
-    const hash = Array.from(new Uint8Array(buf)).map(function(b){ return b.toString(16).padStart(2,'0'); }).join('');
-    await window.CR_FIREBASE.setPasswordHash(hash);
-    document.getElementById('crNewPassword').value = '';
-    showToast('Mot de passe enregistré ✓');
-    refreshCrPasswordStatus();
-  }catch(err){ showToast('Erreur : ' + err.message); }
-};
-async function refreshCrPasswordStatus(){
-  const el = document.getElementById('crPasswordStatus');
-  if(!el) return;
-  try{
-    const has = await window.CR_FIREBASE.hasPasswordHash();
-    el.textContent = has ? '✓ Un mot de passe est actuellement configuré.' : '⚠️ Aucun mot de passe configuré — les collaborateurs n\'ont pas encore accès aux CR.';
-    el.style.color = has ? 'var(--teal-dark)' : 'var(--danger)';
-  }catch(e){ el.textContent = ''; }
-}
+// Note : la gestion du mot de passe collaborateurs (config/cr_password_hash) a été déplacée
+// dans administration.html > "Comptes autorisés & administrateurs" > onglet "Accès CR réunion".
 
 window.showInfoModal = function(title, body){
   alert(title + '\n\n' + body.replace(/<[^>]+>/g, ''));
@@ -878,9 +867,25 @@ window.saveSection = async function(crId, sectionNum){
   openDrawer(crId);
 };
 window.deleteCR = async function(crId){
-  if(!confirm('Supprimer définitivement ce compte-rendu ?')) return;
-  try{ await window.CR_FIREBASE.remove(crId); closeDrawer(); showToast('Compte-rendu supprimé'); }
-  catch(err){ showToast('Erreur : ' + err.message); }
+  const it = findCR(crId);
+  const nbFichiers = (it && it.fichierConfidentiel ? 1 : 0) + (it && it.fichierNonConfidentiel ? 1 : 0) + (it && it.piecesJointes ? it.piecesJointes.length : 0);
+  const avertissement = nbFichiers
+    ? ('Supprimer définitivement ce compte-rendu ET ses ' + nbFichiers + ' fichier(s)/pièce(s) jointe(s) associé(s) ? Cette action est irréversible, aucune trace ne sera conservée.')
+    : 'Supprimer définitivement ce compte-rendu ?';
+  if(!confirm(avertissement)) return;
+  try{
+    showToast('Suppression en cours…');
+    if(it){
+      const fileIds = [];
+      if(it.fichierConfidentiel && it.fichierConfidentiel.fileId) fileIds.push(it.fichierConfidentiel.fileId);
+      if(it.fichierNonConfidentiel && it.fichierNonConfidentiel.fileId) fileIds.push(it.fichierNonConfidentiel.fileId);
+      (it.piecesJointes||[]).forEach(function(p){ if(p.fileId) fileIds.push(p.fileId); });
+      for(const fid of fileIds){ await deleteCrFileFromKV(fid); }
+    }
+    await window.CR_FIREBASE.remove(crId);
+    closeDrawer();
+    showToast('Compte-rendu et fichiers associés supprimés définitivement');
+  }catch(err){ showToast('Erreur pendant la suppression : ' + err.message + ' — le CR n\'a pas été supprimé, réessaie.'); }
 };
 
 // ---- Prompt IA ----
@@ -1006,7 +1011,6 @@ window.openAdminModal = function(){
   renderAdminSections();
   document.getElementById('adminPromptText').value = window._adminDraft.aiPromptTemplate;
   document.getElementById('adminModal').classList.add('show');
-  refreshCrPasswordStatus();
 };
 window.switchAdminTab = function(tab){
   document.querySelectorAll('.admin-tab').forEach(function(b){ b.classList.toggle('active', b.dataset.tab === tab); });
