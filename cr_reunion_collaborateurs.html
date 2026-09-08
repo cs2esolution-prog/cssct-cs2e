@@ -3,10 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Comptes-rendus CSE . CSSCT</title>
+<title>Suivre ma demande . CSSCT</title>
 <link rel="icon" href="icon-192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,500;8..60,600;8..60,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,500;8..60,600;8..60,700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
 <style>
   :root{
     --teal:#019682; --teal-dark:#017162; --purple:#5A4570; --gold:#C6AB76;
@@ -14,355 +14,219 @@
   }
   *{box-sizing:border-box;}
   body{margin:0; background:var(--paper); color:var(--ink); font-family:'Inter',system-ui,sans-serif; line-height:1.5;}
-  .wrap{max-width:760px; margin:0 auto; padding:32px 20px 80px;}
+  .wrap{max-width:600px; margin:0 auto; padding:32px 20px 80px;}
   .brand{display:flex; align-items:center; gap:12px; padding-bottom:20px; border-bottom:2px solid var(--ink); margin-bottom:24px;}
   .brand-mark{width:38px; height:38px; border-radius:50%;
     background:conic-gradient(var(--teal) 0deg 120deg, var(--gold) 120deg 240deg, var(--purple) 240deg 360deg); flex:none;}
   .brand-text{font-family:'Source Serif 4', serif; font-weight:700; font-size:19px;}
   .brand-text span{color:var(--teal);}
+  .back-link{margin-left:auto; font-size:12px; font-weight:600; color:var(--ink-soft); text-decoration:none; border:1px solid var(--line); padding:6px 12px; border-radius:20px;}
+  .back-link:hover{border-color:var(--teal); color:var(--teal-dark);}
 
-  h1{font-family:'Source Serif 4',serif; font-size:20px; margin:0 0 4px;}
-  .subtitle{font-size:12.5px; color:var(--ink-soft); margin:0 0 20px;}
+  h1{font-family:'Source Serif 4',serif; font-size:19px; margin:0 0 6px;}
+  .subtitle{font-size:13px; color:var(--ink-soft); margin:0 0 24px;}
 
-  #gate{display:flex; align-items:center; justify-content:center; min-height:60vh;}
-  #gateBox{background:#fff; border:1px solid var(--line); border-radius:16px; padding:32px; max-width:360px; width:100%; text-align:center;}
-  #gateBox input{width:100%; padding:11px 14px; border:1px solid var(--line); border-radius:20px; font-size:14px; margin:14px 0 10px; text-align:center;}
-  #gateBox button{width:100%; background:var(--ink); color:#fff; border:none; padding:11px; border-radius:20px; font-weight:600; cursor:pointer; font-size:13.5px;}
-  #gateMsg{font-size:12px; color:var(--danger); min-height:16px; margin-top:8px;}
+  .field{margin-bottom:14px;}
+  .field label{display:block; font-size:12.5px; font-weight:600; margin-bottom:5px;}
+  input, textarea{width:100%; font-family:'Inter',sans-serif; font-size:14px; padding:10px 12px; border:1px solid var(--line); border-radius:8px; background:#fff;}
+  input#codeInput{font-family:'IBM Plex Mono',monospace; letter-spacing:.03em; text-transform:uppercase;}
+  textarea{min-height:80px; resize:vertical;}
 
-  #app{display:none;}
-  #crSearchInput{width:100%; padding:11px 16px; border:1px solid var(--line); border-radius:22px; font-size:13.5px; margin-bottom:16px;}
+  button[type="submit"], .action-btn{width:100%; background:var(--ink); color:#fff; border:none; padding:14px; border-radius:24px; font-weight:600; font-size:14.5px; cursor:pointer; margin-top:10px;}
+  button:disabled{opacity:.5;}
+  .error-msg{color:var(--danger); font-size:12.5px; margin-top:10px; text-align:center;}
 
-  .cr-card{background:#fff; border:1px solid var(--line); border-left:4px solid var(--teal); border-radius:var(--radius); padding:16px 18px; margin-bottom:12px;}
-  .cr-card .cr-titre{font-weight:700; font-size:14.5px;}
-  .cr-card .cr-date{font-size:11.5px; color:var(--ink-soft); margin-top:2px; margin-bottom:10px;}
-  .cr-card .cr-top{display:flex; justify-content:space-between; align-items:flex-start; gap:10px;}
-  .cr-top-badges{display:flex; align-items:center; gap:6px; flex-shrink:0;}
-  .cat-badge{display:inline-block; padding:4px 10px; border-radius:12px; font-size:10.5px; font-weight:700; white-space:nowrap; flex-shrink:0;}
-  .new-badge{display:inline-block; padding:4px 10px; border-radius:12px; font-size:10.5px; font-weight:700; white-space:nowrap; flex-shrink:0; background:#FDECEA; color:#B23B3B;}
-  .cr-files{display:flex; flex-direction:column; gap:6px;}
-  .cr-file-row{display:flex; align-items:center; justify-content:space-between; gap:10px; background:var(--paper); border:1px solid var(--line); border-radius:8px; padding:8px 12px;}
-  .cr-file-row .fname{font-size:12.5px; font-weight:600;}
-  .cr-file-row .ftype{font-size:10.5px; color:var(--ink-soft); text-transform:uppercase; letter-spacing:.04em;}
-  .cr-file-row button, .cr-file-row a{background:none; border:1px solid var(--line); color:var(--ink); font-size:12px; font-weight:600; padding:6px 12px; border-radius:16px; cursor:pointer; text-decoration:none; white-space:nowrap;}
-  .cr-file-row button:hover, .cr-file-row a:hover{border-color:var(--teal); color:var(--teal-dark);}
+  .card{background:#fff; border:1px solid var(--line); border-left:4px solid var(--teal); border-radius:var(--radius); padding:22px; margin-bottom:16px;}
+  .card .k-title{font-family:'Source Serif 4',serif; font-size:16px; margin:0 0 4px;}
+  .card .k-meta{font-size:12px; color:var(--ink-soft); margin-bottom:14px;}
+  .statut-badge{display:inline-block; font-size:11.5px; font-weight:700; padding:4px 11px; border-radius:14px; background:#F2FBF9; color:var(--teal-dark); border:1px solid #BFE6DE;}
+  .k-row{margin-bottom:10px;}
+  .k-row .k-label{font-size:10.5px; text-transform:uppercase; letter-spacing:.06em; color:var(--ink-soft); margin-bottom:2px;}
+  .k-row .k-val{font-size:13.5px; white-space:pre-wrap;}
 
-  .search-results{display:flex; flex-direction:column; gap:8px; margin-bottom:20px;}
-  .sr-group{background:#fff; border:1px solid var(--line); border-radius:10px; overflow:hidden;}
-  .sr-group-head{display:flex; align-items:center; justify-content:space-between; gap:10px; padding:12px 14px; cursor:pointer;}
-  .sr-group-head:hover{background:var(--paper);}
-  .sr-count{font-size:11px; color:var(--ink-soft); background:var(--paper); border-radius:10px; padding:3px 9px; white-space:nowrap;}
-  .sr-chevron{font-size:11px; color:var(--ink-soft); flex-shrink:0; margin-left:4px;}
-  .sr-group-body{display:flex; flex-direction:column; gap:8px; padding:0 14px 12px;}
-  .sr-card{background:#fff; border:1px solid var(--line); border-radius:10px; padding:12px 14px;}
-  .sr-head{display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap; align-items:flex-start;}
-  .sr-ctx{font-size:12px; background:#FBFAF7; border:1px solid var(--line); border-radius:6px; padding:8px 10px; margin-top:8px; line-height:1.5;}
-  .sr-ctx mark{background:#FCEFC7;}
+  .histo{margin-top:16px;}
+  .histo-item{border-top:1px solid var(--line); padding:10px 0; font-size:12.5px;}
+  .histo-item .h-date{color:var(--ink-soft); font-size:11px; margin-bottom:2px;}
+  .histo-item .h-tag{display:inline-block; font-size:10px; font-weight:700; padding:1px 8px; border-radius:10px; margin-left:6px; background:#F3EFF6; color:var(--purple);}
 
-  .empty-note{font-size:13px; color:var(--ink-soft); text-align:center; padding:30px 10px;}
-  .back-link{display:inline-block; margin-top:24px; font-size:12px; color:var(--ink-soft); text-decoration:none;}
+  .toast{font-size:12.5px; color:var(--teal-dark); margin-top:8px; text-align:center; display:none;}
 </style>
 </head>
 <body>
-
-<div id="gate">
-  <div id="gateBox">
-    <div class="brand" style="border:none; padding:0; margin:0 0 6px; justify-content:center;">
-      <div class="brand-mark" id="brandMark"></div>
-      <div class="brand-text">CS<span>2E</span> · CSSCT</div>
-    </div>
-    <p style="font-size:13px;color:var(--ink-soft);margin:10px 0 0;">Comptes-rendus de réunion du CSE mis à disposition par vos représentants.</p>
-    <input type="password" id="gatePassword" placeholder="Mot de passe">
-    <button onclick="checkPassword()">Accéder</button>
-    <div id="gateMsg"></div>
+<div class="wrap">
+  <div class="brand">
+    <div class="brand-mark" id="brandMark"></div>
+    <div class="brand-text">CS<span>2E</span> · CSSCT</div>
+    <a class="back-link" href="portail.html">← Portail</a>
   </div>
+
+  <div id="searchZone">
+    <h1>Suivre ma demande</h1>
+    <p class="subtitle">Retrouve ta demande (signalement ou expression de besoin) grâce au code de suivi qui t'a été communiqué à l'envoi.</p>
+
+    <form id="searchForm">
+      <div class="field">
+        <label>Code de suivi</label>
+        <input type="text" id="codeInput" required placeholder="XXXX-XXXX-XX">
+      </div>
+      <button type="submit" id="searchBtn">Rechercher</button>
+      <div class="error-msg" id="searchError"></div>
+    </form>
+  </div>
+
+  <div id="resultZone" style="display:none;"></div>
 </div>
 
-<div id="app">
-  <div class="wrap">
-    <div class="brand">
-      <div class="brand-mark" id="brandMark2"></div>
-      <div class="brand-text">CS<span>2E</span> · CSSCT</div>
-    </div>
-    <h1>Comptes-rendus de réunion du CSE</h1>
-    <p class="subtitle">Documents mis à disposition par vos représentants du personnel — triés du plus récent au plus ancien.</p>
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js";
+  import { getFirestore, collection, doc, getDoc, updateDoc, arrayUnion } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
 
-    <input type="text" id="crSearchInput" oninput="renderSearch()" placeholder="🔎 Rechercher un mot dans les comptes-rendus…">
-    <div id="searchResults" class="search-results" style="display:none;"></div>
+ const firebaseConfig = {
+  apiKey: "AIzaSyACY8fyy8Rd9NyLJ855xsDyknuUMV-pAag",
+  authDomain: "cssct-cs2e-c655b.firebaseapp.com",
+  projectId: "cssct-cs2e-c655b",
+  storageBucket: "cssct-cs2e-c655b.firebasestorage.app",
+  messagingSenderId: "277603883255",
+  appId: "1:277603883255:web:b3b7a5c3097a60caac1bf2"
+};
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+  const signalementsCol = collection(db, "signalements");
+  const besoinsCol = collection(db, "expressions_besoin");
 
-    <div id="catFilterWrap" style="display:none;margin:12px 0;align-items:center;gap:8px;">
-      <label for="crCategorieFilter" style="font-size:12px;color:var(--ink-soft);white-space:nowrap;">Catégorie :</label>
-      <select id="crCategorieFilter" onchange="renderListe()" style="padding:8px 12px;border:1px solid var(--line);border-radius:20px;font-size:13px;">
-        <option value="">Toutes</option>
-      </select>
-    </div>
+  getDoc(doc(db, 'config', 'branding')).then((snap) => {
+    const data = snap.exists() ? snap.data() : {};
+    if(!data.logoBase64) return;
+    document.querySelectorAll('.brand-mark').forEach(function(el){
+      el.style.background = 'none';
+      el.innerHTML = '<img src="data:image/png;base64,' + data.logoBase64 + '" alt="Logo" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">';
+    });
+  }).catch(() => {});
 
-    <div id="listeCR"><p class="empty-note">Chargement…</p></div>
-
-    <a class="back-link" href="portail.html">‹ Retour au portail</a>
-  </div>
-</div>
-
-<script>
-  const TOKEN_KEY = 'cr_collab_token';
-  const SEEN_KEY = 'cr_collab_vus';
-  let CRS = [];
-
-  // Suivi "déjà consulté" local au navigateur (pas de compte individuel collaborateur —
-  // voir claude/backlog-technique.md). Limite assumée : propre à cet appareil/navigateur,
-  // remis à zéro si le collaborateur change de PC ou vide ses données de navigation.
-  function getSeenSet(){
-    try{ return new Set(JSON.parse(localStorage.getItem(SEEN_KEY) || '[]')); }
-    catch(e){ return new Set(); }
-  }
-  function saveSeenSet(set){
-    try{ localStorage.setItem(SEEN_KEY, JSON.stringify(Array.from(set))); }
-    catch(e){ /* stockage indisponible, tant pis pour la persistance */ }
-  }
-  let SEEN = getSeenSet();
-  function fileKey(f){ return f.fileId || f.id || f.url || ''; }
-  window.markFileSeen = function(key){
-    if(!key || SEEN.has(key)) return;
-    SEEN.add(key);
-    saveSeenSet(SEEN);
-    renderListe();
-  };
-  function crEstNouveau(cr){ return (cr.fichiers||[]).some(function(f){ return !SEEN.has(fileKey(f)); }); }
+  let DESTINATAIRES_SIGNALEMENT = [];
+  let DESTINATAIRES_BESOIN = [];
+  getDoc(doc(db, 'config', 'notifications_signalement')).then((snap) => {
+    const data = snap.exists() ? snap.data() : {};
+    if(Array.isArray(data.list)) DESTINATAIRES_SIGNALEMENT = data.list.slice();
+  }).catch(() => {});
+  getDoc(doc(db, 'config', 'notifications_besoin')).then((snap) => {
+    const data = snap.exists() ? snap.data() : {};
+    if(Array.isArray(data.list)) DESTINATAIRES_BESOIN = data.list.slice();
+  }).catch(() => {});
 
   function esc(s){ return (s==null?'':String(s)).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
-
-  function decodeTokenExp(token){
-    try{
-      const part = token.split('.')[0].replace(/-/g,'+').replace(/_/g,'/');
-      const pad = part + '='.repeat((4 - part.length % 4) % 4);
-      const payload = JSON.parse(atob(pad));
-      return payload.exp || 0;
-    }catch(e){ return 0; }
+  function toFR(iso){
+    if(!iso) return '';
+    const parts = String(iso).split('-');
+    if(parts.length !== 3) return iso;
+    return parts[2] + '/' + parts[1] + '/' + parts[0];
   }
 
-  function getStoredToken(){
-    const t = localStorage.getItem(TOKEN_KEY);
-    if(!t) return null;
-    if(decodeTokenExp(t) < Math.floor(Date.now()/1000)) { localStorage.removeItem(TOKEN_KEY); return null; }
-    return t;
+  let currentKind = null; // 'signalement' | 'besoin'
+  let currentCode = null;
+
+  function renderHistorique(list, containerEl){
+    const arr = (list||[]).slice().sort(function(a,b){ return (a.date||'').localeCompare(b.date||''); });
+    if(!arr.length){ containerEl.innerHTML = '<div class="histo-item" style="border-top:none;color:var(--ink-soft);">Aucun échange enregistré pour l\'instant.</div>'; return; }
+    containerEl.innerHTML = arr.map(function(h){
+      const tag = h.auteur === 'salarie' ? '<span class="h-tag">Toi</span>' : (h.auteur ? '<span class="h-tag" style="background:#F2FBF9;color:var(--teal-dark);">CSSCT</span>' : '');
+      return '<div class="histo-item"><div class="h-date">' + toFR(h.date) + tag + '</div><div>' + esc(h.text) + '</div></div>';
+    }).join('');
   }
 
-  window.checkPassword = async function(){
-    const pwd = document.getElementById('gatePassword').value;
-    const msg = document.getElementById('gateMsg');
-    msg.textContent = '';
-    if(!pwd){ msg.textContent = 'Merci de saisir le mot de passe.'; return; }
-    try{
-      const resp = await fetch('/api/cr-password-check', {
-        method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ password: pwd })
-      });
-      const data = await resp.json();
-      if(!resp.ok){ msg.textContent = data.error || 'Erreur de connexion.'; return; }
-      localStorage.setItem(TOKEN_KEY, data.token);
-      unlockApp();
-    }catch(err){ msg.textContent = 'Erreur : ' + err.message; }
-  };
+  function renderResult(kind, code, data){
+    currentKind = kind; currentCode = code;
+    const zone = document.getElementById('resultZone');
+    document.getElementById('searchZone').style.display = 'none';
+    zone.style.display = 'block';
 
-  async function unlockApp(){
-    document.getElementById('gate').style.display = 'none';
-    document.getElementById('app').style.display = 'block';
-    await chargerListe();
-  }
-
-  async function chargerListe(){
-    const token = getStoredToken();
-    const listeEl = document.getElementById('listeCR');
-    try{
-      const resp = await fetch('/api/cr-liste-publique?session=' + encodeURIComponent(token));
-      const data = await resp.json();
-      if(!resp.ok){
-        localStorage.removeItem(TOKEN_KEY);
-        document.getElementById('app').style.display = 'none';
-        document.getElementById('gate').style.display = 'flex';
-        document.getElementById('gateMsg').textContent = 'Session expirée, merci de ressaisir le mot de passe.';
-        return;
-      }
-      CRS = data.crs || [];
-      renderListe();
-    }catch(err){
-      listeEl.innerHTML = '<p class="empty-note">Erreur de chargement : ' + esc(err.message) + '</p>';
-    }
-  }
-
-  function fileIcon(type){
-    if(type === 'confidentiel' || type === 'non-confidentiel') return '📄';
-    if(type === 'ppt') return '📊';
-    if(type === 'image') return '🖼️';
-    if(type === 'url') return '🔗';
-    return '📎';
-  }
-
-  const CAT_BADGE_PALETTE = [
-    { bg:'#E4F3EF', fg:'#017162' },
-    { bg:'#F3E9D9', fg:'#8A6A2F' },
-    { bg:'#EFE6F2', fg:'#5A4570' },
-    { bg:'#E6EEF7', fg:'#2F5A8A' },
-    { bg:'#F7E6EF', fg:'#8A3F63' },
-    { bg:'#F0EDE4', fg:'#6B6873' }
-  ];
-  function catColor(cat){
-    let hash = 0;
-    const s = String(cat || '');
-    for(let i = 0; i < s.length; i++){ hash = (hash * 31 + s.charCodeAt(i)) >>> 0; }
-    return CAT_BADGE_PALETTE[hash % CAT_BADGE_PALETTE.length];
-  }
-  function catBadgeHtml(cat){
-    if(!cat) return '';
-    const col = catColor(cat);
-    return '<span class="cat-badge" style="background:' + col.bg + ';color:' + col.fg + ';">' + esc(cat) + '</span>';
-  }
-
-  function fileRowHtml(crId, f){
-    const label = (f.kind === 'confidentiel' || f.kind === 'non-confidentiel') ? (f.nomFichier || 'Compte-rendu') : (f.nom || f.nomFichier || 'Pièce jointe');
-    const key = fileKey(f);
-    const keyJs = esc(key).replace(/'/g,"\\'");
-    const openBtn = f.kind === 'piece-jointe' && f.url
-      ? '<a href="' + esc(f.url) + '" target="_blank" rel="noopener" onclick="markFileSeen(\'' + keyJs + '\')">Ouvrir ↗</a>'
-      : '<button onclick="openFile(\'' + esc(f.fileId) + '\',\'' + esc(label).replace(/'/g,"\\'") + '\',\'' + keyJs + '\')">Ouvrir</button>';
-    return '<div class="cr-file-row"><div><div class="fname">' + fileIcon(f.kind) + ' ' + esc(label) + '</div><div class="ftype">' + esc(f.type||f.kind) + '</div></div>' + openBtn + '</div>';
-  }
-
-  function renderListe(){
-    const el = document.getElementById('listeCR');
-    if(!CRS.length){ el.innerHTML = '<p class="empty-note">Aucun compte-rendu n\'est pour le moment mis à disposition.</p>'; return; }
-
-    const filterWrap = document.getElementById('catFilterWrap');
-    const filterSel = document.getElementById('crCategorieFilter');
-    const cats = Array.from(new Set(CRS.map(function(cr){ return cr.categorie; }).filter(function(c){ return c; })));
-    if(cats.length){
-      filterWrap.style.display = 'flex';
-      if(!filterSel.dataset.filled){
-        filterSel.innerHTML = '<option value="">Toutes</option>' + cats.map(function(c){ return '<option value="' + esc(c).replace(/"/g,'&quot;') + '">' + esc(c) + '</option>'; }).join('');
-        filterSel.dataset.filled = '1';
-      }
+    let titleHtml, metaHtml, rowsHtml, histoField, histoData;
+    if(kind === 'signalement'){
+      titleHtml = esc(data.objet || 'Dossier de signalement');
+      metaHtml = 'N° ' + esc(data.numero) + ' — ' + toFR(data.date || (data.createdAt||'').slice(0,10));
+      rowsHtml =
+        '<div class="k-row"><div class="k-label">Nature</div><div class="k-val">' + esc(data.natureIncident||'—') + '</div></div>' +
+        '<div class="k-row"><div class="k-label">Description</div><div class="k-val">' + esc(data.description||'—') + '</div></div>';
+      histoField = 'echanges';
+      histoData = data.echanges;
     } else {
-      filterWrap.style.display = 'none';
+      titleHtml = esc(data.theme || 'Expression de besoin');
+      metaHtml = toFR((data.createdAt||'').slice(0,10));
+      rowsHtml =
+        '<div class="k-row"><div class="k-label">Description</div><div class="k-val">' + esc(data.description||'—') + '</div></div>' +
+        '<div class="k-row"><div class="k-label">Impact</div><div class="k-val">' + esc(data.impact||'—') + '</div></div>';
+      histoField = 'historique';
+      histoData = data.historique;
     }
-    const filtreCat = filterSel.value;
-    let items = CRS.slice();
-    if(filtreCat) items = items.filter(function(cr){ return cr.categorie === filtreCat; });
 
-    if(!items.length){ el.innerHTML = '<p class="empty-note">Aucun compte-rendu pour cette catégorie.</p>'; return; }
-    el.innerHTML = items.map(function(cr){
-      const badges = '<div class="cr-top-badges">' + (crEstNouveau(cr) ? '<span class="new-badge">🆕 Nouveau</span>' : '') + catBadgeHtml(cr.categorie) + '</div>';
-      return '<div class="cr-card"><div class="cr-top"><div><div class="cr-titre">' + esc(cr.titre||'Sans titre') + '</div><div class="cr-date">' + esc(cr.date) + '</div></div>' + badges + '</div>' +
-        '<div class="cr-files">' + cr.fichiers.map(function(f){ return fileRowHtml(cr.id, f); }).join('') + '</div></div>';
-    }).join('');
-  }
-
-  window.openFile = async function(fileId, nom, key){
-    try{
-      const token = getStoredToken();
-      const resp = await fetch('/api/cr-file?fileId=' + encodeURIComponent(fileId) + '&nom=' + encodeURIComponent(nom) + '&session=' + encodeURIComponent(token));
-      if(!resp.ok){ alert("Impossible d'ouvrir ce fichier."); return; }
-      const blob = await resp.blob();
-      const url = URL.createObjectURL(blob);
-      window.open(url, '_blank');
-      if(key) markFileSeen(key);
-    }catch(err){ alert('Erreur : ' + err.message); }
-  };
-
-  function searchAll(query){
-    const q = query.trim().toLowerCase();
-    if(!q) return [];
-    const results = [];
-    CRS.forEach(function(cr){
-      cr.fichiers.forEach(function(f){
-        if(f.pages){
-          f.pages.forEach(function(pg){
-            (pg.lignes||[]).forEach(function(ligne, idx){
-              if(ligne.toLowerCase().indexOf(q) !== -1){
-                results.push({ crId: cr.id, titre: cr.titre, date: cr.date, fileId: f.fileId, nom: f.nomFichier, page: pg.page, key: fileKey(f),
-                  before: pg.lignes.slice(Math.max(0, idx-3), idx), match: ligne, after: pg.lignes.slice(idx+1, idx+4) });
-              }
-            });
-          });
-        } else if(f.texte){
-          const lignes = String(f.texte).split('\n');
-          lignes.forEach(function(ligne, idx){
-            if(ligne.toLowerCase().indexOf(q) !== -1){
-              results.push({ crId: cr.id, titre: cr.titre, date: cr.date, fileId: f.fileId, nom: f.nomFichier, page: null, key: fileKey(f),
-                before: lignes.slice(Math.max(0, idx-3), idx), match: ligne, after: lignes.slice(idx+1, idx+4) });
-            }
-          });
-        }
-      });
-    });
-    results.sort(function(a, b){ return String(b.date||'').localeCompare(String(a.date||'')); });
-    return results;
-  }
-
-  window.renderSearch = function(){
-    const q = document.getElementById('crSearchInput').value;
-    const box = document.getElementById('searchResults');
-    if(!q.trim()){ box.style.display = 'none'; box.innerHTML=''; return; }
-    const results = searchAll(q);
-    box.style.display = 'flex';
-    if(!results.length){ box.innerHTML = '<p class="empty-note">Aucun résultat.</p>'; return; }
-
-    // Regroupement par CR (déjà trié par date décroissante par searchAll)
-    const groups = [];
-    const byId = {};
-    results.slice(0, 200).forEach(function(r){
-      if(!byId[r.crId]){ byId[r.crId] = { crId:r.crId, titre:r.titre, date:r.date, items:[] }; groups.push(byId[r.crId]); }
-      byId[r.crId].items.push(r);
-    });
-
-    box.innerHTML = groups.map(function(g, gi){
-      const gid = 'srg' + gi;
-      const itemsHtml = g.items.map(function(r){
-        const ctx = r.before.map(esc).join('<br>') + (r.before.length?'<br>':'') + '<mark>' + esc(r.match) + '</mark>' + (r.after.length?'<br>':'') + r.after.map(esc).join('<br>');
-        return '<div class="sr-card"><div class="sr-head"><div><div style="font-size:11px;color:var(--ink-soft);">' + (r.page?('page '+r.page+' · '):'') + esc(r.nom) + '</div></div>' +
-          '<button onclick="event.stopPropagation();openFile(\'' + esc(r.fileId) + '\',\'' + esc(r.nom).replace(/'/g,"\\'") + '\',\'' + esc(r.key).replace(/'/g,"\\'") + '\')" style="background:none;border:1px solid var(--line);border-radius:16px;padding:6px 12px;font-size:12px;cursor:pointer;">Ouvrir' + (r.page?(' (p.'+r.page+')'):'') + '</button></div>' +
-          '<div class="sr-ctx">' + ctx + '</div></div>';
-      }).join('');
-      return '<div class="sr-group">' +
-        '<div class="sr-group-head" onclick="toggleSearchGroup(\'' + gid + '\')">' +
-          '<div><strong style="font-size:13px;">' + esc(g.titre) + '</strong><div style="font-size:11px;color:var(--ink-soft);">' + esc(g.date) + '</div></div>' +
-          '<div style="display:flex;align-items:center;">' +
-            '<span class="sr-count">' + g.items.length + ' résultat' + (g.items.length > 1 ? 's' : '') + '</span>' +
-            '<span class="sr-chevron" id="chev-' + gid + '">▸</span>' +
-          '</div>' +
-        '</div>' +
-        '<div class="sr-group-body" id="' + gid + '" style="display:none;">' + itemsHtml + '</div>' +
+    zone.innerHTML =
+      '<div class="card">' +
+        '<div class="k-title">' + titleHtml + '</div>' +
+        '<div class="k-meta">' + metaHtml + '</div>' +
+        '<span class="statut-badge">' + esc(data.statut || 'Statut inconnu') + '</span>' +
+        '<div style="margin-top:16px;">' + rowsHtml + '</div>' +
+        '<div class="histo"><div class="k-row"><div class="k-label">Échanges</div></div><div id="histoList"></div></div>' +
+      '</div>' +
+      '<div class="card">' +
+        '<div class="k-row"><div class="k-label">Ajouter une information complémentaire</div></div>' +
+        '<textarea id="complementText" placeholder="Précision, complément d\'information, nouvelle question…"></textarea>' +
+        '<button class="action-btn" id="complementBtn" type="button">Envoyer ce complément</button>' +
+        '<div class="error-msg" id="complementError"></div>' +
+        '<div class="toast" id="complementToast">✓ Complément envoyé, merci.</div>' +
       '</div>';
-    }).join('');
 
-    if(groups.length) window.toggleSearchGroup('srg0');
-  };
-  window.toggleSearchGroup = function(gid){
-    const body = document.getElementById(gid);
-    const chev = document.getElementById('chev-' + gid);
-    if(!body) return;
-    const isOpen = body.style.display !== 'none';
-    body.style.display = isOpen ? 'none' : 'flex';
-    if(chev) chev.textContent = isOpen ? '▸' : '▾';
-  };
+    renderHistorique(histoData, document.getElementById('histoList'));
 
-  document.getElementById('gatePassword').addEventListener('keydown', function(e){ if(e.key === 'Enter') checkPassword(); });
+    document.getElementById('complementBtn').addEventListener('click', async function(){
+      const btn = this;
+      const errEl = document.getElementById('complementError');
+      const toastEl = document.getElementById('complementToast');
+      errEl.textContent = ''; toastEl.style.display = 'none';
+      const text = document.getElementById('complementText').value.trim();
+      if(!text){ errEl.textContent = 'Écris ton complément avant d\'envoyer.'; return; }
+      btn.disabled = true; btn.textContent = 'Envoi…';
+      try{
+        const entry = { date: new Date().toISOString().slice(0,10), text: text, auteur: 'salarie' };
+        const col = kind === 'signalement' ? signalementsCol : besoinsCol;
+        await updateDoc(doc(col, code), { [histoField]: arrayUnion(entry) });
+        histoData = (histoData||[]).concat([entry]);
+        renderHistorique(histoData, document.getElementById('histoList'));
+        document.getElementById('complementText').value = '';
+        toastEl.style.display = 'block';
+        try{
+          const destinataires = kind === 'signalement' ? DESTINATAIRES_SIGNALEMENT : DESTINATAIRES_BESOIN;
+          await fetch('/api/ajout-complement', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ kind: kind, code: code, numero: data.numero || null, objet: data.objet || data.theme || '', text: text, destinataires: destinataires })
+          });
+        }catch(mailErr){ /* le complément est enregistré même si la notification échoue */ }
+      }catch(err){
+        errEl.textContent = "Erreur : " + err.message;
+      }
+      btn.disabled = false; btn.textContent = 'Envoyer ce complément';
+    });
+  }
 
-  // Logo (facultatif, identique aux autres pages publiques)
-  (async function applyBranding(){
+  document.getElementById('searchForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = document.getElementById('searchBtn');
+    const errEl = document.getElementById('searchError');
+    errEl.textContent = '';
+    const code = document.getElementById('codeInput').value.trim().toUpperCase();
+    if(!code){ errEl.textContent = 'Saisis ton code de suivi.'; return; }
+    btn.disabled = true; btn.textContent = 'Recherche…';
     try{
-      const resp = await fetch('https://firestore.googleapis.com/v1/projects/cssct-cs2e-c655b/databases/(default)/documents/config/branding');
-      if(!resp.ok) return;
-      const data = await resp.json();
-      const b64 = data.fields && data.fields.logoBase64 && data.fields.logoBase64.stringValue;
-      if(!b64) return;
-      document.querySelectorAll('.brand-mark').forEach(function(el){
-        el.style.background = 'none';
-        el.innerHTML = '<img src="data:image/png;base64,' + b64 + '" alt="Logo" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">';
-      });
-    }catch(e){}
-  })();
-
-  const existingToken = getStoredToken();
-  if(existingToken){ unlockApp(); }
+      const snapSig = await getDoc(doc(signalementsCol, code));
+      if(snapSig.exists()){ renderResult('signalement', code, snapSig.data()); return; }
+      const snapBesoin = await getDoc(doc(besoinsCol, code));
+      if(snapBesoin.exists()){ renderResult('besoin', code, snapBesoin.data()); return; }
+      errEl.textContent = "Aucune demande trouvée avec ce code. Vérifie qu'il est correctement recopié.";
+    }catch(err){
+      errEl.textContent = "Erreur : " + err.message;
+    }
+    btn.disabled = false; btn.textContent = 'Rechercher';
+  });
 </script>
 </body>
 </html>
