@@ -84,6 +84,31 @@ function resolveDestinataires(list) {
   return DEFAULT_CSSCT_EMAILS.slice();
 }
 
+// Sécurité : les destinataires et les modèles d'email ne sont plus jamais pris depuis le corps
+// de la requête (n'importe qui pouvait sinon faire envoyer un email à n'importe qui, avec
+// n'importe quel contenu, via Mailjet — cf. audit cybersécurité). On les relit nous-mêmes dans
+// Firestore avec l'accès privilégié du compte de service, déjà utilisé pour les CR. Si ce
+// compte de service n'est pas configuré, on retombe silencieusement sur les valeurs par défaut
+// (l'envoi continue de fonctionner, juste sans personnalisation tant que ce n'est pas en place).
+async function fetchDestinatairesConfig(env, configId) {
+  try {
+    const doc = await firestoreGetDoc(env, 'config/' + configId);
+    return (doc && Array.isArray(doc.list)) ? doc.list : null;
+  } catch (err) {
+    console.error('Lecture config/' + configId + ' impossible (compte de service non configuré ?) : ' + err.message);
+    return null;
+  }
+}
+async function fetchEmailTemplatesConfig(env) {
+  try {
+    const doc = await firestoreGetDoc(env, 'config/email_templates');
+    return doc || {};
+  } catch (err) {
+    console.error('Lecture config/email_templates impossible (compte de service non configuré ?) : ' + err.message);
+    return {};
+  }
+}
+
 async function sendMailjet(env, messages) {
   const mjAuth = btoa(env.MAILJET_API_KEY + ':' + env.MAILJET_API_SECRET);
   const mjResp = await fetch('https://api.mailjet.com/v3.1/send', {
@@ -144,8 +169,9 @@ async function handleCollaborateurSubmission(request, env, ctx) {
     }
 
     const vars = { numero, codeSuivi, rapporteur, site, nature, objet };
-    const tConfirm = pickTemplate(data.templates, 'signalementConfirmation');
-    const tNotif = pickTemplate(data.templates, 'signalementNotifCSSCT');
+    const templatesDoc = await fetchEmailTemplatesConfig(env);
+    const tConfirm = pickTemplate(templatesDoc, 'signalementConfirmation');
+    const tNotif = pickTemplate(templatesDoc, 'signalementNotifCSSCT');
     const collabSubject = fillTemplate(tConfirm.subject, vars);
     const collabBody = fillTemplate(tConfirm.body, vars);
     const cssctSubject = fillTemplate(tNotif.subject, vars);
@@ -153,7 +179,7 @@ async function handleCollaborateurSubmission(request, env, ctx) {
 
     const fromEmail = env.MAILJET_FROM_EMAIL || 'cs2esolution@gmail.com';
     const fromName = env.MAILJET_FROM_NAME || 'CSSCT';
-    const cssctEmails = resolveDestinataires(data.destinataires);
+    const cssctEmails = resolveDestinataires(await fetchDestinatairesConfig(env, 'notifications_signalement'));
 
     const messages = [
       {
@@ -181,7 +207,10 @@ async function handleCollaborateurSubmission(request, env, ctx) {
       return new Response(JSON.stringify({ error: 'Erreur envoi email', detail: errText }), { status: 502, headers: CORS_HEADERS });
     }
 
-    await sendNtfy(env, 'Nouveau signalement ' + numero, rapporteur + ' - ' + site + ' - ' + nature + ' : ' + objet);
+    // Sécurité/confidentialité : le contenu envoyé à ntfy.sh (service tiers, sans contrôle
+    // d'accès fiable sur le nom du topic) reste volontairement générique — jamais le nom du
+    // rapporteur, le site, la nature ou l'objet du signalement, ni le code de suivi.
+    await sendNtfy(env, 'Nouveau signalement CSSCT', 'Un nouveau signalement (n°' + numero + ') a été déposé. Consulte l\'application pour le détail.');
 
     return new Response(JSON.stringify({ ok: true }), { status: 200, headers: CORS_HEADERS });
   } catch (err) {
@@ -212,7 +241,8 @@ async function handleBesoinSubmission(request, env, ctx) {
 
     const fromEmail = env.MAILJET_FROM_EMAIL || 'cs2esolution@gmail.com';
     const fromName = env.MAILJET_FROM_NAME || 'CSSCT';
-    const cssctEmails = resolveDestinataires(data.destinataires);
+    const cssctEmails = resolveDestinataires(await fetchDestinatairesConfig(env, 'notifications_besoin'));
+    const templatesDoc = await fetchEmailTemplatesConfig(env);
 
     const auteurLabel = nomPrenom || 'anonyme';
     const entrepriseLabel = entreprise ? (', ' + entreprise) : '';
@@ -221,7 +251,7 @@ async function handleBesoinSubmission(request, env, ctx) {
     const messages = [];
 
     if (emailContact) {
-      const tConfirm = pickTemplate(data.templates, 'besoinConfirmation');
+      const tConfirm = pickTemplate(templatesDoc, 'besoinConfirmation');
       messages.push({
         From: { Email: fromEmail, Name: fromName },
         To: [{ Email: emailContact }],
@@ -231,7 +261,7 @@ async function handleBesoinSubmission(request, env, ctx) {
     }
 
     if (cssctEmails.length) {
-      const tNotif = pickTemplate(data.templates, 'besoinNotifCSSCT');
+      const tNotif = pickTemplate(templatesDoc, 'besoinNotifCSSCT');
       messages.push({
         From: { Email: fromEmail, Name: fromName },
         To: cssctEmails.map(function(e){ return { Email: e }; }),
@@ -249,7 +279,9 @@ async function handleBesoinSubmission(request, env, ctx) {
       }
     }
 
-    await sendNtfy(env, 'Nouvelle expression de besoin', (nomPrenom || 'Anonyme') + ' - ' + theme + ' : ' + description);
+    // Sécurité/confidentialité : idem, contenu générique envoyé à ntfy.sh (jamais le nom,
+    // le thème ou la description).
+    await sendNtfy(env, 'Nouvelle expression de besoin CSSCT', 'Une nouvelle expression de besoin a été déposée. Consulte l\'application pour le détail.');
 
     return new Response(JSON.stringify({ ok: true }), { status: 200, headers: CORS_HEADERS });
   } catch (err) {
@@ -279,11 +311,16 @@ async function handleComplementSubmission(request, env, ctx) {
 
     const fromEmail = env.MAILJET_FROM_EMAIL || 'cs2esolution@gmail.com';
     const fromName = env.MAILJET_FROM_NAME || 'CSSCT';
-    const cssctEmails = resolveDestinataires(data.destinataires);
+    const cssctEmails = resolveDestinataires(await fetchDestinatairesConfig(env, kind === 'signalement' ? 'notifications_signalement' : 'notifications_besoin'));
 
     const label = kind === 'signalement'
       ? ('dossier de signalement' + (numero ? ' n°' + numero : '') + ' (' + code + ')')
       : ('expression de besoin (' + code + ')');
+    // Version sans le code de suivi, pour la notification ntfy.sh (canal tiers non fiable) :
+    // le code est un jeton d'accès au dossier, il ne doit jamais transiter par ce canal.
+    const labelSansCode = kind === 'signalement'
+      ? ('un dossier de signalement' + (numero ? ' n°' + numero : ''))
+      : ('une expression de besoin');
 
     const cssctBody =
 `Bonjour,
@@ -308,7 +345,9 @@ Ce message a été envoyé automatiquement de l'application CSSCT.`;
       }
     }
 
-    await sendNtfy(env, 'Complément ajouté - ' + code, label + ' : ' + text);
+    // Sécurité/confidentialité : ni le code de suivi (jeton d'accès au dossier), ni le texte
+    // du complément, ne partent vers ntfy.sh.
+    await sendNtfy(env, 'Complément ajouté - CSSCT', 'Un complément a été ajouté sur ' + labelSansCode + '. Consulte l\'application pour le détail.');
 
     return new Response(JSON.stringify({ ok: true }), { status: 200, headers: CORS_HEADERS });
   } catch (err) {
