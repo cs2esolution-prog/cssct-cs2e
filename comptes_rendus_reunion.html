@@ -649,6 +649,82 @@ async function extractWordLines(file){
   }catch(err){ console.error('Extraction Word impossible', err); return null; }
 }
 
+// ============================================================================
+// Pré-remplissage automatique de "Ordre du jour" et "Participants" depuis un
+// PDF/Word uploadé. Best-effort : basé sur le gabarit habituel des PV (page
+// "ORDRE DU JOUR" dédiée + bloc "Étaient présents :"), mais ce gabarit peut
+// varier — si rien n'est détecté avec confiance, on ne renseigne rien plutôt
+// que de risquer un texte faux ou tronqué. Ne remplace jamais un champ déjà
+// renseigné sur la fiche (vérifié à l'appel, dans uploadCrSlot).
+// ============================================================================
+function normalizeForMatch(s){
+  return String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
+}
+function isFooterLine(line){
+  const t = String(line||'').trim();
+  if(!t) return true;
+  if(/^\d{1,4}$/.test(t)) return true; // numéro de page isolé
+  if(/^par teams,/.test(normalizeForMatch(t))) return true; // pied de page horodaté CS2E
+  return false;
+}
+function cleanOdjLine(line){
+  return String(line||'')
+    .replace(/\.{2,}\s*\d+\s*$/, '')  // points de suite + numéro de page
+    .replace(/\s{2,}\d+\s*$/, '')     // ou simple espacement + numéro
+    .trim();
+}
+function extractOdjEtParticipants(fichier){
+  const result = { participants: null, ordreJour: null };
+  try{
+    if(fichier.pages && fichier.pages.length){
+      // PDF : structure par page, on reste cantonné à la page où chaque rubrique démarre
+      fichier.pages.forEach(function(pg){
+        const lignes = pg.lignes || [];
+        if(!result.participants){
+          const idx = lignes.findIndex(function(l){ return /^etaient?\s+present/.test(normalizeForMatch(l)); });
+          if(idx !== -1){
+            const bloc = lignes.slice(idx + 1).filter(function(l){ return !isFooterLine(l); });
+            if(bloc.length) result.participants = bloc.join('\n');
+          }
+        }
+        if(!result.ordreJour){
+          const idx = lignes.findIndex(function(l){ return normalizeForMatch(l) === 'ordre du jour'; });
+          if(idx !== -1){
+            const bloc = lignes.slice(idx + 1).filter(function(l){ return !isFooterLine(l); }).map(cleanOdjLine).filter(Boolean);
+            if(bloc.length) result.ordreJour = bloc.join('\n');
+          }
+        }
+      });
+    } else if(fichier.lignes && fichier.lignes.length){
+      // Word : pas de découpage par page, on s'arrête à la première ligne vide ou à la rubrique suivante
+      const lignes = fichier.lignes;
+      const presentsIdx = lignes.findIndex(function(l){ return /^etaient?\s+present/.test(normalizeForMatch(l)); });
+      if(presentsIdx !== -1){
+        const bloc = [];
+        for(let i = presentsIdx + 1; i < lignes.length; i++){
+          const l = lignes[i];
+          if(!l || !l.trim()) break;
+          if(/^ordre\s+du\s+jour$/i.test(l.trim())) break;
+          bloc.push(l);
+        }
+        if(bloc.length) result.participants = bloc.join('\n');
+      }
+      const odjIdx = lignes.findIndex(function(l){ return normalizeForMatch(l) === 'ordre du jour'; });
+      if(odjIdx !== -1){
+        const bloc = [];
+        for(let i = odjIdx + 1; i < lignes.length; i++){
+          const l = lignes[i];
+          if(!l || !l.trim()) break;
+          const cleaned = cleanOdjLine(l);
+          if(cleaned) bloc.push(cleaned);
+        }
+        if(bloc.length) result.ordreJour = bloc.join('\n');
+      }
+    }
+  }catch(e){ /* extraction best-effort : on ignore silencieusement tout échec */ }
+  return result;
+}
+
 window.uploadCrSlot = async function(crId, slot, inputEl){
   const file = inputEl.files[0];
   inputEl.value = '';
@@ -667,8 +743,17 @@ window.uploadCrSlot = async function(crId, slot, inputEl){
     };
     const field = slot === 'confidentiel' ? 'fichierConfidentiel' : 'fichierNonConfidentiel';
     const fields = {}; fields[field] = fichier;
+
+    // Pré-remplissage automatique de l'ordre du jour et des participants, uniquement si ces
+    // champs sont encore vides sur la fiche — on n'écrase jamais une saisie déjà existante.
+    const it = findCR(crId);
+    const prerempli = [];
+    const extrait = extractOdjEtParticipants(fichier);
+    if(extrait.participants && it && !it.participants){ fields.participants = extrait.participants; prerempli.push('participants'); }
+    if(extrait.ordreJour && it && !it.ordreJour){ fields.ordreJour = extrait.ordreJour; prerempli.push('ordre du jour'); }
+
     await window.CR_FIREBASE.update(crId, fields);
-    showToast('Fichier ajouté ✓');
+    showToast('Fichier ajouté ✓' + (prerempli.length ? (' (' + prerempli.join(' et ') + ' pré-rempli' + (prerempli.length>1?'s':'') + ' depuis le fichier — à vérifier)') : ''));
     openDrawer(crId);
   }catch(err){ showToast('Erreur : ' + err.message); }
 };
