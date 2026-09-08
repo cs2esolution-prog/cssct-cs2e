@@ -3,14 +3,18 @@
   "compatibility_date": "2026-07-28",
   "main": "src/worker.js",
   "keep_vars": true,
+  // Activé pour pouvoir consulter l'historique des requêtes/erreurs du Worker depuis
+  // le tableau de bord Cloudflare (Workers & Pages > le Worker > onglet "Observability"),
+  // sans avoir besoin d'avoir un flux de logs ouvert au moment exact du problème.
+  // Nécessite un redéploiement pour prendre effet (npx wrangler deploy, ou republier le code).
   "observability": {
-    "enabled": false,
+    "enabled": true,
     "head_sampling_rate": 1,
     "logs": {
-      "enabled": false,
+      "enabled": true,
       "head_sampling_rate": 1,
-      "persist": false,
-      "invocation_logs": false
+      "persist": true,
+      "invocation_logs": true
     }
   },
   "assets": {
