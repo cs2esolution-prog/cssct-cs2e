@@ -120,6 +120,12 @@
   .suivi-popover .sp-date{font-family:'IBM Plex Mono',monospace; font-size:10.5px; color:var(--gold); margin-bottom:4px; font-weight:600;}
   .suivi-popover .sp-text{white-space:pre-wrap;}
 
+  .histo-item{border-top:1px solid var(--line); padding:10px 0; font-size:12.5px;}
+  .histo-item:first-child{border-top:none;}
+  .histo-item .h-date{color:var(--ink-soft); font-size:11px; margin-bottom:2px;}
+  .h-tag{display:inline-block; font-size:10px; font-weight:700; padding:1px 8px; border-radius:10px; margin-left:6px; background:#F3EFF6; color:var(--purple);}
+  .h-tag.cssct{background:#F2FBF9; color:var(--teal-dark);}
+
   .incoming-filter-banner{
     display:flex; align-items:center; justify-content:space-between; gap:10px; background:#fff;
     border:1px solid var(--teal); border-left:4px solid var(--teal); border-radius:var(--radius);
@@ -481,6 +487,7 @@
   window.CSSCT_FIREBASE = {
     async updateFields(docId, fields){ await updateDoc(doc(db,'signalements', docId), fields); },
     async addSuiviEntry(docId, entry){ await updateDoc(doc(db,'signalements', docId), { suivi: arrayUnion(entry) }); },
+    async addEchangeEntry(docId, entry){ await updateDoc(doc(db,'signalements', docId), { echanges: arrayUnion(entry) }); },
     async remove(docId){ await deleteDoc(doc(db,'signalements', docId)); }
   };
 
@@ -830,6 +837,58 @@ function sectionCard(title, num, dossierNum, fields){
   return '<div class="dsection" data-section="' + num + '"><h3>' + title + ' <button class="edit-link" onclick="toggleEdit(\'' + dossierNum + '\', ' + num + ')">Modifier</button></h3><div class="section-view">' + rows + '</div></div>';
 }
 
+function renderEchanges(d){
+  const arr = (d.echanges||[]).slice().sort(function(a,b){ return (a.date||'').localeCompare(b.date||''); });
+  if(!arr.length) return '<div style="font-size:12px;color:var(--ink-soft);">Aucun échange avec le salarié pour l\'instant.</div>';
+  return arr.map(function(h){
+    const tag = h.auteur === 'salarie' ? '<span class="h-tag">Salarié</span>' : '<span class="h-tag cssct">CSSCT</span>';
+    return '<div class="histo-item"><div class="h-date">' + toFR(h.date) + tag + '</div><div>' + esc(h.text) + '</div></div>';
+  }).join('');
+}
+
+function addEchangePublic(dossierId){
+  const d = findDossier(dossierId);
+  const text = document.getElementById('newEchangeText').value.trim();
+  if(!text){ showToast("Ecris un texte avant de l'ajouter au retour."); return; }
+  const entry = { date: new Date().toISOString().slice(0,10), text: text, auteur: 'cssct' };
+  window.CSSCT_FIREBASE.addEchangeEntry(d.id, entry).then(function(){
+    d.echanges = (d.echanges||[]).concat([entry]);
+    document.getElementById('echangesBlock').innerHTML = renderEchanges(d);
+    document.getElementById('newEchangeText').value = '';
+    showToast('Retour ajouté ✓ (visible par le salarié)');
+  }).catch(function(err){ showToast('Erreur : ' + err.message); });
+}
+
+function envoyerMailEchange(dossierId){
+  const d = findDossier(dossierId);
+  if(!d) return;
+  const code = d.codeSuivi;
+  if(!d.rapporteurEmail){
+    showToast("Aucun email fourni par le salarié — communique-lui uniquement le code de suivi (" + code + ") par un autre moyen.");
+    return;
+  }
+  const draft = document.getElementById('newEchangeText').value.trim();
+  const subject = 'CSSCT - Votre signalement ' + code;
+  const body =
+    'Bonjour,\n\n' +
+    (draft || ('Suite à votre signalement auprès du CSSCT (code de suivi ' + code + '), nous revenons vers vous :')) +
+    '\n\n' +
+    'Vous pouvez à tout moment suivre l’avancement de votre demande depuis la page "Suivre ma demande" de l’application, en indiquant ce code : ' + code + '.\n\n' +
+    'Cordialement,\n' +
+    'L’équipe CSSCT';
+  const mailto = 'mailto:' + d.rapporteurEmail +
+    '?subject=' + encodeURIComponent(subject) +
+    '&body=' + encodeURIComponent(body);
+  window.location.href = mailto;
+
+  const entry = { date: new Date().toISOString().slice(0,10), text: draft || 'Mail envoyé au salarié ce jour.', auteur: 'cssct' };
+  window.CSSCT_FIREBASE.addEchangeEntry(d.id, entry).then(function(){
+    d.echanges = (d.echanges||[]).concat([entry]);
+    document.getElementById('echangesBlock').innerHTML = renderEchanges(d);
+    document.getElementById('newEchangeText').value = '';
+  }).catch(function(err){ showToast('Erreur lors de la journalisation du retour : ' + err.message); });
+}
+
 function openDrawer(numero){
   const d = findDossier(numero);
   if(!d) return;
@@ -918,6 +977,14 @@ function openDrawer(numero){
       '<div class="add-suivi"><input type="date" id="newSuiviDate">' +
       '<textarea id="newSuiviText" placeholder="Decrire la relance, l\'echange, l\'avancee..."></textarea>' +
       '<button onclick="addSuivi(\'' + d.id + '\')">Ajouter au suivi</button></div></div>' +
+      (d.codeSuivi ? (
+      '<div class="dsection"><h3>Retour au collaborateur <span style="font-size:11px;font-weight:400;color:var(--ink-soft);">(via le code de suivi ' + esc(d.codeSuivi) + ')</span></h3><div id="echangesBlock">' + renderEchanges(d) + '</div>' +
+        '<textarea id="newEchangeText" placeholder="Ajouter un retour visible par le salarié (statut, réponse, précision...)..." style="margin-top:10px;"></textarea>' +
+        '<div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;">' +
+          '<button class="btn" onclick="addEchangePublic(\'' + d.id + '\')">+ Ajouter au retour</button>' +
+          '<button class="btn" style="background:var(--purple);color:#fff;border-color:var(--purple);" onclick="envoyerMailEchange(\'' + d.id + '\')">✉️ Envoyer un mail</button>' +
+        '</div>' +
+      '</div>') : '') +
       '<div class="dsection danger-zone"><h3>Actions sur le dossier</h3><div class="action-row">' +
       '<button class="btn btn-export" onclick="previewReport(\'' + d.id + '\')">🔍 Prévisualiser le rapport</button>' +
       '<button class="btn btn-export" onclick="openMailRelance(\'' + d.id + '\')">✉️ Mail de relance</button>' +
