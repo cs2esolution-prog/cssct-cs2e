@@ -48,6 +48,9 @@
   .row:hover{box-shadow:0 4px 14px rgba(0,0,0,.06);}
   .row .r-title{font-weight:600; font-size:14px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:420px;}
   .row .r-meta{font-size:11.5px; color:var(--ink-soft); margin-top:2px;}
+  .row .r-badges{display:flex; align-items:center; gap:6px; flex-shrink:0;}
+  .cat-badge{display:inline-block; padding:4px 10px; border-radius:12px; font-size:10.5px; font-weight:700; white-space:nowrap;}
+  .acc-badge{display:inline-flex; align-items:center; gap:3px; padding:4px 9px; border-radius:12px; font-size:10.5px; font-weight:600; white-space:nowrap; background:#E4F3EF; color:#017162;}
 
   .drawer-overlay{position:fixed; inset:0; background:rgba(30,28,32,.5); display:none; z-index:150; justify-content:center; align-items:flex-start;}
   .drawer-overlay.show{display:flex;}
@@ -185,12 +188,19 @@
     </div>
   </header>
 
-  <h1>Comptes-rendus de réunion CSSCT</h1>
+  <h1>Comptes-rendus de réunion</h1>
   <p class="subtitle">Ordre du jour, participants, décisions — historique complet du mandat.</p>
 
   <div style="margin-bottom:14px;">
     <input type="text" id="crSearchInput" oninput="renderSearchResults()" placeholder="🔎 Rechercher un mot dans tous les CR (fichiers confidentiels inclus)…" style="width:100%;padding:10px 14px;border:1px solid var(--line);border-radius:20px;font-size:13px;">
     <div id="crSearchResults" style="display:none;flex-direction:column;gap:8px;margin-top:10px;"></div>
+  </div>
+
+  <div style="margin-bottom:14px;display:flex;align-items:center;gap:8px;">
+    <label for="crCategorieFilter" style="font-size:12px;color:var(--ink-soft);white-space:nowrap;">Catégorie :</label>
+    <select id="crCategorieFilter" onchange="window.renderList()" style="padding:8px 12px;border:1px solid var(--line);border-radius:20px;font-size:13px;">
+      <option value="">Toutes</option>
+    </select>
   </div>
 
   <div class="list" id="list"><div style="font-size:13px;color:var(--ink-soft);">Chargement…</div></div>
@@ -213,6 +223,7 @@
     <div class="modal-body">
       <div class="dfield"><label class="dlabel">Titre de la réunion</label><input type="text" id="newTitre" placeholder="Ex : Réunion CSSCT trimestrielle"></div>
       <div class="dfield"><label class="dlabel">Date</label><input type="date" id="newDate"></div>
+      <div class="dfield"><label class="dlabel">Catégorie</label><select id="newCategorie"></select></div>
     </div>
     <div class="modal-actions">
       <button class="ghost" onclick="document.getElementById('newModal').classList.remove('show')">Annuler</button>
@@ -272,12 +283,18 @@
       <p style="font-size:12px;color:var(--ink-soft);margin:0 0 12px;">S'applique à tous les CR, existants et futurs.</p>
       <div class="admin-tabs">
         <button class="admin-tab active" data-tab="sections" onclick="switchAdminTab('sections')">Rubriques complémentaires</button>
+        <button class="admin-tab" data-tab="categories" onclick="switchAdminTab('categories')">Catégories</button>
         <button class="admin-tab" data-tab="prompt" onclick="switchAdminTab('prompt')">Prompt IA</button>
       </div>
       <div class="admin-panel active" id="adminPanelSections">
         <p style="font-size:11.5px;color:var(--ink-soft);">Rubriques narratives libres, en plus de celles déjà prévues (ordre du jour, participants, points abordés, décisions, prochaine échéance).</p>
         <div id="adminSectionsList"></div>
         <button class="add-admin-btn" onclick="adminAddSection()">+ Ajouter une rubrique</button>
+      </div>
+      <div class="admin-panel" id="adminPanelCategories">
+        <p style="font-size:11.5px;color:var(--ink-soft);">Catégories disponibles pour classer chaque réunion (CSSCT, CSE ordinaire, CSE extraordinaire par défaut). Utilisées pour filtrer les listes et affichées en vignette colorée.</p>
+        <div id="adminCategoriesList"></div>
+        <button class="add-admin-btn" onclick="adminAddCategory()">+ Ajouter une catégorie</button>
       </div>
       <div class="admin-panel" id="adminPanelPrompt">
         <p style="font-size:11.5px;color:var(--ink-soft);">Repères disponibles : {{TITRE}}, {{DATE}}, {{PARTICIPANTS}}, {{ORDRE_JOUR}}, {{NOTE_BRUTE}}.</p>
@@ -409,6 +426,7 @@ const CSSCT_LOGO_B64 = "iVBORw0KGgoAAAANSUhEUgAAAOEAAADhCAYAAAA+s9J6AAAAAXNSR0IA
 
 window.DEFAULT_CONFIG = {
   sectionsComplementaires: [],
+  categories: ['CSSCT', 'CSE ordinaire', 'CSE extraordinaire'],
   aiPromptTemplate:
     "Tu es en charge de rediger un compte-rendu de reunion CSSCT (commission sante, securite et conditions de travail) professionnel, clair et bien structure, a partir d'une prise de notes brute ou d'un transcript. " +
     "IMPORTANT sur le format : reponds en texte brut structure (pas de tableau markdown, utilise des listes a tirets). Chaque section DOIT commencer par un titre sur sa propre ligne, ecrit EXACTEMENT ainsi : '## Nom de la section' (deux dieses, un espace, puis le titre). Respecte precisement ce format meme si cela repete la consigne. Exemple :\n## Points abordes\n(texte ici)\n\n## Decisions prises\n(texte ici)\n\n" +
@@ -418,18 +436,62 @@ window.DEFAULT_CONFIG = {
     "Titre : {{TITRE}}\nDate : {{DATE}}\nParticipants : {{PARTICIPANTS}}\nOrdre du jour : {{ORDRE_JOUR}}\n\nPrise de notes brute / transcript :\n{{NOTE_BRUTE}}"
 };
 
-function cfg(){ return window._config || window.DEFAULT_CONFIG; }
+function cfg(){
+  const c = window._config || window.DEFAULT_CONFIG;
+  if(!c.categories || !c.categories.length) c.categories = window.DEFAULT_CONFIG.categories.slice();
+  return c;
+}
+// Palette de couleurs pastel, une par catégorie (hash stable), même principe que l'annuaire CSE.
+const CAT_BADGE_PALETTE = [
+  { bg:'#E4F3EF', fg:'#017162' },
+  { bg:'#F3E9D9', fg:'#8A6A2F' },
+  { bg:'#EFE6F2', fg:'#5A4570' },
+  { bg:'#E6EEF7', fg:'#2F5A8A' },
+  { bg:'#F7E6EF', fg:'#8A3F63' },
+  { bg:'#F0EDE4', fg:'#6B6873' }
+];
+function catColor(cat){
+  let hash = 0;
+  const s = String(cat || '');
+  for(let i = 0; i < s.length; i++){ hash = (hash * 31 + s.charCodeAt(i)) >>> 0; }
+  return CAT_BADGE_PALETTE[hash % CAT_BADGE_PALETTE.length];
+}
+function catBadgeHtml(cat){
+  if(!cat) return '';
+  const col = catColor(cat);
+  return '<span class="cat-badge" style="background:' + col.bg + ';color:' + col.fg + ';">' + esc(cat) + '</span>';
+}
+function crHasAccessible(it){
+  if(it.fichierConfidentiel && it.fichierConfidentiel.accessible) return true;
+  if(it.fichierNonConfidentiel && it.fichierNonConfidentiel.accessible) return true;
+  if((it.piecesJointes||[]).some(function(p){ return p.accessible; })) return true;
+  return false;
+}
+function populateCategorieSelect(sel, current){
+  const cats = cfg().categories || [];
+  sel.innerHTML = cats.map(function(c){ return '<option value="' + esc(c).replace(/"/g,'&quot;') + '">' + esc(c) + '</option>'; }).join('');
+  if(current) sel.value = current;
+}
 
 window.renderList = function(){
   const list = document.getElementById('list');
-  const items = (window._crs||[]).slice().sort(function(a,b){ return (b.date||'').localeCompare(a.date||''); });
+  const filterSel = document.getElementById('crCategorieFilter');
+  if(filterSel && !filterSel.dataset.filled){
+    const cats = cfg().categories || [];
+    filterSel.innerHTML = '<option value="">Toutes</option>' + cats.map(function(c){ return '<option value="' + esc(c).replace(/"/g,'&quot;') + '">' + esc(c) + '</option>'; }).join('');
+    filterSel.dataset.filled = '1';
+  }
+  const filtreCat = filterSel ? filterSel.value : '';
+  let items = (window._crs||[]).slice().sort(function(a,b){ return (b.date||'').localeCompare(a.date||''); });
+  if(filtreCat) items = items.filter(function(it){ return it.categorie === filtreCat; });
   if(!items.length){
-    list.innerHTML = '<div style="font-size:13px;color:var(--ink-soft);">Aucun compte-rendu enregistré. Clique sur "+ Nouveau CR" pour commencer.</div>';
+    list.innerHTML = '<div style="font-size:13px;color:var(--ink-soft);">Aucun compte-rendu enregistré' + (filtreCat ? ' pour cette catégorie' : '') + '. ' + (filtreCat ? '' : 'Clique sur "+ Nouveau CR" pour commencer.') + '</div>';
     return;
   }
   list.innerHTML = items.map(function(it){
     return '<div class="row" onclick="openDrawer(\'' + it.id + '\')">' +
       '<div style="min-width:0;"><div class="r-title">' + esc(it.titre||'Sans titre') + '</div><div class="r-meta">' + esc(it.date) + '</div></div>' +
+      '<div class="r-badges">' + catBadgeHtml(it.categorie) + (crHasAccessible(it) ? '<span class="acc-badge" title="Contenu accessible aux collaborateurs">👁 Accessible</span>' : '') + '</div>' +
     '</div>';
   }).join('');
 };
@@ -437,6 +499,7 @@ window.renderList = function(){
 window.openNewModal = function(){
   document.getElementById('newTitre').value = '';
   document.getElementById('newDate').valueAsDate = new Date();
+  populateCategorieSelect(document.getElementById('newCategorie'), (cfg().categories||[])[0]);
   document.getElementById('newModal').classList.add('show');
 };
 
@@ -458,9 +521,10 @@ window.createCR = async function(){
   const date = document.getElementById('newDate').value;
   if(!titreBrut || !date){ showToast('Titre et date sont obligatoires.'); return; }
   const titre = titreAvecDate(titreBrut, date);
+  const categorie = document.getElementById('newCategorie').value;
   const C = cfg();
   const item = {
-    titre: titre, date: date,
+    titre: titre, date: date, categorie: categorie,
     participants: '', ordreJour: '', priseNoteBrute: '',
     pointsAbordes: '', decisions: '', prochaineEcheance: '',
     estReunionSSCT: false,
@@ -806,6 +870,7 @@ window.openDrawer = function(id){
       sectionCard('Informations générales', 1, id, [
         {id:'titre', label:'Titre de la réunion', value:it.titre},
         {id:'date', label:'Date', value:it.date},
+        {id:'categorie', label:'Catégorie', value:it.categorie},
         {id:'participants', label:'Participants', value:it.participants, info:"Liste des personnes présentes à la réunion (noms, fonctions)."},
         {id:'ordreJour', label:'Ordre du jour', value:it.ordreJour, info:"Les points prévus à l'ordre du jour de la réunion, tels que définis à l'avance."}
       ]) +
@@ -846,7 +911,10 @@ window.toggleEdit = function(crId, sectionNum){
     const label = f.querySelector('.dlabel').childNodes[0].textContent;
     const isBig = id === 'priseNoteBrute';
     const inputType = id === 'date' ? 'date' : null;
-    if(inputType){
+    if(id === 'categorie'){
+      f.innerHTML = '<div class="dlabel">' + label + '</div><select data-edit="categorie"></select>';
+      populateCategorieSelect(f.querySelector('select'), val);
+    } else if(inputType){
       f.innerHTML = '<div class="dlabel">' + label + '</div><input type="' + inputType + '" data-edit="' + id + '" value="' + esc(val) + '">';
     } else {
       f.innerHTML = '<div class="dlabel">' + label + '</div><textarea data-edit="' + id + '" class="' + (isBig?'big':'') + '">' + esc(val) + '</textarea>';
@@ -1008,7 +1076,9 @@ window.integrateOneSection = async function(i){
 // ---- Administration ----
 window.openAdminModal = function(){
   window._adminDraft = JSON.parse(JSON.stringify(cfg()));
+  if(!window._adminDraft.categories || !window._adminDraft.categories.length) window._adminDraft.categories = window.DEFAULT_CONFIG.categories.slice();
   renderAdminSections();
+  renderAdminCategories();
   document.getElementById('adminPromptText').value = window._adminDraft.aiPromptTemplate;
   document.getElementById('adminModal').classList.add('show');
 };
@@ -1024,12 +1094,27 @@ function renderAdminSections(){
 }
 window.adminAddSection = function(){ window._adminDraft.sectionsComplementaires.push('Nouvelle rubrique'); renderAdminSections(); };
 window.adminRemoveSection = function(i){ window._adminDraft.sectionsComplementaires.splice(i,1); renderAdminSections(); };
+function renderAdminCategories(){
+  document.getElementById('adminCategoriesList').innerHTML = window._adminDraft.categories.map(function(s, i){
+    return '<div class="admin-item"><div class="ai-top"><input type="text" value="' + esc(s).replace(/"/g,'&quot;') + '" oninput="window._adminDraft.categories[' + i + '] = this.value" style="margin:0;"><button class="remove-x" onclick="adminRemoveCategory(' + i + ')">✕</button></div></div>';
+  }).join('');
+}
+window.adminAddCategory = function(){ window._adminDraft.categories.push('Nouvelle catégorie'); renderAdminCategories(); };
+window.adminRemoveCategory = function(i){
+  if(window._adminDraft.categories.length <= 1){ showToast('Au moins une catégorie doit être conservée.'); return; }
+  window._adminDraft.categories.splice(i,1); renderAdminCategories();
+};
 window.saveAdminConfig = async function(){
   window._adminDraft.aiPromptTemplate = document.getElementById('adminPromptText').value;
+  window._adminDraft.categories = (window._adminDraft.categories||[]).map(function(c){ return c.trim(); }).filter(function(c){ return c; });
+  if(!window._adminDraft.categories.length) window._adminDraft.categories = window.DEFAULT_CONFIG.categories.slice();
   try{
     await window.CR_FIREBASE.saveConfig(window._adminDraft);
     showToast('Trame enregistrée ✓');
     document.getElementById('adminModal').classList.remove('show');
+    const filterSel = document.getElementById('crCategorieFilter');
+    if(filterSel) delete filterSel.dataset.filled;
+    window.renderList();
     if(window._openDrawerId) openDrawer(window._openDrawerId);
   }catch(err){ showToast('Erreur : ' + err.message); }
 };
