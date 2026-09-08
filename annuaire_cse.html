@@ -37,7 +37,8 @@
 
   .empty-note{font-size:13px; color:var(--ink-soft); text-align:center; padding:30px 10px;}
 
-  .elu-card{display:flex; gap:14px; background:#fff; border:1px solid var(--line); border-radius:var(--radius); padding:16px; margin-bottom:12px;}
+  .elu-card{display:flex; gap:14px; background:#fff; border:1px solid var(--line); border-radius:var(--radius); padding:16px; margin-bottom:12px; cursor:pointer; transition:box-shadow .15s, border-color .15s;}
+  .elu-card:hover{box-shadow:0 4px 16px rgba(0,0,0,.08); border-color:var(--teal);}
   .elu-photo{width:56px; height:56px; border-radius:50%; object-fit:cover; flex:none; background:var(--paper); border:1px solid var(--line);}
   .elu-photo.placeholder{display:flex; align-items:center; justify-content:center; font-size:22px; color:var(--ink-soft);}
   .elu-name{font-family:'Source Serif 4',serif; font-weight:700; font-size:15.5px; margin-bottom:2px;}
@@ -84,6 +85,28 @@
 
   .footer-note{font-size:11.5px; color:var(--ink-soft); text-align:center; margin-top:24px;}
 
+  .elu-detail-overlay{position:fixed; inset:0; background:rgba(30,28,32,.7); display:none; align-items:center; justify-content:center; z-index:150; padding:20px;}
+  .elu-detail-overlay.show{display:flex;}
+  .elu-detail-modal{background:#fff; border-radius:16px; max-width:480px; width:100%; max-height:85vh; overflow-y:auto; box-shadow:0 20px 60px rgba(0,0,0,.35);}
+  .elu-detail-head{padding:24px 20px 0; text-align:center; position:relative;}
+  .elu-detail-close{position:absolute; top:14px; right:14px; background:var(--paper); border:none; width:32px; height:32px; border-radius:50%; font-size:18px; cursor:pointer; color:var(--ink-soft);}
+  .elu-detail-photo{width:120px; height:120px; border-radius:50%; object-fit:cover; margin:0 auto 12px; display:block; border:3px solid #fff; box-shadow:0 2px 10px rgba(0,0,0,.15); background:var(--paper);}
+  .elu-detail-photo.placeholder{display:flex; align-items:center; justify-content:center; font-size:46px; color:var(--ink-soft);}
+  .elu-detail-name{font-family:'Source Serif 4',serif; font-weight:700; font-size:19px; margin-bottom:2px;}
+  .elu-detail-sub{font-size:13px; color:var(--ink-soft); margin-bottom:14px;}
+  .elu-detail-body{padding:4px 20px 24px;}
+  .elu-detail-fonctions{display:flex; flex-wrap:wrap; gap:6px; justify-content:center; margin-bottom:14px;}
+  .elu-detail-msg{font-size:13px; line-height:1.6; background:var(--paper); border-radius:10px; padding:12px 14px; margin-bottom:16px;}
+  .elu-detail-emails{display:flex; flex-wrap:wrap; gap:8px; justify-content:center; margin-bottom:16px;}
+  .section-title{font-size:11px; text-transform:uppercase; letter-spacing:.05em; color:var(--ink-soft); margin:0 0 6px;}
+  .role-mission{display:flex; gap:12px; padding:12px 0; border-top:1px solid var(--line);}
+  .role-mission:first-of-type{border-top:none; padding-top:0;}
+  .role-mission-icon{width:40px; height:40px; border-radius:50%; object-fit:cover; flex:none; background:var(--paper); border:1px solid var(--line);}
+  .role-mission-icon.placeholder{display:flex; align-items:center; justify-content:center; font-size:17px; color:var(--ink-soft);}
+  .role-mission-name{font-weight:700; font-size:13.5px; margin-bottom:3px;}
+  .role-mission-desc{font-size:12px; color:var(--ink); line-height:1.5;}
+  .no-info-note{color:var(--ink-soft); font-size:13px; text-align:center; margin:0;}
+
   .zoom-overlay{position:fixed; inset:0; background:rgba(30,28,32,.85); display:none; align-items:center; justify-content:center; z-index:200; padding:24px;}
   .zoom-overlay.show{display:flex;}
   .zoom-overlay img{max-width:100%; max-height:85vh; border-radius:10px;}
@@ -122,6 +145,18 @@
 <div class="zoom-overlay" id="zoomOverlay" onclick="closePhotoZoom()">
   <button class="zoom-close" onclick="closePhotoZoom(); event.stopPropagation();">×</button>
   <img id="zoomImg" src="" alt="Photo du local">
+</div>
+
+<div class="elu-detail-overlay" id="eluDetailOverlay" onclick="if(event.target===this) closeEluDetail();">
+  <div class="elu-detail-modal">
+    <div class="elu-detail-head">
+      <button class="elu-detail-close" onclick="closeEluDetail()">×</button>
+      <div id="eluDetailPhotoWrap"></div>
+      <div class="elu-detail-name" id="eluDetailName"></div>
+      <div class="elu-detail-sub" id="eluDetailSub"></div>
+    </div>
+    <div class="elu-detail-body" id="eluDetailBody"></div>
+  </div>
 </div>
 
 <script type="module">
@@ -189,7 +224,7 @@
     const r = ROLES.find(function(x){ return x.id === fid; });
     if(!r) return '';
     const col = roleColor(fid);
-    return '<button type="button" class="role-badge" style="background:' + col.bg + ';color:' + col.fg + ';" onclick="goToRole(\'' + fid + '\')"><span class="role-badge-dot"></span>' + esc(r.nom) + '</button>';
+    return '<button type="button" class="role-badge" style="background:' + col.bg + ';color:' + col.fg + ';" onclick="event.stopPropagation();goToRole(\'' + fid + '\')"><span class="role-badge-dot"></span>' + esc(r.nom) + '</button>';
   }
   // Petite rangée d'insignes/macarons (image officielle du rôle), séparée des pastilles colorées :
   // uniquement pour les rôles qui ont une image, invisible sinon (ex : Secrétaire, Trésorier n'en ont pas).
@@ -197,7 +232,7 @@
     const html = sortedFonctionIds(el.fonctions).map(function(fid){
       const r = ROLES.find(function(x){ return x.id === fid; });
       if(!r || !r.imageBase64) return '';
-      return '<img class="elu-insigne" src="' + r.imageBase64 + '" alt="" title="' + esc(r.nom) + '" onclick="goToRole(\'' + fid + '\')">';
+      return '<img class="elu-insigne" src="' + r.imageBase64 + '" alt="" title="' + esc(r.nom) + '" onclick="event.stopPropagation();goToRole(\'' + fid + '\')">';
     }).filter(Boolean).join('');
     return html ? '<div class="elu-insignes">' + html + '</div>' : '';
   }
@@ -214,6 +249,7 @@
   window.goToRole = function(roleId){
     const nom = roleNomById(roleId);
     document.getElementById('searchInput').value = nom || '';
+    window.closeEluDetail();
     window.switchTab('roles');
   };
   window.openPhotoZoom = function(localIndex){
@@ -225,6 +261,46 @@
   window.closePhotoZoom = function(){
     document.getElementById('zoomOverlay').classList.remove('show');
   };
+
+  window.openEluDetail = function(id){
+    const el = ELUS.find(function(x){ return x.id === id; });
+    if(!el) return;
+    document.getElementById('eluDetailPhotoWrap').innerHTML = el.photoBase64
+      ? '<img class="elu-detail-photo" src="' + el.photoBase64 + '" alt="">'
+      : '<div class="elu-detail-photo placeholder">👤</div>';
+    document.getElementById('eluDetailName').textContent = eluNomComplet(el);
+    document.getElementById('eluDetailSub').textContent = [el.societe, el.site].filter(Boolean).join(' · ');
+
+    const fids = sortedFonctionIds(el.fonctions);
+    let body = '';
+    if(fids.length){
+      body += '<div class="elu-detail-fonctions">' + fids.map(roleBadgeHtml).join('') + '</div>';
+    }
+    const emails = (el.emails || []).map(function(em){
+      return '<a class="elu-email-link" href="mailto:' + esc(em) + '">✉️ ' + esc(em) + '</a>';
+    }).join('');
+    if(emails) body += '<div class="elu-detail-emails">' + emails + '</div>';
+    if(el.message) body += '<div class="elu-detail-msg">' + esc(el.message).replace(/\n/g, '<br>') + '</div>';
+    if(fids.length){
+      body += '<div class="section-title">Rôles &amp; missions</div>';
+      body += fids.map(function(fid){
+        const r = ROLES.find(function(x){ return x.id === fid; });
+        if(!r) return '';
+        const icon = r.imageBase64 ? '<img class="role-mission-icon" src="' + r.imageBase64 + '" alt="">' : '<div class="role-mission-icon placeholder">🏷️</div>';
+        const desc = r.description
+          ? '<div class="role-mission-desc">' + esc(r.description).replace(/\n/g, '<br>') + '</div>'
+          : '<div class="role-mission-desc" style="font-style:italic;color:var(--ink-soft);">Pas de description renseignée.</div>';
+        return '<div class="role-mission">' + icon + '<div><div class="role-mission-name">' + esc(r.nom) + '</div>' + desc + '</div></div>';
+      }).join('');
+    }
+    if(!body) body = '<p class="no-info-note">Aucune information complémentaire renseignée pour le moment.</p>';
+    document.getElementById('eluDetailBody').innerHTML = body;
+    document.getElementById('eluDetailOverlay').classList.add('show');
+  };
+  window.closeEluDetail = function(){
+    document.getElementById('eluDetailOverlay').classList.remove('show');
+  };
+
   window.goToElu = function(nomComplet){
     document.getElementById('searchInput').value = nomComplet;
     document.getElementById('siteFilter').value = '';
@@ -250,9 +326,9 @@
     wrap.innerHTML = filtered.map(function(el){
       const badges = sortedFonctionIds(el.fonctions).map(roleBadgeHtml).join('');
       const emails = (el.emails || []).map(function(em){
-        return '<a class="elu-email-link" href="mailto:' + esc(em) + '">✉️ ' + esc(em) + '</a>';
+        return '<a class="elu-email-link" href="mailto:' + esc(em) + '" onclick="event.stopPropagation();">✉️ ' + esc(em) + '</a>';
       }).join('');
-      return '<div class="elu-card">'
+      return '<div class="elu-card" onclick="openEluDetail(\'' + el.id + '\')">'
         + (el.photoBase64 ? '<img class="elu-photo" src="' + el.photoBase64 + '" alt="">' : '<div class="elu-photo placeholder">👤</div>')
         + '<div style="flex:1;min-width:0;">'
         + '<div class="elu-name">' + esc(eluNomComplet(el)) + '</div>'
