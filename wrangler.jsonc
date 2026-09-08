@@ -23,6 +23,6 @@
   //   wrangler kv namespace create CR_FILES
   // puis remplacer "REMPLACER_PAR_ID_NAMESPACE" ci-dessous par l'id retourné.
   "kv_namespaces": [
-    { "binding": "CR_FILES", "id": "REMPLACER_PAR_ID_NAMESPACE" }
+    { "binding": "CR_FILES", "id": "3e71a74bb3354863b7834eaf146d478b" }
   ]
 }
