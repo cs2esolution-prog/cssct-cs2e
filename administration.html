@@ -82,7 +82,7 @@
   #authGate{position:fixed;inset:0;background:#2B2A2E;display:flex;align-items:center;justify-content:center;z-index:200;padding:20px;}
   #authForm{display:none;background:#fff;border-radius:14px;padding:32px;max-width:360px;width:100%;text-align:center;}
 
-  .access-tabs{display:flex; gap:8px; margin-bottom:14px;}
+  .access-tabs{display:flex; gap:8px; margin-bottom:14px; flex-wrap:wrap;}
   .access-tab{background:#fff; border:1px solid var(--line); color:var(--ink-soft); font-weight:600; font-size:12px; padding:8px 14px; border-radius:16px; cursor:pointer;}
   .access-tab.active{background:var(--ink); color:#fff; border-color:var(--ink);}
   .access-panel{display:none;}
@@ -385,6 +385,7 @@
       <div class="access-tabs">
         <button type="button" class="access-tab active" id="tabAuthorized" onclick="switchAccessTab('authorized')">Comptes autorisés</button>
         <button type="button" class="access-tab" id="tabAdmins" onclick="switchAccessTab('admins')">Administrateurs</button>
+        <button type="button" class="access-tab" id="tabCrAcces" onclick="switchAccessTab('crAcces')">Accès CR réunion</button>
       </div>
 
       <div class="access-panel active" id="panelAuthorized">
@@ -406,6 +407,21 @@
         <div class="access-add-row" id="bootstrapAddRow" style="display:none;">
           <button type="button" onclick="bootstrapSelfAsAdmin()" style="flex:1;">Me nommer premier administrateur</button>
         </div>
+      </div>
+
+      <div class="access-panel" id="panelCrAcces">
+        <p class="s-help" style="margin:0 0 10px;">Mot de passe demandé aux collaborateurs pour consulter, depuis <em>cr_reunion_collaborateurs.html</em>, les comptes-rendus de réunion (ou pièces jointes) marqués « accessible ». Le mot de passe n'est jamais réaffiché en clair une fois enregistré — seule son empreinte est conservée. Pense à le changer régulièrement (par ex. une fois par an).</p>
+        <div id="crPasswordStatus" style="font-size:12px;margin-bottom:12px;"></div>
+        <div class="access-add-row">
+          <input type="text" id="crNewPassword" placeholder="Nouveau mot de passe (6 caractères min.)">
+          <button type="button" onclick="saveCrPassword()">Enregistrer</button>
+        </div>
+        <div class="access-add-row">
+          <button type="button" onclick="deleteCrPassword()" style="flex:1;color:var(--danger);">Couper l'accès collaborateurs (supprimer le mot de passe)</button>
+        </div>
+        <p class="s-help" style="margin-top:10px;">⚠️ Changer ou supprimer le mot de passe empêche toute <em>nouvelle</em> connexion, mais ne déconnecte pas instantanément les collaborateurs déjà connectés (leur session reste valable jusqu'à 180 jours). Pour couper l'accès de tout le monde immédiatement, il faut faire tourner le secret <code>CR_ACCESS_SECRET</code> côté Cloudflare (voir mode opératoire).</p>
+        <p class="s-help" style="margin-top:10px;">Page collaborateurs : <a href="cr_reunion_collaborateurs.html" target="_blank">cr_reunion_collaborateurs.html</a></p>
+        <div class="access-msg" id="crAccesMsg"></div>
       </div>
 
       <div class="access-msg" id="accessMsg"></div>
@@ -1399,14 +1415,55 @@ const firebaseConfig = {
   window.openAccessModal = function(){
     document.getElementById('accessModal').classList.add('show');
     loadAccessData();
+    refreshCrPasswordStatus();
   };
 
   window.switchAccessTab = function(tab){
     document.getElementById('tabAuthorized').classList.toggle('active', tab === 'authorized');
     document.getElementById('tabAdmins').classList.toggle('active', tab === 'admins');
+    document.getElementById('tabCrAcces').classList.toggle('active', tab === 'crAcces');
     document.getElementById('panelAuthorized').classList.toggle('active', tab === 'authorized');
     document.getElementById('panelAdmins').classList.toggle('active', tab === 'admins');
+    document.getElementById('panelCrAcces').classList.toggle('active', tab === 'crAcces');
   };
+
+  // ---- Accès collaborateurs aux CR de réunion (config/cr_password_hash) ----
+  window.saveCrPassword = async function(){
+    const input = document.getElementById('crNewPassword');
+    const msg = document.getElementById('crAccesMsg');
+    const pwd = input.value.trim();
+    msg.textContent = '';
+    if(!pwd || pwd.length < 6){ msg.textContent = '6 caractères minimum.'; msg.style.color = 'var(--danger)'; return; }
+    try{
+      const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(pwd));
+      const hash = Array.from(new Uint8Array(buf)).map(function(b){ return b.toString(16).padStart(2,'0'); }).join('');
+      await setDoc(doc(db,'config','cr_password_hash'), { hash: hash, updatedAt: new Date().toISOString() });
+      input.value = '';
+      msg.style.color = 'var(--teal-dark)';
+      msg.textContent = 'Mot de passe enregistré ✓';
+      refreshCrPasswordStatus();
+    }catch(err){ msg.style.color = 'var(--danger)'; msg.textContent = 'Erreur : ' + err.message; }
+  };
+  window.deleteCrPassword = async function(){
+    if(!confirm("Couper l'accès collaborateurs ? Plus personne ne pourra se connecter à cr_reunion_collaborateurs.html tant qu'un nouveau mot de passe n'aura pas été défini.")) return;
+    const msg = document.getElementById('crAccesMsg');
+    try{
+      await deleteDoc(doc(db,'config','cr_password_hash'));
+      msg.style.color = 'var(--teal-dark)';
+      msg.textContent = 'Accès collaborateurs coupé.';
+      refreshCrPasswordStatus();
+    }catch(err){ msg.style.color = 'var(--danger)'; msg.textContent = 'Erreur : ' + err.message; }
+  };
+  async function refreshCrPasswordStatus(){
+    const el = document.getElementById('crPasswordStatus');
+    if(!el) return;
+    try{
+      const snap = await getDoc(doc(db,'config','cr_password_hash'));
+      const has = snap.exists() && !!snap.data().hash;
+      el.textContent = has ? '✓ Un mot de passe est actuellement configuré.' : "⚠️ Aucun mot de passe configuré — les collaborateurs n'ont pas accès aux CR.";
+      el.style.color = has ? 'var(--teal-dark)' : 'var(--danger)';
+    }catch(e){ el.textContent = ''; }
+  }
 
   window.addAuthorizedEmail = async function(){
     const input = document.getElementById('newAuthorizedEmail');
