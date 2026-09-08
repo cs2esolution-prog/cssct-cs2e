@@ -1,5 +1,17 @@
 [
   {
+    "hash": "77e0d3b",
+    "date": "08/09/2026",
+    "title": "Update cr_reunion_collaborateurs.html",
+    "description": ""
+  },
+  {
+    "hash": "98f1f80",
+    "date": "08/09/2026",
+    "title": "chore: mise a jour automatique du changelog [skip ci]",
+    "description": ""
+  },
+  {
     "hash": "28f1ff0",
     "date": "08/09/2026",
     "title": "Update comptes_rendus_reunion.html",
