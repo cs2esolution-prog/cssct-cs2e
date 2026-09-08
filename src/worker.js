@@ -45,7 +45,7 @@ const DEFAULT_CSSCT_EMAILS = ['choudayer@smag.tech'];
 const DEFAULT_TEMPLATES = {
   signalementConfirmation: {
     subject: 'Confirmation de votre signalement CSSCT - {{numero}}',
-    body: 'Bonjour,\n\nVous venez de réaliser une demande de suivi auprès du CSSCT. Merci pour votre message. Nous allons étudier votre demande qui porte le numéro "{{numero}}" qu\'il faudra systématiquement intégrer dans nos échanges.\n\nSi des photos doivent être transmises, vous pouvez les envoyer en réponse à ce mail.\n\nNous vous souhaitons une bonne journée.'
+    body: 'Bonjour,\n\nVous venez de réaliser une demande de suivi auprès du CSSCT. Merci pour votre message. Nous allons étudier votre demande qui porte le numéro "{{numero}}" qu\'il faudra systématiquement intégrer dans nos échanges.\n\nVotre code de suivi est : {{codeSuivi}}\nConservez-le précieusement : il vous permettra de suivre l\'avancement de votre demande et d\'ajouter un complément si besoin, depuis la page "Suivre ma demande".\n\nSi des photos doivent être transmises, vous pouvez les envoyer en réponse à ce mail.\n\nNous vous souhaitons une bonne journée.'
   },
   signalementNotifCSSCT: {
     subject: 'Formulaire CSSCT - {{nature}} - {{numero}}',
@@ -132,6 +132,7 @@ async function handleCollaborateurSubmission(request, env, ctx) {
   try {
     const data = await request.json();
     const numero = data.numero;
+    const codeSuivi = data.codeSuivi || '';
     const rapporteur = data.rapporteur || '';
     const rapporteurEmail = data.rapporteurEmail || '';
     const site = data.site || '';
@@ -142,7 +143,7 @@ async function handleCollaborateurSubmission(request, env, ctx) {
       return new Response(JSON.stringify({ error: 'Champs obligatoires manquants' }), { status: 400, headers: CORS_HEADERS });
     }
 
-    const vars = { numero, rapporteur, site, nature, objet };
+    const vars = { numero, codeSuivi, rapporteur, site, nature, objet };
     const tConfirm = pickTemplate(data.templates, 'signalementConfirmation');
     const tNotif = pickTemplate(data.templates, 'signalementNotifCSSCT');
     const collabSubject = fillTemplate(tConfirm.subject, vars);
