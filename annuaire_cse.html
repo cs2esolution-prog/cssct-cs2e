@@ -99,12 +99,16 @@
   .elu-detail-msg{font-size:13px; line-height:1.6; background:var(--paper); border-radius:10px; padding:12px 14px; margin-bottom:16px;}
   .elu-detail-emails{display:flex; flex-wrap:wrap; gap:8px; justify-content:center; margin-bottom:16px;}
   .section-title{font-size:11px; text-transform:uppercase; letter-spacing:.05em; color:var(--ink-soft); margin:0 0 6px;}
-  .role-mission{display:flex; gap:12px; padding:12px 0; border-top:1px solid var(--line);}
-  .role-mission:first-of-type{border-top:none; padding-top:0;}
+  .role-mission{border-top:1px solid var(--line);}
+  .role-mission:first-of-type{border-top:none;}
+  .role-mission-header{display:flex; align-items:center; gap:12px; padding:11px 0; cursor:pointer;}
   .role-mission-icon{width:40px; height:40px; border-radius:50%; object-fit:cover; flex:none; background:var(--paper); border:1px solid var(--line);}
   .role-mission-icon.placeholder{display:flex; align-items:center; justify-content:center; font-size:17px; color:var(--ink-soft);}
-  .role-mission-name{font-weight:700; font-size:13.5px; margin-bottom:3px;}
-  .role-mission-desc{font-size:12px; color:var(--ink); line-height:1.5;}
+  .role-mission-name{font-weight:700; font-size:13.5px; flex:1; min-width:0;}
+  .role-mission-chevron{color:var(--ink-soft); font-size:16px; flex:none; transition:transform .15s ease;}
+  .role-mission.open .role-mission-chevron{transform:rotate(90deg);}
+  .role-mission-desc{font-size:12px; color:var(--ink); line-height:1.5; display:none; padding:0 0 14px 52px;}
+  .role-mission.open .role-mission-desc{display:block;}
   .no-info-note{color:var(--ink-soft); font-size:13px; text-align:center; margin:0;}
 
   .zoom-overlay{position:fixed; inset:0; background:rgba(30,28,32,.85); display:none; align-items:center; justify-content:center; z-index:200; padding:24px;}
@@ -286,11 +290,18 @@
       body += fids.map(function(fid){
         const r = ROLES.find(function(x){ return x.id === fid; });
         if(!r) return '';
-        const icon = r.imageBase64 ? '<img class="role-mission-icon" src="' + r.imageBase64 + '" alt="">' : '<div class="role-mission-icon placeholder">🏷️</div>';
+        const icon = r.imageBase64
+          ? '<img class="role-mission-icon" src="' + r.imageBase64 + '" alt="">'
+          : '<div class="role-mission-icon placeholder">' + esc(r.emoji || '🏷️') + '</div>';
         const desc = r.description
-          ? '<div class="role-mission-desc">' + esc(r.description).replace(/\n/g, '<br>') + '</div>'
-          : '<div class="role-mission-desc" style="font-style:italic;color:var(--ink-soft);">Pas de description renseignée.</div>';
-        return '<div class="role-mission">' + icon + '<div><div class="role-mission-name">' + esc(r.nom) + '</div>' + desc + '</div></div>';
+          ? esc(r.description).replace(/\n/g, '<br>')
+          : '<span style="font-style:italic;color:var(--ink-soft);">Pas de description renseignée.</span>';
+        return '<div class="role-mission">'
+          + '<div class="role-mission-header" onclick="this.parentElement.classList.toggle(\'open\')">'
+          + icon + '<div class="role-mission-name">' + esc(r.nom) + '</div><div class="role-mission-chevron">›</div>'
+          + '</div>'
+          + '<div class="role-mission-desc">' + desc + '</div>'
+          + '</div>';
       }).join('');
     }
     if(!body) body = '<p class="no-info-note">Aucune information complémentaire renseignée pour le moment.</p>';
@@ -362,7 +373,7 @@
           }).join(', ')
         : 'Personne n\'occupe ce rôle pour le moment.';
       return '<div class="role-card">'
-        + (r.imageBase64 ? '<img class="role-img" src="' + r.imageBase64 + '" alt="">' : '<div class="role-img placeholder">🏷️</div>')
+        + (r.imageBase64 ? '<img class="role-img" src="' + r.imageBase64 + '" alt="">' : '<div class="role-img placeholder">' + esc(r.emoji || '🏷️') + '</div>')
         + '<div style="flex:1;min-width:0;">'
         + '<div class="role-name">' + esc(r.nom) + '</div>'
         + (r.description ? '<div class="role-desc">' + esc(r.description).replace(/\n/g, '<br>') + '</div>' : '')
