@@ -204,6 +204,11 @@
     <div><div class="a-title">Tableau de bord Cloudflare</div><div class="a-desc">Déploiements, statut du site</div></div>
     <div class="a-arrow">↗</div>
   </a>
+  <a class="admin-card" href="https://console.cloud.google.com/iam-admin/serviceaccounts?project=cssct-cs2e-c655b" target="_blank" rel="noopener">
+    <div class="a-icon">🛡️</div>
+    <div><div class="a-title">Compte de service Google (accès Worker)</div><div class="a-desc">Utilisé par le Worker pour l'accès collaborateurs aux CR de réunion — clé, rôle, rotation</div></div>
+    <div class="a-arrow">↗</div>
+  </a>
   <button type="button" class="admin-card" onclick="document.getElementById('modopModal').classList.add('show')">
     <div class="a-icon">🧭</div>
     <div><div class="a-title">Créer une nouvelle instance CSSCT</div><div class="a-desc">Mode opératoire complet pour dupliquer l'appli pour un autre CSSCT</div></div>
@@ -584,6 +589,19 @@
         <li>À vérifier : crée un signalement ou une expression de besoin de test et confirme que l'email et la notification ntfy arrivent bien. En cas de souci, les logs du Worker (Cloudflare &gt; le Worker &gt; Logs, ou <code>npx wrangler tail</code>) affichent les erreurs Mailjet/ntfy.</li>
       </ol>
 
+      <h4>Étape 3ter — Compte de service Firebase (accès privilégié du Worker)</h4>
+      <div class="modop-note">⚠️ Nécessaire uniquement pour l'accès collaborateurs aux CR de réunion protégés par mot de passe (<code>cr_reunion_collaborateurs.html</code>) et l'upload de fichiers CR. Sans cette étape, ces deux fonctionnalités renvoient une erreur explicite (<code>GOOGLE_SERVICE_ACCOUNT_KEY absent</code>) — le reste de l'appli continue de fonctionner normalement.</div>
+      <p class="s-help" style="margin:6px 0;">Pourquoi : la page collaborateurs n'a aucune connexion (juste un mot de passe partagé). Pour que ce mot de passe soit une vraie barrière et pas une façade, le Worker doit pouvoir lire les CR accessibles en contournant les règles Firestore classiques — sinon il faudrait rendre ces CR publiquement lisibles, ce qui rendrait le mot de passe décoratif.</p>
+      <ol>
+        <li>Sur <code>console.cloud.google.com</code>, sélectionne le même projet que le projet Firebase de cette instance.</li>
+        <li>IAM et administration → Comptes de service → Créer un compte de service (ex. <code>worker-cr-access</code>), rôle <strong>Cloud Datastore User</strong> (<code>roles/datastore.user</code>).</li>
+        <li>Onglet Clés → Ajouter une clé → JSON → télécharge le fichier (jamais dans Git, non re-téléchargeable ensuite).</li>
+        <li>Ajoute son contenu complet en secret Cloudflare : <code>npx wrangler secret put GOOGLE_SERVICE_ACCOUNT_KEY</code>.</li>
+        <li>Ajoute un second secret <code>CR_ACCESS_SECRET</code> (chaîne aléatoire, ex. <code>openssl rand -hex 32</code>) : <code>npx wrangler secret put CR_ACCESS_SECRET</code>.</li>
+        <li>Crée le namespace KV qui stockera les fichiers : <code>npx wrangler kv namespace create CR_FILES</code>, copie l'<code>id</code> retourné dans <code>wrangler.jsonc</code> (<code>kv_namespaces</code>), puis <code>npx wrangler deploy</code>.</li>
+        <li>À vérifier : Administration &gt; CR réunion &gt; Accès collaborateurs, définis un mot de passe test, ouvre <code>cr_reunion_collaborateurs.html</code> en navigation privée et confirme que le mot de passe est accepté.</li>
+      </ol>
+
       <h4>Étape 4 — Premiers comptes</h4>
       <ol>
         <li>Ajoute ton email dans <code>authorized_emails</code> (console Firebase du nouveau projet).</li>
@@ -592,7 +610,7 @@
         <li>Ajoute ensuite les comptes autorisés suivants et la config du mail de relance, toujours depuis Administration.</li>
       </ol>
 
-      <div class="modop-note">Limite à connaître : le code est aujourd'hui dupliqué à l'identique entre chaque instance (pas de configuration centralisée), donc toute correction ou nouvelle fonctionnalité doit être reportée manuellement sur chaque dépôt. Les secrets Mailjet/ntfy (étape 3bis) sont eux aussi à reconfigurer à chaque instance — aucune interface d'administration pour les saisir depuis l'appli, ce sont des secrets d'infrastructure.</div>
+      <div class="modop-note">Limite à connaître : le code est aujourd'hui dupliqué à l'identique entre chaque instance (pas de configuration centralisée), donc toute correction ou nouvelle fonctionnalité doit être reportée manuellement sur chaque dépôt. Les secrets Mailjet/ntfy (étape 3bis) et le compte de service Google + KV (étape 3ter) sont eux aussi à reconfigurer à chaque instance — aucune interface d'administration pour les saisir depuis l'appli, ce sont des éléments d'infrastructure. Le mot de passe collaborateurs, lui, reste partagé par tous les collaborateurs d'une même instance (pas de compte individuel) : à changer régulièrement et à ne diffuser que par un canal interne.</div>
     </div>
   </div>
 </div>
