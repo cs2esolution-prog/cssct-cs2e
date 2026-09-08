@@ -52,18 +52,20 @@ const CONTENT_SECURITY_POLICY = [
 // par le navigateur (X-Content-Type-Options), limitent les informations transmises à d'autres
 // sites via l'en-tête Referer, et forcent HTTPS (HSTS).
 //
-// La CSP ci-dessus est déployée en mode "Report-Only" : le navigateur signale les violations
-// dans sa console sans jamais rien bloquer, donc sans aucun risque de casser une page. Une fois
-// confirmé qu'aucune violation ne remonte sur les pages du site, remplacer
-// 'Content-Security-Policy-Report-Only' par 'Content-Security-Policy' ci-dessous pour l'activer
-// réellement.
+// CSP activée en mode bloquant (passée depuis "Report-Only" le 08/09/2026, après vérification en
+// production sur les pages principales du site sans aucune violation constatée). En cas de
+// problème après coup (une ressource externe légitime non listée ci-dessus), le symptôme est
+// ciblé — une fonctionnalité précise qui échoue silencieusement, jamais la page entière — et une
+// ligne "Refused to load ... because it violates the following Content Security Policy directive"
+// apparaît dans la console du navigateur (F12) pour identifier la ressource à ajouter à la liste.
+// Revert rapide en cas de souci bloquant : remettre 'Content-Security-Policy-Report-Only' ci-dessous.
 function withSecurityHeaders(response) {
   const headers = new Headers(response.headers);
   headers.set('X-Content-Type-Options', 'nosniff');
   headers.set('X-Frame-Options', 'DENY');
   headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
   headers.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
-  headers.set('Content-Security-Policy-Report-Only', CONTENT_SECURITY_POLICY);
+  headers.set('Content-Security-Policy', CONTENT_SECURITY_POLICY);
   return new Response(response.body, { status: response.status, statusText: response.statusText, headers: headers });
 }
 
