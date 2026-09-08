@@ -17,5 +17,12 @@
     "directory": "./",
     "binding": "ASSETS",
     "not_found_handling": "404-page"
-  }
+  },
+  // Stockage des fichiers PDF/Word des comptes-rendus de réunion (voir
+  // claude/mode-operatoire-multi-cssct.md). À créer une fois avec :
+  //   wrangler kv namespace create CR_FILES
+  // puis remplacer "REMPLACER_PAR_ID_NAMESPACE" ci-dessous par l'id retourné.
+  "kv_namespaces": [
+    { "binding": "CR_FILES", "id": "REMPLACER_PAR_ID_NAMESPACE" }
+  ]
 }
