@@ -1,5 +1,17 @@
 [
   {
+    "hash": "b78bf14",
+    "date": "08/09/2026",
+    "title": "Update suivi_demande.html",
+    "description": ""
+  },
+  {
+    "hash": "5c37d87",
+    "date": "08/09/2026",
+    "title": "chore: mise a jour automatique du changelog [skip ci]",
+    "description": ""
+  },
+  {
     "hash": "48b3be1",
     "date": "08/09/2026",
     "title": "Update signalement_collaborateur.html",
