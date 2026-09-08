@@ -1,5 +1,17 @@
 [
   {
+    "hash": "f4a9e18",
+    "date": "08/09/2026",
+    "title": "Update worker.js",
+    "description": ""
+  },
+  {
+    "hash": "f6e3693",
+    "date": "08/09/2026",
+    "title": "chore: mise a jour automatique du changelog [skip ci]",
+    "description": ""
+  },
+  {
     "hash": "5d91cc1",
     "date": "08/09/2026",
     "title": "Update comptes_rendus_reunion.html",
