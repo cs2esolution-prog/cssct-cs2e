@@ -36,6 +36,8 @@
   .cr-card{background:#fff; border:1px solid var(--line); border-left:4px solid var(--teal); border-radius:var(--radius); padding:16px 18px; margin-bottom:12px;}
   .cr-card .cr-titre{font-weight:700; font-size:14.5px;}
   .cr-card .cr-date{font-size:11.5px; color:var(--ink-soft); margin-top:2px; margin-bottom:10px;}
+  .cr-card .cr-top{display:flex; justify-content:space-between; align-items:flex-start; gap:10px;}
+  .cat-badge{display:inline-block; padding:4px 10px; border-radius:12px; font-size:10.5px; font-weight:700; white-space:nowrap; flex-shrink:0;}
   .cr-files{display:flex; flex-direction:column; gap:6px;}
   .cr-file-row{display:flex; align-items:center; justify-content:space-between; gap:10px; background:var(--paper); border:1px solid var(--line); border-radius:8px; padding:8px 12px;}
   .cr-file-row .fname{font-size:12.5px; font-weight:600;}
@@ -79,6 +81,13 @@
 
     <input type="text" id="crSearchInput" oninput="renderSearch()" placeholder="🔎 Rechercher un mot dans les comptes-rendus…">
     <div id="searchResults" class="search-results" style="display:none;"></div>
+
+    <div id="catFilterWrap" style="display:none;margin:12px 0;align-items:center;gap:8px;">
+      <label for="crCategorieFilter" style="font-size:12px;color:var(--ink-soft);white-space:nowrap;">Catégorie :</label>
+      <select id="crCategorieFilter" onchange="renderListe()" style="padding:8px 12px;border:1px solid var(--line);border-radius:20px;font-size:13px;">
+        <option value="">Toutes</option>
+      </select>
+    </div>
 
     <div id="listeCR"><p class="empty-note">Chargement…</p></div>
 
@@ -158,6 +167,26 @@
     return '📎';
   }
 
+  const CAT_BADGE_PALETTE = [
+    { bg:'#E4F3EF', fg:'#017162' },
+    { bg:'#F3E9D9', fg:'#8A6A2F' },
+    { bg:'#EFE6F2', fg:'#5A4570' },
+    { bg:'#E6EEF7', fg:'#2F5A8A' },
+    { bg:'#F7E6EF', fg:'#8A3F63' },
+    { bg:'#F0EDE4', fg:'#6B6873' }
+  ];
+  function catColor(cat){
+    let hash = 0;
+    const s = String(cat || '');
+    for(let i = 0; i < s.length; i++){ hash = (hash * 31 + s.charCodeAt(i)) >>> 0; }
+    return CAT_BADGE_PALETTE[hash % CAT_BADGE_PALETTE.length];
+  }
+  function catBadgeHtml(cat){
+    if(!cat) return '';
+    const col = catColor(cat);
+    return '<span class="cat-badge" style="background:' + col.bg + ';color:' + col.fg + ';">' + esc(cat) + '</span>';
+  }
+
   function fileRowHtml(crId, f){
     const label = (f.kind === 'confidentiel' || f.kind === 'non-confidentiel') ? (f.nomFichier || 'Compte-rendu') : (f.nom || f.nomFichier || 'Pièce jointe');
     const openBtn = f.kind === 'piece-jointe' && f.url
@@ -169,8 +198,26 @@
   function renderListe(){
     const el = document.getElementById('listeCR');
     if(!CRS.length){ el.innerHTML = '<p class="empty-note">Aucun compte-rendu n\'est pour le moment mis à disposition.</p>'; return; }
-    el.innerHTML = CRS.map(function(cr){
-      return '<div class="cr-card"><div class="cr-titre">' + esc(cr.titre||'Sans titre') + '</div><div class="cr-date">' + esc(cr.date) + '</div>' +
+
+    const filterWrap = document.getElementById('catFilterWrap');
+    const filterSel = document.getElementById('crCategorieFilter');
+    const cats = Array.from(new Set(CRS.map(function(cr){ return cr.categorie; }).filter(function(c){ return c; })));
+    if(cats.length){
+      filterWrap.style.display = 'flex';
+      if(!filterSel.dataset.filled){
+        filterSel.innerHTML = '<option value="">Toutes</option>' + cats.map(function(c){ return '<option value="' + esc(c).replace(/"/g,'&quot;') + '">' + esc(c) + '</option>'; }).join('');
+        filterSel.dataset.filled = '1';
+      }
+    } else {
+      filterWrap.style.display = 'none';
+    }
+    const filtreCat = filterSel.value;
+    let items = CRS.slice();
+    if(filtreCat) items = items.filter(function(cr){ return cr.categorie === filtreCat; });
+
+    if(!items.length){ el.innerHTML = '<p class="empty-note">Aucun compte-rendu pour cette catégorie.</p>'; return; }
+    el.innerHTML = items.map(function(cr){
+      return '<div class="cr-card"><div class="cr-top"><div><div class="cr-titre">' + esc(cr.titre||'Sans titre') + '</div><div class="cr-date">' + esc(cr.date) + '</div></div>' + catBadgeHtml(cr.categorie) + '</div>' +
         '<div class="cr-files">' + cr.fichiers.map(function(f){ return fileRowHtml(cr.id, f); }).join('') + '</div></div>';
     }).join('');
   }
