@@ -20,6 +20,8 @@
     background:conic-gradient(var(--teal) 0deg 120deg, var(--gold) 120deg 240deg, var(--purple) 240deg 360deg); flex:none;}
   .brand-text{font-family:'Source Serif 4', serif; font-weight:700; font-size:19px;}
   .brand-text span{color:var(--teal);}
+  .back-link{margin-left:auto; font-size:12px; font-weight:600; color:var(--ink-soft); text-decoration:none; border:1px solid var(--line); padding:6px 12px; border-radius:20px;}
+  .back-link:hover{border-color:var(--teal); color:var(--teal-dark);}
 
   h1{font-family:'Source Serif 4',serif; font-size:19px; margin:0 0 6px;}
   .subtitle{font-size:13px; color:var(--ink-soft); margin:0 0 24px;}
@@ -47,7 +49,6 @@
   .histo-item .h-date{color:var(--ink-soft); font-size:11px; margin-bottom:2px;}
   .histo-item .h-tag{display:inline-block; font-size:10px; font-weight:700; padding:1px 8px; border-radius:10px; margin-left:6px; background:#F3EFF6; color:var(--purple);}
 
-  .back-link{display:inline-block; margin-top:6px; font-size:12.5px; color:var(--teal-dark); text-decoration:none; font-weight:600;}
   .toast{font-size:12.5px; color:var(--teal-dark); margin-top:8px; text-align:center; display:none;}
 </style>
 </head>
@@ -56,6 +57,7 @@
   <div class="brand">
     <div class="brand-mark" id="brandMark"></div>
     <div class="brand-text">CS<span>2E</span> · CSSCT</div>
+    <a class="back-link" href="portail.html">← Portail</a>
   </div>
 
   <div id="searchZone">
@@ -70,8 +72,6 @@
       <button type="submit" id="searchBtn">Rechercher</button>
       <div class="error-msg" id="searchError"></div>
     </form>
-
-    <a class="back-link" href="portail.html">← Retour au portail</a>
   </div>
 
   <div id="resultZone" style="display:none;"></div>
@@ -173,8 +173,7 @@
         '<button class="action-btn" id="complementBtn" type="button">Envoyer ce complément</button>' +
         '<div class="error-msg" id="complementError"></div>' +
         '<div class="toast" id="complementToast">✓ Complément envoyé, merci.</div>' +
-      '</div>' +
-      '<a class="back-link" href="portail.html">← Retour au portail</a>';
+      '</div>';
 
     renderHistorique(histoData, document.getElementById('histoList'));
 
