@@ -1,5 +1,17 @@
 [
   {
+    "hash": "ac6d26b",
+    "date": "09/09/2026",
+    "title": "Update worker.js",
+    "description": ""
+  },
+  {
+    "hash": "7e76bdb",
+    "date": "09/09/2026",
+    "title": "chore: mise a jour automatique du changelog [skip ci]",
+    "description": ""
+  },
+  {
     "hash": "69b5cc4",
     "date": "09/09/2026",
     "title": "Update inspections.html",
