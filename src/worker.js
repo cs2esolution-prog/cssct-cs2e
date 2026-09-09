@@ -17,6 +17,10 @@ export default {
       response = await handleCrPasswordCheck(request, env, ctx);
     } else if (url.pathname === '/api/cr-liste-publique') {
       response = await handleCrListePublique(request, env, ctx);
+    } else if (url.pathname === '/api/insp-file-upload') {
+      response = await handleInspFileUpload(request, env, ctx);
+    } else if (url.pathname === '/api/insp-file') {
+      response = await handleInspFileGet(request, env, ctx);
     } else {
       response = await env.ASSETS.fetch(request);
     }
@@ -732,6 +736,74 @@ async function handleCrFileGet(request, env, ctx) {
   if (!allowed) return new Response(JSON.stringify({ error: 'Accès refusé' }), { status: 403, headers: CORS_HEADERS });
 
   if (!env.CR_FILES) return new Response(JSON.stringify({ error: "Binding KV \"CR_FILES\" absent (voir wrangler.jsonc)." }), { status: 500, headers: CORS_HEADERS });
+  const obj = await env.CR_FILES.get(fileId, 'arrayBuffer');
+  if (!obj) return new Response(JSON.stringify({ error: 'Fichier introuvable' }), { status: 404, headers: CORS_HEADERS });
+
+  const ext = (nom.split('.').pop() || '').toLowerCase();
+  const contentType = ext === 'pdf' ? 'application/pdf'
+    : (ext === 'docx' ? 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+    : (ext === 'doc' ? 'application/msword' : 'application/octet-stream'));
+
+  const headers = Object.assign({}, CORS_HEADERS, {
+    'Content-Type': contentType,
+    'Content-Disposition': 'inline; filename="' + nom.replace(/"/g, '') + '"'
+  });
+  return new Response(obj, { status: 200, headers: headers });
+}
+
+// ============================================================================
+// Inspections CSSCT — fichier de compte-rendu joint (même stockage KV
+// "CR_FILES" que les CR de réunion, mais clé préfixée "insp_" pour bien les
+// distinguer dans le tableau de bord Cloudflare ; pas de partage public ici,
+// contrairement aux CR de réunion — accès réservé aux comptes autorisés de
+// l'appli, comme le reste des inspections).
+// ============================================================================
+
+async function handleInspFileUpload(request, env, ctx) {
+  if (request.method === 'OPTIONS') return new Response(null, { headers: CORS_HEADERS });
+  if (request.method !== 'POST') return new Response(JSON.stringify({ error: 'Methode non autorisee' }), { status: 405, headers: CORS_HEADERS });
+  try {
+    await requireAdmin(request, env);
+  } catch (err) {
+    return new Response(JSON.stringify({ error: err.message }), { status: 401, headers: CORS_HEADERS });
+  }
+  try {
+    const contentLength = parseInt(request.headers.get('content-length') || '0', 10);
+    if (contentLength > 25 * 1024 * 1024) {
+      return new Response(JSON.stringify({ error: 'Fichier trop volumineux (25 Mo maximum).' }), { status: 413, headers: CORS_HEADERS });
+    }
+    const buf = await request.arrayBuffer();
+    if (!env.CR_FILES) throw new Error("Binding KV \"CR_FILES\" absent (voir wrangler.jsonc).");
+    const fileId = 'insp_' + crypto.randomUUID();
+    await env.CR_FILES.put(fileId, buf);
+    return new Response(JSON.stringify({ ok: true, fileId: fileId, taille: buf.byteLength }), { status: 200, headers: CORS_HEADERS });
+  } catch (err) {
+    return new Response(JSON.stringify({ error: err.message }), { status: 500, headers: CORS_HEADERS });
+  }
+}
+
+async function handleInspFileGet(request, env, ctx) {
+  if (request.method === 'OPTIONS') return new Response(null, { headers: CORS_HEADERS });
+  const url = new URL(request.url);
+  const fileId = url.searchParams.get('fileId');
+  const nom = url.searchParams.get('nom') || 'fichier';
+  if (!fileId) return new Response(JSON.stringify({ error: 'fileId manquant' }), { status: 400, headers: CORS_HEADERS });
+
+  let email;
+  try {
+    email = await requireAdmin(request, env);
+  } catch (err) {
+    return new Response(JSON.stringify({ error: err.message }), { status: 401, headers: CORS_HEADERS });
+  }
+
+  if (!env.CR_FILES) return new Response(JSON.stringify({ error: "Binding KV \"CR_FILES\" absent (voir wrangler.jsonc)." }), { status: 500, headers: CORS_HEADERS });
+
+  if (request.method === 'DELETE') {
+    console.log('DELETE /api/insp-file par ' + email + ' — fileId=' + fileId);
+    await env.CR_FILES.delete(fileId);
+    return new Response(JSON.stringify({ ok: true }), { status: 200, headers: CORS_HEADERS });
+  }
+
   const obj = await env.CR_FILES.get(fileId, 'arrayBuffer');
   if (!obj) return new Response(JSON.stringify({ error: 'Fichier introuvable' }), { status: 404, headers: CORS_HEADERS });
 
