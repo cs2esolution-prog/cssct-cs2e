@@ -123,6 +123,21 @@
   .filebox-sm{display:inline-block; border:1.5px dashed var(--line); border-radius:8px; padding:10px 16px; font-size:12px; color:var(--ink-soft); cursor:pointer;}
   .filebox-sm input{display:none;}
 
+  .cr-file-card{display:flex; align-items:center; justify-content:space-between; gap:10px; background:#FBFAF7; border:1px solid var(--line); border-radius:8px; padding:10px 12px; margin-bottom:10px;}
+  .cr-file-card .cf-name{font-size:12.5px; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .cr-file-card .cf-actions{display:flex; gap:6px; flex:none;}
+  .cr-file-card .cf-actions button{background:none; border:1px solid var(--line); border-radius:14px; padding:4px 10px; font-size:11px; font-weight:600; cursor:pointer; color:var(--ink);}
+  .cr-file-card .cf-actions button.cf-del{color:var(--danger); border-color:#E7D3CB;}
+  .liens-list{list-style:none; margin:0 0 10px; padding:0;}
+  .liens-list li{display:flex; align-items:center; gap:8px; padding:7px 0; border-bottom:1px solid var(--line); font-size:12.5px;}
+  .liens-list li:last-child{border-bottom:none;}
+  .liens-list a{flex:1; color:var(--teal-dark); text-decoration:none; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .liens-list a:hover{text-decoration:underline;}
+  .liens-list .lien-del{background:none; border:none; color:var(--danger); font-size:14px; cursor:pointer; flex:none; padding:2px 4px;}
+  .liens-add-row{display:flex; gap:8px; flex-wrap:wrap;}
+  .liens-add-row input{flex:1; min-width:120px; padding:8px 10px; border:1px solid var(--line); border-radius:7px; font-size:12.5px; font-family:'Inter',sans-serif;}
+  .liens-add-row button{background:var(--ink); color:#fff; border:none; padding:8px 14px; border-radius:16px; font-weight:600; font-size:12px; cursor:pointer; white-space:nowrap;}
+
   .ai-btn{display:inline-flex; align-items:center; gap:6px; background:#fff; border:1px solid var(--line); color:var(--ink); font-size:12px; font-weight:600; padding:8px 14px; border-radius:20px; cursor:pointer; margin-top:8px; margin-right:8px;}
   .ai-btn:hover{border-color:var(--teal); color:var(--teal-dark);}
 
@@ -473,7 +488,8 @@
     async add(item){ return await addDoc(col, item); },
     async update(id, fields){ await updateDoc(doc(db,'inspections', id), fields); },
     async remove(id){ await deleteDoc(doc(db,'inspections', id)); },
-    async saveConfig(cfg){ await setDoc(configRef, cfg); window._config = cfg; }
+    async saveConfig(cfg){ await setDoc(configRef, cfg); window._config = cfg; },
+    async getIdToken(){ return auth.currentUser ? await auth.currentUser.getIdToken() : null; }
   };
 
   document.getElementById('logoutBtn').addEventListener('click', () => {
@@ -739,6 +755,7 @@ window.openDrawer = function(id){
         {id:'pointsComplementaires', label:'Points complémentaires à vérifier', value:it.pointsComplementaires}
       ]) +
       (statut === 'Clos' ? '<div class="dsection"><h3>Transmission</h3><div class="dfield"><div class="dlabel">Date de transmission du CR au CSE</div><div class="dval">' + esc(it.dateRetourCR) + '</div></div></div>' : '') +
+      docsLiensSectionHtml(it, id) +
       '<div class="dsection"><h3>Guide d\'entretien (méthodologie de référence)</h3>' +
       C.guideSections.map(function(g){ return '<div class="guide-ref"><strong>' + esc(g.titre) + '</strong><br>' + esc(g.description) + '</div>'; }).join('') +
       '</div>' +
@@ -763,6 +780,134 @@ window.openDrawer = function(id){
   overlay.classList.add('show');
 };
 function closeDrawer(){ document.getElementById('drawerOverlay').classList.remove('show'); window._openDrawerId = null; }
+
+// ---- Documents & liens (CR fichier, CR lien externe, liens nommés) ----
+function docsLiensSectionHtml(it, id){
+  const cf = it.crFichier;
+  const fileCardHtml = cf
+    ? '<div class="cr-file-card"><span class="cf-name" title="' + esc(cf.nomFichier) + '">📄 ' + esc(cf.nomFichier) + '</span>' +
+      '<div class="cf-actions"><button onclick="openInspFile(\'' + esc(cf.fileId) + '\', \'' + esc(cf.nomFichier).replace(/'/g,"\\'") + '\')">Ouvrir</button>' +
+      '<button class="cf-del" onclick="deleteInspCrFile(\'' + id + '\')">Supprimer</button></div></div>'
+    : '<label class="filebox-sm" for="inspCrFileInput_' + id + '">📎 Joindre le CR (Word/PDF, 25 Mo max)<input type="file" id="inspCrFileInput_' + id + '" accept=".pdf,.doc,.docx" onchange="uploadInspCrFile(\'' + id + '\', this)"></label>';
+
+  const liensHtml = (it.liens||[]).length
+    ? '<ul class="liens-list">' + it.liens.map(function(l, idx){
+        return '<li><a href="' + esc(l.url) + '" target="_blank" rel="noopener">🔗 ' + esc(l.nom || l.url) + '</a>' +
+          '<button class="lien-del" onclick="removeInspLien(\'' + id + '\', ' + idx + ')">✕</button></li>';
+      }).join('') + '</ul>'
+    : '<div class="dval empty" style="margin-bottom:10px;">Aucun lien ajouté.</div>';
+
+  return '<div class="dsection">' +
+    '<h3>Documents &amp; liens</h3>' +
+    '<div class="dlabel" style="margin-bottom:6px;">Compte-rendu (fichier)</div>' +
+    fileCardHtml +
+    '<div class="dlabel" style="margin:14px 0 6px;">Compte-rendu (lien externe, ex : Teams/Drive)</div>' +
+    '<div style="display:flex;gap:8px;margin-bottom:10px;">' +
+      '<input type="url" id="crLienInput_' + id + '" value="' + esc(it.crLien||'').replace(/"/g,'&quot;') + '" placeholder="https://...">' +
+      '<button class="add-admin-btn" style="margin-top:0;white-space:nowrap;" onclick="saveInspCrLien(\'' + id + '\')">Enregistrer</button>' +
+    '</div>' +
+    '<div class="dlabel" style="margin:14px 0 6px;">Autres liens utiles</div>' +
+    liensHtml +
+    '<div class="liens-add-row">' +
+      '<input type="text" id="newLienNom_' + id + '" placeholder="Nom (ex : Plan d\'action DUERP)">' +
+      '<input type="url" id="newLienUrl_' + id + '" placeholder="https://...">' +
+      '<button onclick="addInspLien(\'' + id + '\')">+ Ajouter</button>' +
+    '</div>' +
+  '</div>';
+}
+
+async function inspApiFetch(path, options){
+  const idToken = await window.INSP_FIREBASE.getIdToken();
+  if(!idToken) throw new Error('Session expirée, reconnecte-toi.');
+  const opts = Object.assign({}, options);
+  opts.headers = Object.assign({}, options && options.headers, { 'Authorization': 'Bearer ' + idToken });
+  return fetch(path, opts);
+}
+
+window.uploadInspCrFile = async function(inspId, inputEl){
+  const file = inputEl.files[0];
+  if(!file) return;
+  if(file.size > 25 * 1024 * 1024){ showToast('Fichier trop volumineux (25 Mo maximum).'); inputEl.value=''; return; }
+  const it = findInspection(inspId);
+  showToast('Envoi du fichier…');
+  try{
+    const resp = await inspApiFetch('/api/insp-file-upload', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/octet-stream' },
+      body: file
+    });
+    const data = await resp.json();
+    if(!resp.ok) throw new Error(data.error || 'Erreur upload');
+    const crFichier = { fileId: data.fileId, nomFichier: file.name, taille: data.taille };
+    await window.INSP_FIREBASE.update(inspId, { crFichier: crFichier });
+    it.crFichier = crFichier;
+    showToast('Fichier joint ✓');
+    openDrawer(inspId);
+  }catch(err){ showToast('Erreur : ' + err.message); }
+  inputEl.value = '';
+};
+
+window.deleteInspCrFile = async function(inspId){
+  if(!confirm('Supprimer définitivement ce fichier ?')) return;
+  const it = findInspection(inspId);
+  const fileId = it.crFichier && it.crFichier.fileId;
+  try{
+    if(fileId){
+      const resp = await inspApiFetch('/api/insp-file?fileId=' + encodeURIComponent(fileId), { method: 'DELETE' });
+      if(!resp.ok){ const d = await resp.json().catch(function(){return {};}); throw new Error(d.error || 'Suppression impossible.'); }
+    }
+    await window.INSP_FIREBASE.update(inspId, { crFichier: null });
+    it.crFichier = null;
+    showToast('Fichier supprimé');
+    openDrawer(inspId);
+  }catch(err){ showToast('Erreur : ' + err.message); }
+};
+
+window.openInspFile = async function(fileId, nom){
+  try{
+    const resp = await inspApiFetch('/api/insp-file?fileId=' + encodeURIComponent(fileId) + '&nom=' + encodeURIComponent(nom||'fichier'));
+    if(!resp.ok){ const d = await resp.json().catch(function(){return {};}); showToast('Impossible d\'ouvrir le fichier' + (d.error?(' : '+d.error):'') + '.'); return; }
+    const blob = await resp.blob();
+    const url = URL.createObjectURL(blob);
+    window.open(url, '_blank');
+  }catch(err){ showToast('Erreur : ' + err.message); }
+};
+
+window.saveInspCrLien = async function(inspId){
+  const it = findInspection(inspId);
+  const val = document.getElementById('crLienInput_' + inspId).value.trim();
+  try{
+    await window.INSP_FIREBASE.update(inspId, { crLien: val });
+    it.crLien = val;
+    showToast('Lien enregistré ✓');
+  }catch(err){ showToast('Erreur : ' + err.message); }
+};
+
+window.addInspLien = async function(inspId){
+  const it = findInspection(inspId);
+  const nom = document.getElementById('newLienNom_' + inspId).value.trim();
+  const urlVal = document.getElementById('newLienUrl_' + inspId).value.trim();
+  if(!urlVal){ showToast('Indique au moins une URL.'); return; }
+  const newLiens = (it.liens||[]).concat([{ nom: nom || urlVal, url: urlVal }]);
+  try{
+    await window.INSP_FIREBASE.update(inspId, { liens: newLiens });
+    it.liens = newLiens;
+    showToast('Lien ajouté ✓');
+    openDrawer(inspId);
+  }catch(err){ showToast('Erreur : ' + err.message); }
+};
+
+window.removeInspLien = async function(inspId, idx){
+  const it = findInspection(inspId);
+  const newLiens = (it.liens||[]).slice();
+  newLiens.splice(idx, 1);
+  try{
+    await window.INSP_FIREBASE.update(inspId, { liens: newLiens });
+    it.liens = newLiens;
+    showToast('Lien supprimé');
+    openDrawer(inspId);
+  }catch(err){ showToast('Erreur : ' + err.message); }
+};
 
 // ---- Statut ----
 window.setInspectionStatus = async function(inspId, statut){
@@ -1252,6 +1397,13 @@ window.exportInspectionDocx = function(inspId){
     children.push(blank());
     children.push(GH('Date de transmission du CR au CSE'));
     children.push(...P(it.dateRetourCR||''));
+  }
+
+  if(it.crFichier || it.crLien || (it.liens||[]).length){
+    children.push(blank(), GH('Documents & liens'));
+    if(it.crFichier) children.push(...P('Compte-rendu joint : ' + it.crFichier.nomFichier));
+    if(it.crLien) children.push(...P('Compte-rendu (lien) : ' + it.crLien));
+    (it.liens||[]).forEach(function(l){ children.push(...P((l.nom||l.url) + ' : ' + l.url)); });
   }
 
   children.push(blank(), GH('Guide d\'entretien (méthodologie)'));
