@@ -52,6 +52,11 @@
   h1{font-family:'Source Serif 4',serif; font-size:20px; margin:0 0 4px;}
   .subtitle{font-size:12.5px; color:var(--ink-soft); margin:0 0 20px;}
 
+  .filter-bar{display:flex; flex-wrap:wrap; gap:8px; margin-bottom:14px;}
+  .filter-bar input[type="text"]{flex:1; min-width:160px; padding:9px 12px; border:1px solid var(--line); border-radius:20px; font-size:12.5px; font-family:'Inter',sans-serif;}
+  .filter-bar select{padding:9px 12px; border:1px solid var(--line); border-radius:20px; font-size:12.5px; font-family:'Inter',sans-serif; background:#fff; color:var(--ink);}
+  .filter-bar .admin-btn{padding:9px 14px; font-size:12px;}
+
   .list{display:flex; flex-direction:column; gap:8px;}
   .row{
     display:flex; justify-content:space-between; align-items:center; gap:14px;
@@ -196,6 +201,19 @@
   <h1>Inspections</h1>
   <p class="subtitle">Préparation, guide d'entretien et suivi des inspections CSSCT.</p>
 
+  <div class="filter-bar">
+    <input type="text" id="filterSearch" placeholder="🔎 Rechercher un sujet…" oninput="applyFilters()">
+    <select id="filterSite" onchange="applyFilters()"><option value="">Tous les sites</option></select>
+    <select id="filterEntreprise" onchange="applyFilters()"><option value="">Toutes les entreprises</option></select>
+    <select id="filterStatut" onchange="applyFilters()">
+      <option value="">Tous les statuts</option>
+      <option value="Créé">Créé</option>
+      <option value="En cours">En cours</option>
+      <option value="Clos">Clos</option>
+    </select>
+    <button type="button" class="admin-btn" id="filterResetBtn" onclick="resetFilters()" style="display:none;">✕ Réinitialiser</button>
+  </div>
+
   <div class="list" id="list"><div style="font-size:13px;color:var(--ink-soft);">Chargement…</div></div>
 </div>
 
@@ -216,8 +234,9 @@
     <div class="modal-body">
       <div class="grid2">
         <div class="dfield"><label class="dlabel">Site</label><select id="newSite"></select></div>
-        <div class="dfield"><label class="dlabel">Date</label><input type="date" id="newDate"></div>
+        <div class="dfield"><label class="dlabel">Entreprise</label><select id="newEntreprise"></select></div>
       </div>
+      <div class="dfield"><label class="dlabel">Date</label><input type="date" id="newDate"></div>
       <div class="dfield"><label class="dlabel">Sujet de l'inspection</label><input type="text" id="newSujet" placeholder="Ex : Conditions de travail terrain"></div>
     </div>
     <div class="modal-actions">
@@ -381,12 +400,23 @@
     }).catch(() => {});
   }
 
+  function loadEntreprisesConfig(){
+    getDoc(doc(db, 'config', 'entreprises')).then((snap) => {
+      const data = snap.exists() ? snap.data() : {};
+      if(!Array.isArray(data.list) || !data.list.length) return;
+      window.ENTREPRISES = data.list.slice().sort((a,b)=>a.localeCompare(b,'fr'));
+      if(window.populateEntrepriseOptions) window.populateEntrepriseOptions();
+      if(window.renderList) window.renderList();
+    }).catch(() => {});
+  }
+
   onAuthStateChanged(auth, (user) => {
     document.getElementById('authChecking').style.display = 'none';
     if (user) {
       document.getElementById('authGate').style.display = 'none';
       applyBrandingLogo();
       loadSitesConfig();
+      loadEntreprisesConfig();
       loadConfig().then(() => {
         if(!unsubscribe){
           unsubscribe = onSnapshot(col, (snap) => {
@@ -460,12 +490,37 @@ const DEFAULT_SITES = ["Bezannes","Chalons-en-Champagne","Evreux","Milly-la-For�
 window.SITES = DEFAULT_SITES.slice();
 window.populateSiteOptions = function(){
   const sel = document.getElementById('newSite');
-  if(!sel) return;
-  const keep = sel.value;
-  sel.innerHTML = '<option value="">Choisir…</option>' + window.SITES.map(function(s){ return '<option>' + s + '</option>'; }).join('');
-  if(keep) sel.value = keep;
+  if(sel){
+    const keep = sel.value;
+    sel.innerHTML = '<option value="">Choisir…</option>' + window.SITES.map(function(s){ return '<option>' + s + '</option>'; }).join('');
+    if(keep) sel.value = keep;
+  }
+  const fsel = document.getElementById('filterSite');
+  if(fsel){
+    const fkeep = fsel.value;
+    fsel.innerHTML = '<option value="">Tous les sites</option>' + window.SITES.map(function(s){ return '<option>' + esc(s) + '</option>'; }).join('');
+    if(fkeep) fsel.value = fkeep;
+  }
 };
 window.populateSiteOptions();
+
+const DEFAULT_ENTREPRISES = ["Smag","Agrinovex","Fermes Leader","Be API","Agrosolutions","Carbon & Co"];
+window.ENTREPRISES = DEFAULT_ENTREPRISES.slice();
+window.populateEntrepriseOptions = function(){
+  const sel = document.getElementById('newEntreprise');
+  if(sel){
+    const keep = sel.value;
+    sel.innerHTML = '<option value="">Choisir…</option>' + window.ENTREPRISES.map(function(s){ return '<option>' + esc(s) + '</option>'; }).join('');
+    if(keep) sel.value = keep;
+  }
+  const fsel = document.getElementById('filterEntreprise');
+  if(fsel){
+    const fkeep = fsel.value;
+    fsel.innerHTML = '<option value="">Toutes les entreprises</option>' + window.ENTREPRISES.map(function(s){ return '<option>' + esc(s) + '</option>'; }).join('');
+    if(fkeep) fsel.value = fkeep;
+  }
+};
+window.populateEntrepriseOptions();
 
 window.DEFAULT_CONFIG = {
   guideSections: [
@@ -532,11 +587,43 @@ function compressImageFile(file, maxDim, quality){
   });
 }
 
+window.applyFilters = function(){
+  window._filters = {
+    search: (document.getElementById('filterSearch')||{}).value || '',
+    site: (document.getElementById('filterSite')||{}).value || '',
+    entreprise: (document.getElementById('filterEntreprise')||{}).value || '',
+    statut: (document.getElementById('filterStatut')||{}).value || ''
+  };
+  const f = window._filters;
+  const active = !!(f.search || f.site || f.entreprise || f.statut);
+  const btn = document.getElementById('filterResetBtn');
+  if(btn) btn.style.display = active ? 'inline-block' : 'none';
+  window.renderList();
+};
+window.resetFilters = function(){
+  document.getElementById('filterSearch').value = '';
+  document.getElementById('filterSite').value = '';
+  document.getElementById('filterEntreprise').value = '';
+  document.getElementById('filterStatut').value = '';
+  window.applyFilters();
+};
+
 window.renderList = function(){
   const list = document.getElementById('list');
-  const items = (window._inspections||[]).slice().sort(function(a,b){ return (b.date||'').localeCompare(a.date||''); });
+  const f = window._filters || {};
+  let items = (window._inspections||[]).slice().sort(function(a,b){ return (b.date||'').localeCompare(a.date||''); });
+  if(f.search){
+    const q = f.search.toLowerCase();
+    items = items.filter(function(it){ return (it.sujet||'').toLowerCase().indexOf(q) !== -1; });
+  }
+  if(f.site) items = items.filter(function(it){ return it.site === f.site; });
+  if(f.entreprise) items = items.filter(function(it){ return it.entreprise === f.entreprise; });
+  if(f.statut) items = items.filter(function(it){ return (it.statut||'Créé') === f.statut; });
   if(!items.length){
-    list.innerHTML = '<div style="font-size:13px;color:var(--ink-soft);">Aucune inspection enregistrée. Clique sur "+ Nouvelle inspection" pour commencer.</div>';
+    const hasFilters = !!(f.search || f.site || f.entreprise || f.statut);
+    list.innerHTML = '<div style="font-size:13px;color:var(--ink-soft);">' +
+      (hasFilters ? 'Aucune inspection ne correspond à ces filtres.' : 'Aucune inspection enregistrée. Clique sur "+ Nouvelle inspection" pour commencer.') +
+    '</div>';
     return;
   }
   const statusClassMap = {'Créé':'status-cree','En cours':'status-encours','Clos':'status-clos'};
@@ -544,7 +631,7 @@ window.renderList = function(){
     const nbEntretiens = (it.entretiens||[]).length;
     const statut = it.statut || 'Créé';
     return '<div class="row" onclick="openDrawer(\'' + it.id + '\')">' +
-      '<div style="min-width:0;"><div class="r-title" title="' + esc(it.sujet) + '">' + esc(it.sujet||'Sans sujet') + '</div><div class="r-meta">' + esc(it.site) + ' · ' + esc(it.date) + '</div></div>' +
+      '<div style="min-width:0;"><div class="r-title" title="' + esc(it.sujet) + '">' + esc(it.sujet||'Sans sujet') + '</div><div class="r-meta">' + esc(it.site) + (it.entreprise ? ' · ' + esc(it.entreprise) : '') + ' · ' + esc(it.date) + '</div></div>' +
       '<div class="r-right"><span class="status-chip ' + (statusClassMap[statut]||'status-cree') + '">' + esc(statut) + '</span>' +
       '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:11.5px;color:var(--ink-soft);">' + nbEntretiens + ' ent.</span></div>' +
     '</div>';
@@ -553,6 +640,7 @@ window.renderList = function(){
 
 window.openNewInspectionModal = function(){
   document.getElementById('newSite').value = '';
+  document.getElementById('newEntreprise').value = '';
   document.getElementById('newDate').valueAsDate = new Date();
   document.getElementById('newSujet').value = '';
   document.getElementById('newInspectionModal').classList.add('show');
@@ -560,14 +648,15 @@ window.openNewInspectionModal = function(){
 
 window.createInspection = async function(){
   const site = document.getElementById('newSite').value.trim();
+  const entreprise = document.getElementById('newEntreprise').value.trim();
   const date = document.getElementById('newDate').value;
   const sujet = document.getElementById('newSujet').value.trim();
   if(!site || !sujet){ showToast('Site et sujet sont obligatoires.'); return; }
   const item = {
-    site: site, date: date, sujet: sujet, statut: 'Créé',
+    site: site, entreprise: entreprise, date: date, sujet: sujet, statut: 'Créé',
     contexte: '', intervenants: '', documentsNecessaires: [], modalite: '', infoSalaries: '',
     dateRetourCR: '', pointsComplementaires: '', notesSuiteInspection: '',
-    entretiens: [], photos: [], createdAt: new Date().toISOString()
+    entretiens: [], photos: [], liens: [], crFichier: null, crLien: '', createdAt: new Date().toISOString()
   };
   try{
     const ref = await window.INSP_FIREBASE.add(item);
@@ -637,6 +726,7 @@ window.openDrawer = function(id){
     '<div class="drawer-body">' +
       sectionCard('Informations générales', 1, id, [
         {id:'site', label:'Site', value:it.site},
+        {id:'entreprise', label:'Entreprise', value:it.entreprise},
         {id:'date', label:'Date', value:it.date},
         {id:'sujet', label:'Sujet', value:it.sujet},
         {id:'contexte', label:'Contexte / objectif', value:it.contexte}
@@ -732,6 +822,15 @@ window.toggleEdit = function(inspId, sectionNum){
       const options = window.SITES.slice();
       if(val && options.indexOf(val) === -1) options.unshift(val);
       f.innerHTML = '<div class="dlabel">' + label + '</div><select data-edit="site">' +
+        options.map(function(s){ return '<option ' + (s===val?'selected':'') + '>' + esc(s) + '</option>'; }).join('') +
+      '</select>';
+      return;
+    }
+    if(id === 'entreprise'){
+      const options = window.ENTREPRISES.slice();
+      if(val && options.indexOf(val) === -1) options.unshift(val);
+      f.innerHTML = '<div class="dlabel">' + label + '</div><select data-edit="entreprise">' +
+        '<option value="">Non renseigné</option>' +
         options.map(function(s){ return '<option ' + (s===val?'selected':'') + '>' + esc(s) + '</option>'; }).join('') +
       '</select>';
       return;
@@ -1139,7 +1238,7 @@ window.exportInspectionDocx = function(inspId){
   const children = [
     PBC('Dossier d\'inspection CSSCT'),
     new Paragraph({ alignment: AlignmentType.CENTER, children:[ new TextRun(it.sujet||'') ] }),
-    new Paragraph({ alignment: AlignmentType.CENTER, children:[ new TextRun((it.site||'') + ' — ' + (it.date||'') + ' — Statut : ' + (it.statut||'Créé')) ] }),
+    new Paragraph({ alignment: AlignmentType.CENTER, children:[ new TextRun((it.site||'') + (it.entreprise ? ' — ' + it.entreprise : '') + ' — ' + (it.date||'') + ' — Statut : ' + (it.statut||'Créé')) ] }),
     blank(),
     GH('Contexte / objectif'), ...P(it.contexte),
     blank(), GH('Intervenants'), ...P(it.intervenants),
