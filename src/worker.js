@@ -1,3 +1,5 @@
+import { nettoyer, verifierCles, envoyer, expliquerCode } from './push.js';
+
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
@@ -21,6 +23,10 @@ export default {
       response = await handleInspFileUpload(request, env, ctx);
     } else if (url.pathname === '/api/insp-file') {
       response = await handleInspFileGet(request, env, ctx);
+    } else if (url.pathname === '/api/notif-cle') {
+      response = await handleNotifCle(request, env);
+    } else if (url.pathname === '/api/notif-test') {
+      response = await handleNotifTest(request, env);
     } else {
       response = await env.ASSETS.fetch(request);
     }
@@ -858,5 +864,102 @@ async function handleCrListePublique(request, env, ctx) {
     return new Response(JSON.stringify({ ok: true, crs: list }), { status: 200, headers: CORS_HEADERS });
   } catch (err) {
     return new Response(JSON.stringify({ error: err.message }), { status: 500, headers: CORS_HEADERS });
+  }
+}
+
+// ============================================================================
+// Notifications Web Push (voir src/push.js). Les messages restent toujours génériques :
+// jamais de nom, de code de suivi ni de détail d'un dossier.
+// ============================================================================
+
+function reponseJson(objet, code) {
+  return new Response(JSON.stringify(objet), { status: code || 200, headers: Object.assign({ 'Content-Type': 'application/json', 'Cache-Control': 'no-store' }, CORS_HEADERS) });
+}
+
+// Lecture stricte d'une collection : une erreur d'accès à la base n'est jamais avalée en silence.
+async function firestoreListStrict(env, collectionPath) {
+  const token = await getGoogleAccessToken(env);
+  let docs = [];
+  let pageToken = '';
+  do {
+    const base = 'https://firestore.googleapis.com/v1/projects/' + FIREBASE_PROJECT_ID + '/databases/(default)/documents/' + collectionPath + '?pageSize=300';
+    const resp = await fetch(base + (pageToken ? ('&pageToken=' + encodeURIComponent(pageToken)) : ''), { headers: { Authorization: 'Bearer ' + token } });
+    if (!resp.ok) throw new Error('Firestore ' + resp.status);
+    const data = await resp.json();
+    if (data.documents) docs = docs.concat(data.documents.map(fsDecodeDoc));
+    pageToken = data.nextPageToken || '';
+  } while (pageToken);
+  return docs;
+}
+
+// Lecture stricte d'un document : renvoie null seulement s'il n'existe pas, lève une erreur si la base refuse l'accès.
+async function firestoreGetStrict(env, docPath) {
+  const token = await getGoogleAccessToken(env);
+  const resp = await fetch('https://firestore.googleapis.com/v1/projects/' + FIREBASE_PROJECT_ID + '/databases/(default)/documents/' + docPath, {
+    headers: { Authorization: 'Bearer ' + token }
+  });
+  if (resp.status === 404) return null;
+  if (!resp.ok) throw new Error('Firestore ' + resp.status);
+  const data = await resp.json();
+  return data.fields ? fsDecodeDoc(data) : null;
+}
+
+async function firestoreDeleteDoc(env, docPath) {
+  const token = await getGoogleAccessToken(env);
+  const resp = await fetch('https://firestore.googleapis.com/v1/projects/' + FIREBASE_PROJECT_ID + '/databases/(default)/documents/' + docPath, {
+    method: 'DELETE', headers: { Authorization: 'Bearer ' + token }
+  });
+  if (!resp.ok && resp.status !== 404) throw new Error('Firestore ' + resp.status);
+}
+
+// Message lisible pour une erreur d'accès à la base (secret du compte de service absent, périmé ou incorrect).
+function expliquerErreurBase(err) {
+  const m = String((err && err.message) || err);
+  if (/GOOGLE_SERVICE_ACCOUNT_KEY absent/.test(m)) return 'Le secret GOOGLE_SERVICE_ACCOUNT_KEY est absent de Cloudflare (Paramètres, Variables et secrets).';
+  if (/Firestore (401|403)|invalid_grant|Erreur obtention token Google/.test(m)) return 'Accès à la base refusé : le secret GOOGLE_SERVICE_ACCOUNT_KEY de Cloudflare est périmé ou incorrect.';
+  if (/JSON/.test(m) && /position|Unexpected|token/i.test(m)) return 'Le secret GOOGLE_SERVICE_ACCOUNT_KEY est illisible : recollez le fichier JSON du compte de service en entier.';
+  return 'Erreur d\u2019accès à la base : ' + m.slice(0, 120);
+}
+
+// Clé publique à utiliser pour l'abonnement d'un appareil, ou raison pour laquelle elle est indisponible.
+async function handleNotifCle(request, env) {
+  if (request.method === 'OPTIONS') return new Response(null, { headers: CORS_HEADERS });
+  const configuree = !!(nettoyer(env.VAPID_PUBLIC) || nettoyer(env.VAPID_PRIVATE));
+  const erreur = configuree ? await verifierCles(env) : 'Les notifications ne sont pas encore configurées : un administrateur doit générer les clés dans Administration.';
+  return reponseJson({ cle: erreur ? null : nettoyer(env.VAPID_PUBLIC), erreur: erreur });
+}
+
+// Envoie une notification de test à un appareil de la personne connectée (jamais à un autre).
+async function handleNotifTest(request, env) {
+  if (request.method === 'OPTIONS') return new Response(null, { headers: CORS_HEADERS });
+  if (request.method !== 'POST') return reponseJson({ erreur: 'Méthode non autorisée' }, 405);
+  let email;
+  try {
+    const auth = request.headers.get('Authorization') || '';
+    const m = auth.match(/^Bearer (.+)$/);
+    if (!m) return reponseJson({ erreur: 'Vous n\u2019êtes pas connecté : reconnectez-vous puis réessayez.' }, 401);
+    email = await verifyFirebaseIdToken(m[1]);
+  } catch (err) {
+    return reponseJson({ erreur: 'Connexion non valide (' + err.message + ') : reconnectez-vous puis réessayez.' }, 401);
+  }
+  try {
+    if (!env.GOOGLE_SERVICE_ACCOUNT_KEY) return reponseJson({ erreur: expliquerErreurBase(new Error('GOOGLE_SERVICE_ACCOUNT_KEY absent')) }, 503);
+    const autorise = await firestoreGetStrict(env, 'authorized_emails/' + email);
+    if (!autorise) return reponseJson({ erreur: 'Votre adresse n\u2019est pas autorisée dans l\u2019application.' }, 403);
+    let corps = {};
+    try { corps = await request.json(); } catch (e) { /* corps vide */ }
+    const endpoint = String(corps.endpoint || '');
+    if (!endpoint) return reponseJson({ erreur: 'Aucun appareil indiqué : activez d\u2019abord les notifications sur cet appareil.' }, 400);
+    const abonnements = await firestoreListStrict(env, 'abonnements_push');
+    const abonnement = abonnements.find(function (a) { return a.endpoint === endpoint && String(a.email || '').toLowerCase() === email; });
+    if (!abonnement) return reponseJson({ erreur: 'Cet appareil n\u2019est pas enregistré pour votre adresse : désactivez puis réactivez les notifications.' }, 404);
+    const resultat = await envoyer(env, abonnement, { titre: 'Notification de test', corps: 'Les notifications fonctionnent sur cet appareil.', url: 'notifications.html', tag: 'test' });
+    if (resultat.code === 404 || resultat.code === 410) {
+      try { await firestoreDeleteDoc(env, 'abonnements_push/' + abonnement.id); } catch (e) { console.error('Suppression abonnement périmé impossible : ' + e.message); }
+    }
+    const ok = resultat.code >= 200 && resultat.code < 300;
+    return reponseJson({ ok: ok, erreur: ok ? null : (resultat.code === 0 ? resultat.detail : expliquerCode(resultat.code, resultat.detail)), code: resultat.code }, ok ? 200 : 502);
+  } catch (err) {
+    return reponseJson({ erreur: expliquerErreurBase(err) }, 503);
   }
 }
