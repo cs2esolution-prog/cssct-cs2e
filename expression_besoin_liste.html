@@ -244,7 +244,14 @@
   window.BESOIN_FIREBASE = {
     async update(id, fields){ await updateDoc(doc(col, id), fields); },
     async addNote(id, entry){ await updateDoc(doc(col, id), { notesInternes: arrayUnion(entry) }); },
-    async addHistorique(id, entry){ await updateDoc(doc(col, id), { historique: arrayUnion(entry) }); }
+    async addHistorique(id, entry){ await updateDoc(doc(col, id), { historique: arrayUnion(entry) }); },
+    // Prévient les autres personnes abonnées aux notifications (message générique, sans détail). Échec sans conséquence.
+    async notifierStatut(){
+      try{
+        const jeton = await auth.currentUser.getIdToken();
+        await fetch('/api/notif-statut', { method:'POST', headers:{ 'Content-Type':'application/json', 'Authorization':'Bearer ' + jeton }, body: JSON.stringify({ kind:'besoin' }) });
+      }catch(err){ /* la notification est un confort : on ne gêne jamais l'enregistrement */ }
+    }
   };
 
   window._crList = [];
@@ -383,10 +390,12 @@ window.saveStatutReunion = async function(id){
     reunionLieeId: reunionId || '',
     reunionLieeLabel: cr ? (cr.titre + ' — ' + toFR(cr.date)) : ''
   };
+  const statutChange = it.statut !== statut;
   try{
     await window.BESOIN_FIREBASE.update(id, fields);
     Object.assign(it, fields);
     showToast('Enregistré ✓');
+    if(statutChange) window.BESOIN_FIREBASE.notifierStatut();
     window.renderList();
   }catch(err){ showToast('Erreur : ' + err.message); }
 };
