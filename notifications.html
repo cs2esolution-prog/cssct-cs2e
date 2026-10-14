@@ -77,6 +77,12 @@
     <div class="msg" id="msg"></div>
   </div>
 
+  <div class="card">
+    <h2>Dernier envoi</h2>
+    <p class="etat neutre" id="dernierEnvoi">Chargement…</p>
+    <button class="btn ghost" id="btnActualiser">Actualiser</button>
+  </div>
+
   <div class="card guide">
     <h2>Mode d'emploi</h2>
     <h3>iPhone / iPad</h3>
@@ -118,7 +124,7 @@ const firebaseConfig = {
   messagingSenderId: "277603883255",
   appId: "1:277603883255:web:b3b7a5c3097a60caac1bf2"
 };
-  const VERSION_NOTIFICATIONS = '1.1.1';
+  const VERSION_NOTIFICATIONS = '1.2.0';
   const app = initializeApp(firebaseConfig);
   const auth = getAuth(app);
   const db = getFirestore(app);
@@ -183,8 +189,43 @@ const firebaseConfig = {
     $('btnDesactiver').style.display = etatAppareil === 'actif' ? 'block' : 'none';
   }
 
+  const LIBELLES = { signalement: 'Nouveau signalement', besoin: 'Nouvelle expression de besoin', complement: 'Complément ajouté', statut: 'Changement de statut' };
+
+  // Journal du dernier envoi : permet de comprendre, sans outil technique, pourquoi une notification n'est pas arrivée.
+  async function afficherDernierEnvoi() {
+    const zone = $('dernierEnvoi');
+    try {
+      const snap = await getDoc(doc(db, 'config', 'dernier_envoi_notifications'));
+      if (!snap.exists()) { zone.textContent = "Aucun envoi enregistré pour l'instant."; zone.className = 'etat neutre'; return; }
+      const j = snap.data();
+      const quand = new Date(j.date).toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' });
+      const libelle = LIBELLES[j.type] || j.type;
+      if (j.etat === 'en cours') {
+        if (Date.now() - new Date(j.date).getTime() > 60000) {
+          zone.textContent = quand + ' · ' + libelle + ' : l\u2019envoi a été interrompu avant la fin. Cause la plus probable : limite de temps de calcul du forfait gratuit de Cloudflare.';
+          zone.className = 'etat ko';
+        } else { zone.textContent = quand + ' · ' + libelle + ' : envoi en cours…'; zone.className = 'etat neutre'; }
+      } else if (j.etat === 'échec') {
+        zone.textContent = quand + ' · ' + libelle + ' : échec. ' + (j.erreur || '');
+        zone.className = 'etat ko';
+      } else if (!j.appareils) {
+        zone.textContent = quand + ' · ' + libelle + ' : aucun appareil à prévenir. Vérifie que ton adresse est autorisée et que ce type de notification n\u2019est pas décoché.';
+        zone.className = 'etat ko';
+      } else {
+        const bon = !j.echecs;
+        zone.textContent = quand + ' · ' + libelle + ' : ' + j.appareils + ' appareil(s) trouvé(s), ' + j.envoyes + ' envoyé(s)' + (j.echecs ? ', ' + j.echecs + ' en échec. ' + (j.erreur || '') : '.');
+        zone.className = 'etat ' + (bon ? 'ok' : 'ko');
+      }
+    } catch (e) {
+      zone.textContent = "Impossible de lire le journal : " + e.message;
+      zone.className = 'etat ko';
+    }
+  }
+  $('btnActualiser').addEventListener('click', afficherDernierEnvoi);
+
   async function demarrer() {
     afficher('');
+    afficherDernierEnvoi();
     const ios = estIOS();
     if (ios && !estInstallee()) {
       $('aideInstallation').style.display = 'block';
