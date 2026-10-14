@@ -71,7 +71,7 @@ Une fois le site en ligne :
 
 ## Étape 3quater — Notifications sur téléphone (Web Push)
 
-Nécessite le compte de service Google du Worker (secret `GOOGLE_SERVICE_ACCOUNT_KEY`, voir l'étape correspondante dans la section « Mode opératoire » de la page Administration) et les règles Firestore à jour. Aucune valeur propre à SMAG : chaque instance génère ses propres clés ; les messages sont toujours génériques (aucun nom, code de suivi ni détail).
+Nécessite le compte de service Google du Worker (secret `GOOGLE_SERVICE_ACCOUNT_KEY`, voir l'étape correspondante dans la section « Mode opératoire » de la page Administration) et les règles Firestore à jour. Aucune valeur propre à SMAG : chaque instance génère ses propres clés ; les messages indiquent le type, le numéro et la nature du dossier (jamais de nom, de description ni de code de suivi) et un clic ouvre directement le dossier concerné ; les canaux ntfy (service tiers, en clair) restent strictement génériques.
 
 1. Dans le dépôt de la nouvelle instance : `sw.js`, `notifications.html` (avec le `firebaseConfig` de l'instance), `src/push.js` et `src/worker.js`.
 2. Firestore > Règles : coller le fichier `claude/firestore.rules` à jour (bloc `abonnements_push` : chaque personne autorisée lit et écrit uniquement ses propres appareils), puis publier.

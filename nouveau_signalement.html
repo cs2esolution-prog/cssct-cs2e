@@ -777,7 +777,7 @@
       // Sans attendre la réponse, et sans jamais gêner l'enregistrement en cas d'échec.
       try{
         auth.currentUser.getIdToken().then(function(jeton){
-          return fetch('/api/notif-statut', { method:'POST', headers:{ 'Content-Type':'application/json', 'Authorization':'Bearer ' + jeton }, body: JSON.stringify({ evenement:'signalement' }) });
+          return fetch('/api/notif-statut', { method:'POST', headers:{ 'Content-Type':'application/json', 'Authorization':'Bearer ' + jeton }, body: JSON.stringify({ evenement:'signalement', id: ref.id }) });
         }).catch(function(){ /* la notification est un confort */ });
       }catch(err){ /* idem */ }
       return { id: ref.id, ...payload };

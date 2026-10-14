@@ -490,10 +490,10 @@
     async addEchangeEntry(docId, entry){ await updateDoc(doc(db,'signalements', docId), { echanges: arrayUnion(entry) }); },
     async remove(docId){ await deleteDoc(doc(db,'signalements', docId)); },
     // Prévient les autres personnes abonnées aux notifications (message générique, sans détail). Échec sans conséquence.
-    async notifierStatut(){
+    async notifierStatut(id){
       try{
         const jeton = await auth.currentUser.getIdToken();
-        await fetch('/api/notif-statut', { method:'POST', headers:{ 'Content-Type':'application/json', 'Authorization':'Bearer ' + jeton }, body: JSON.stringify({ kind:'signalement' }) });
+        await fetch('/api/notif-statut', { method:'POST', headers:{ 'Content-Type':'application/json', 'Authorization':'Bearer ' + jeton }, body: JSON.stringify({ kind:'signalement', id: id || '' }) });
       }catch(err){ /* la notification est un confort : on ne gêne jamais l'enregistrement */ }
     }
   };
@@ -574,7 +574,20 @@ window.onDossiersUpdated = function(){
   if(openDrawerNumero !== null && overlay.classList.contains('show')){
     openDrawer(openDrawerNumero);
   }
+  ouvrirDossierDepuisLien();
 };
+
+// Lien profond (clic sur une notification) : signalement_liste.html?dossier=<identifiant>
+let lienDossierTraite = false;
+function ouvrirDossierDepuisLien(){
+  if(lienDossierTraite || !window.dossiers) return;
+  let cible = '';
+  try{ cible = new URLSearchParams(location.search).get('dossier') || ''; }catch(e){ cible = ''; }
+  if(!cible){ lienDossierTraite = true; return; }
+  lienDossierTraite = true;
+  if(findDossier(cible)){ openDrawer(cible); }
+  else { showToast('Ce dossier est introuvable (peut-être supprimé).'); }
+}
 
 function statusClass(s){
   if(s.indexOf('1')===0) return 'status-1';
@@ -1869,7 +1882,7 @@ document.getElementById('closeModalConfirm').addEventListener('click', function(
   const fields = { statut:'3-Clos', dateCloture: dateCloture, infoCloture: info, suivi: newSuivi };
   window.CSSCT_FIREBASE.updateFields(d.id, fields).then(()=>{
     showToast('Dossier cloturé');
-    window.CSSCT_FIREBASE.notifierStatut();
+    window.CSSCT_FIREBASE.notifierStatut(d.id);
   }).catch(err=>{ showToast('Erreur : ' + err.message); });
   Object.assign(d, fields);
   document.getElementById('closeModal').classList.remove('show');
@@ -1885,7 +1898,7 @@ function reopenDossier(dossierId){
     const fields = { statut:'1-En Cours', suivi: newSuivi };
     window.CSSCT_FIREBASE.updateFields(d.id, fields).then(()=>{
       showToast('Dossier réouvert');
-      window.CSSCT_FIREBASE.notifierStatut();
+      window.CSSCT_FIREBASE.notifierStatut(d.id);
     }).catch(err=>{ showToast('Erreur : ' + err.message); });
     Object.assign(d, fields);
     openDrawer(dossierId);

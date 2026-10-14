@@ -208,6 +208,16 @@
           if(window._openDrawerId && document.getElementById('drawerOverlay').classList.contains('show')){
             window.openDrawer(window._openDrawerId);
           }
+          // Lien profond (clic sur une notification) : expression_besoin_liste.html?besoin=<identifiant>
+          if(!window._lienBesoinTraite){
+            window._lienBesoinTraite = true;
+            let cible = '';
+            try{ cible = new URLSearchParams(location.search).get('besoin') || ''; }catch(e){ cible = ''; }
+            if(cible){
+              if(window._besoins.some(b => b.id === cible)) window.openDrawer(cible);
+              else if(typeof showToast === 'function') showToast('Cette expression de besoin est introuvable (peut-être supprimée).');
+            }
+          }
         });
       }
     } else {
@@ -246,10 +256,10 @@
     async addNote(id, entry){ await updateDoc(doc(col, id), { notesInternes: arrayUnion(entry) }); },
     async addHistorique(id, entry){ await updateDoc(doc(col, id), { historique: arrayUnion(entry) }); },
     // Prévient les autres personnes abonnées aux notifications (message générique, sans détail). Échec sans conséquence.
-    async notifierStatut(){
+    async notifierStatut(id){
       try{
         const jeton = await auth.currentUser.getIdToken();
-        await fetch('/api/notif-statut', { method:'POST', headers:{ 'Content-Type':'application/json', 'Authorization':'Bearer ' + jeton }, body: JSON.stringify({ kind:'besoin' }) });
+        await fetch('/api/notif-statut', { method:'POST', headers:{ 'Content-Type':'application/json', 'Authorization':'Bearer ' + jeton }, body: JSON.stringify({ kind:'besoin', id: id || '' }) });
       }catch(err){ /* la notification est un confort : on ne gêne jamais l'enregistrement */ }
     }
   };
@@ -395,7 +405,7 @@ window.saveStatutReunion = async function(id){
     await window.BESOIN_FIREBASE.update(id, fields);
     Object.assign(it, fields);
     showToast('Enregistré ✓');
-    if(statutChange) window.BESOIN_FIREBASE.notifierStatut();
+    if(statutChange) window.BESOIN_FIREBASE.notifierStatut(id);
     window.renderList();
   }catch(err){ showToast('Erreur : ' + err.message); }
 };

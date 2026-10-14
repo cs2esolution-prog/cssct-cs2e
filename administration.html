@@ -651,7 +651,7 @@
 
       <h4>Étape 3quater — Notifications sur téléphone (Web Push)</h4>
       <div class="modop-note">⚠️ Nécessite l'étape 3ter (compte de service) et les règles Firestore de la collection <code>abonnements_push</code> (fichier <code>claude/firestore.rules</code>). Sans les clés ci-dessous, la page « Notifications » affiche un message explicite et rien ne part.</div>
-      <p class="s-help" style="margin:6px 0;">Aucune valeur propre à SMAG : les clés sont générées par chaque instance, le contact d'envoi est facultatif et les messages restent génériques (aucun nom, code de suivi ni détail).</p>
+      <p class="s-help" style="margin:6px 0;">Aucune valeur propre à SMAG : les clés sont générées par chaque instance, le contact d'envoi est facultatif et les messages indiquent le type, le numéro et la nature du dossier (jamais de nom, de description ni de code de suivi) ; un clic ouvre directement le dossier. Les canaux ntfy restent génériques.</p>
       <ol>
         <li>Republie dans le dépôt de la nouvelle instance : <code>sw.js</code>, <code>notifications.html</code> (avec le <code>firebaseConfig</code> de l'instance, voir étape 2), <code>src/push.js</code> et <code>src/worker.js</code>.</li>
         <li>Firestore &rarr; Règles : colle le fichier <code>firestore.rules</code> à jour (bloc <code>abonnements_push</code>) et publie.</li>
