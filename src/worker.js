@@ -27,6 +27,8 @@ export default {
       response = await handleNotifCle(request, env);
     } else if (url.pathname === '/api/notif-test') {
       response = await handleNotifTest(request, env);
+    } else if (url.pathname === '/api/notif-statut') {
+      response = await handleNotifStatut(request, env);
     } else {
       response = await env.ASSETS.fetch(request);
     }
@@ -248,6 +250,9 @@ async function handleCollaborateurSubmission(request, env, ctx) {
       return new Response(JSON.stringify({ error: 'Champs obligatoires manquants' }), { status: 400, headers: CORS_HEADERS });
     }
 
+    // Notification sur téléphone : générique, indépendante de l'envoi des e-mails.
+    declencherNotification(env, ctx, evenementNotification('signalement'));
+
     const vars = { numero, codeSuivi, rapporteur, site, nature, objet };
     const templatesDoc = await fetchEmailTemplatesConfig(env);
     const tConfirm = pickTemplate(templatesDoc, 'signalementConfirmation');
@@ -321,6 +326,8 @@ async function handleBesoinSubmission(request, env, ctx) {
     if (!codeSuivi || !theme) {
       return new Response(JSON.stringify({ error: 'Champs obligatoires manquants' }), { status: 400, headers: CORS_HEADERS });
     }
+
+    declencherNotification(env, ctx, evenementNotification('besoin'));
 
     const fromEmail = env.MAILJET_FROM_EMAIL || 'cs2esolution@gmail.com';
     const fromName = env.MAILJET_FROM_NAME || 'CSSCT';
@@ -398,6 +405,8 @@ async function handleComplementSubmission(request, env, ctx) {
     const fromEmail = env.MAILJET_FROM_EMAIL || 'cs2esolution@gmail.com';
     const fromName = env.MAILJET_FROM_NAME || 'CSSCT';
     const cssctEmails = resolveDestinataires(await fetchDestinatairesConfig(env, kind === 'signalement' ? 'notifications_signalement' : 'notifications_besoin'));
+
+    declencherNotification(env, ctx, evenementNotification('complement', kind));
 
     const label = kind === 'signalement'
       ? ('dossier de signalement' + (numero ? ' n°' + numero : '') + ' (' + code + ')')
@@ -959,6 +968,118 @@ async function handleNotifTest(request, env) {
     }
     const ok = resultat.code >= 200 && resultat.code < 300;
     return reponseJson({ ok: ok, erreur: ok ? null : (resultat.code === 0 ? resultat.detail : expliquerCode(resultat.code, resultat.detail)), code: resultat.code }, ok ? 200 : 502);
+  } catch (err) {
+    return reponseJson({ erreur: expliquerErreurBase(err) }, 503);
+  }
+}
+
+// ---- Diffusion des notifications à tous les appareils concernés ----
+
+// Texte toujours générique : jamais de nom, de numéro, de code de suivi ni de détail.
+function evenementNotification(type, kind, exclure) {
+  const pageDossiers = kind === 'besoin' ? 'expression_besoin_liste.html' : 'signalement_liste.html';
+  const definitions = {
+    signalement: { titre: 'Nouveau signalement CSSCT', corps: 'Un nouveau signalement a été déposé. Consulte l\u2019application.', url: 'signalement_liste.html' },
+    besoin: { titre: 'Nouvelle expression de besoin', corps: 'Une nouvelle expression de besoin a été déposée. Consulte l\u2019application.', url: 'expression_besoin_liste.html' },
+    complement: { titre: 'Complément ajouté', corps: 'Un complément a été ajouté sur une demande. Consulte l\u2019application.', url: pageDossiers },
+    statut: { titre: 'Changement de statut', corps: 'Une demande a changé de statut. Consulte l\u2019application.', url: pageDossiers }
+  };
+  const d = definitions[type];
+  return { type: type, titre: d.titre, corps: d.corps, url: d.url, exclure: exclure || null };
+}
+
+function declencherNotification(env, ctx, evenement) {
+  const tache = diffuserNotification(env, evenement).catch(function (err) {
+    console.error('Diffusion des notifications impossible : ' + err.message);
+  });
+  if (ctx && typeof ctx.waitUntil === 'function') ctx.waitUntil(tache);
+  return tache;
+}
+
+const SUJET_NTFY_PERSONNEL = /^cssct-[0-9a-f]{32}$/;
+// Un Worker du forfait gratuit est limité à 50 requêtes sortantes par exécution : on en réserve une douzaine
+// pour la lecture de la base et les e-mails, le reste sert aux envois (1 par appareil, +1 par canal ntfy personnel).
+const MAX_ENVOIS_PAR_EXECUTION = 36;
+
+// Envoie l'événement à chaque appareil abonné dont la personne est toujours autorisée et a gardé ce type coché.
+async function diffuserNotification(env, evenement) {
+  const bilan = { appareils: 0, envoyes: 0, supprimes: 0, echecs: 0 };
+  if (!env.GOOGLE_SERVICE_ACCOUNT_KEY) return bilan;
+  const lectures = await Promise.all([firestoreListStrict(env, 'abonnements_push'), firestoreListStrict(env, 'authorized_emails')]);
+  const autorises = new Set(lectures[1].map(function (d) { let id = d.id; try { id = decodeURIComponent(id); } catch (e) { /* identifiant laissé tel quel */ } return String(id).toLowerCase(); }));
+  const exclure = evenement.exclure ? String(evenement.exclure).toLowerCase() : null;
+  let cibles = lectures[0].filter(function (a) {
+    const email = String(a.email || '').toLowerCase();
+    return autorises.has(email) && email !== exclure && !(a.types && a.types[evenement.type] === false);
+  });
+  let budget = MAX_ENVOIS_PAR_EXECUTION;
+  const retenues = [];
+  const sujetsComptes = new Set();
+  for (const a of cibles) {
+    const sujet = String(a.ntfySujet || '');
+    const ntfyNeuf = SUJET_NTFY_PERSONNEL.test(sujet) && !sujetsComptes.has(sujet);
+    const cout = (a.endpoint ? 1 : 0) + (ntfyNeuf ? 1 : 0);
+    if (cout > budget) break;
+    budget -= cout;
+    if (ntfyNeuf) sujetsComptes.add(sujet);
+    retenues.push(a);
+  }
+  if (retenues.length < cibles.length) console.error('Trop d\u2019appareils pour une seule exécution : ' + retenues.length + ' notifiés sur ' + cibles.length + ' (limite de requêtes sortantes du forfait gratuit).');
+  cibles = retenues;
+  bilan.appareils = cibles.length;
+  const sujetsDejaServis = new Set();
+  let avertissementCles = false;
+  await Promise.all(cibles.map(async function (a) {
+    const message = { titre: evenement.titre, corps: evenement.corps, url: evenement.url, tag: evenement.type + '-' + Date.now() };
+    if (a.endpoint) {
+      const r = await envoyer(env, a, message);
+      if (r.code >= 200 && r.code < 300) bilan.envoyes++;
+      else {
+        bilan.echecs++;
+        if (r.code === 404 || r.code === 410) {
+          try { await firestoreDeleteDoc(env, 'abonnements_push/' + a.id); bilan.supprimes++; } catch (e) { console.error('Suppression abonnement périmé impossible : ' + e.message); }
+        } else if (r.code === 0 && !avertissementCles) {
+          avertissementCles = true;
+          console.error('Notification non envoyée : ' + r.detail);
+        } else if (r.code !== 0) {
+          console.error('Notification refusée par le service (code ' + r.code + ')');
+        }
+      }
+    }
+    // Canal ntfy personnel (sujet aléatoire propre à la personne), en complément du Web Push.
+    const sujet = String(a.ntfySujet || '');
+    if (SUJET_NTFY_PERSONNEL.test(sujet) && !sujetsDejaServis.has(sujet)) {
+      sujetsDejaServis.add(sujet);
+      try {
+        const entetes = { Title: evenement.titre, Priority: 'default', Tags: 'bell' };
+        if (a.origine && /^https:\/\//.test(a.origine)) entetes.Click = a.origine.replace(/\/$/, '') + '/' + evenement.url;
+        await fetch('https://ntfy.sh/' + sujet, { method: 'POST', headers: entetes, body: evenement.corps });
+      } catch (e) { console.error('Erreur ntfy personnel : ' + e.message); }
+    }
+  }));
+  return bilan;
+}
+
+// Appelée par les pages internes après un changement de statut : prévient les autres personnes abonnées.
+async function handleNotifStatut(request, env) {
+  if (request.method === 'OPTIONS') return new Response(null, { headers: CORS_HEADERS });
+  if (request.method !== 'POST') return reponseJson({ erreur: 'Méthode non autorisée' }, 405);
+  let email;
+  try {
+    const m = (request.headers.get('Authorization') || '').match(/^Bearer (.+)$/);
+    if (!m) return reponseJson({ erreur: 'Non connecté' }, 401);
+    email = await verifyFirebaseIdToken(m[1]);
+  } catch (err) {
+    return reponseJson({ erreur: 'Connexion non valide' }, 401);
+  }
+  try {
+    if (!env.GOOGLE_SERVICE_ACCOUNT_KEY) return reponseJson({ erreur: expliquerErreurBase(new Error('GOOGLE_SERVICE_ACCOUNT_KEY absent')) }, 503);
+    if (!(await firestoreGetStrict(env, 'authorized_emails/' + email))) return reponseJson({ erreur: 'Non autorisé' }, 403);
+    let corps = {};
+    try { corps = await request.json(); } catch (e) { /* corps vide */ }
+    const kind = corps.kind === 'besoin' ? 'besoin' : 'signalement';
+    const bilan = await diffuserNotification(env, evenementNotification('statut', kind, email));
+    return reponseJson({ ok: true, appareils: bilan.appareils, envoyes: bilan.envoyes });
   } catch (err) {
     return reponseJson({ erreur: expliquerErreurBase(err) }, 503);
   }

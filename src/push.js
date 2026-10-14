@@ -72,19 +72,29 @@ export async function verifierCles(env) {
   return null;
 }
 
+// Le jeton VAPID est valable 12 h et identique pour tous les appareils d'un même service de notification
+// (Google, Mozilla, Apple) : on le signe une fois puis on le réutilise, ce qui économise du temps de calcul.
+const jetonsEnMemoire = new Map();
+
 // En-tête d'autorisation VAPID pour un service de notification donné (adresse de l'abonnement).
 export async function jetonVapid(env, endpoint, sujet, maintenant) {
   const pub = nettoyer(env.VAPID_PUBLIC);
+  const horloge = maintenant || Math.floor(Date.now() / 1000);
+  const cleCache = new URL(endpoint).origin + '|' + sujet + '|' + pub;
+  const memorise = jetonsEnMemoire.get(cleCache);
+  if (memorise && memorise.exp - horloge > 3600) return memorise.valeur;
   const pubOctets = b64uDecode(pub);
   const cle = await importerPrivee(pubOctets, b64uDecode(nettoyer(env.VAPID_PRIVATE)));
   const entete = b64uEncode(enc.encode(JSON.stringify({ typ: 'JWT', alg: 'ES256' })));
   const corps = b64uEncode(enc.encode(JSON.stringify({
     aud: new URL(endpoint).origin,
-    exp: (maintenant || Math.floor(Date.now() / 1000)) + 12 * 3600,
+    exp: horloge + 12 * 3600,
     sub: sujet
   })));
   const signature = await crypto.subtle.sign({ name: 'ECDSA', hash: 'SHA-256' }, cle, enc.encode(entete + '.' + corps));
-  return 'vapid t=' + entete + '.' + corps + '.' + b64uEncode(new Uint8Array(signature)) + ', k=' + pub;
+  const valeur = 'vapid t=' + entete + '.' + corps + '.' + b64uEncode(new Uint8Array(signature)) + ', k=' + pub;
+  jetonsEnMemoire.set(cleCache, { valeur: valeur, exp: horloge + 12 * 3600 });
+  return valeur;
 }
 
 async function hkdf(sel, secret, info, longueur) {
