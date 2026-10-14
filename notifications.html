@@ -104,6 +104,11 @@
       <li>Ouvre l'application dans Chrome, Edge ou Firefox, connecte-toi, puis va sur cette page.</li>
       <li>Clique sur « Activer sur cet appareil », autorise les notifications, puis « Envoyer un test ».</li>
     </ol>
+    <h3>Ce que tu reçois</h3>
+    <ul>
+      <li>Tout de suite : nouveau signalement, nouvelle expression de besoin, complément, changement de statut (fait par quelqu'un d'autre). Un clic ouvre directement le dossier.</li>
+      <li>Chaque jour à 9 h : un seul message groupé sur les trousses (péremptions, contrôles) et les signalements non clos depuis plus de 30 jours. Rien n'est envoyé s'il n'y a rien à signaler.</li>
+    </ul>
     <p>Chaque appareil s'active séparément. Si le test échoue, la cause exacte s'affiche sous les boutons.
     Pour arrêter, utilise « Désactiver sur cet appareil ».</p>
   </div>
@@ -124,7 +129,7 @@ const firebaseConfig = {
   messagingSenderId: "277603883255",
   appId: "1:277603883255:web:b3b7a5c3097a60caac1bf2"
 };
-  const VERSION_NOTIFICATIONS = '1.3.0';
+  const VERSION_NOTIFICATIONS = '1.4.0';
   const app = initializeApp(firebaseConfig);
   const auth = getAuth(app);
   const db = getFirestore(app);
@@ -189,7 +194,7 @@ const firebaseConfig = {
     $('btnDesactiver').style.display = etatAppareil === 'actif' ? 'block' : 'none';
   }
 
-  const LIBELLES = { signalement: 'Nouveau signalement', besoin: 'Nouvelle expression de besoin', complement: 'Complément ajouté', statut: 'Changement de statut' };
+  const LIBELLES = { signalement: 'Nouveau signalement', besoin: 'Nouvelle expression de besoin', complement: 'Complément ajouté', statut: 'Changement de statut', rappel: 'Rappels programmés' };
 
   // Journal du dernier envoi : permet de comprendre, sans outil technique, pourquoi une notification n'est pas arrivée.
   async function afficherDernierEnvoi() {
