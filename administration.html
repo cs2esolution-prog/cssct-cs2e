@@ -308,10 +308,6 @@
     <div class="qr-url" id="qrUrl"></div>
     <button class="copy-btn" id="copyUrlBtn">Copier le lien</button>
   </div>
-        <button class="tile" id="ntfy-share-btn" style="border:none;width:100%;margin-top:14px;">
-        <div class="tile-icon">📲</div>
-        <div class="tile-title">Partager les notifs (QR)</div>
-      </button>
 
   <div class="section-lbl">Notifications sur téléphone (Web Push)</div>
   <p style="font-size:12px;color:var(--ink-soft);margin:0 0 8px;">Chaque membre active ses notifications depuis la page « Notifications ». Une seule fois par installation, un administrateur génère ici les clés du serveur.</p>
@@ -618,14 +614,13 @@
         <li>Ajoute l'URL <code>*.workers.dev</code> obtenue (ou ton domaine personnalisé) aux "Authorized domains" Firebase (étape 1.3).</li>
       </ol>
 
-      <h4>Étape 3bis — Envoi d'email (Mailjet) &amp; notifications push (ntfy)</h4>
-      <div class="modop-note">⚠️ Étape facile à oublier : sans elle, l'instance fonctionne normalement mais n'envoie jamais aucun email ni notification push, sans erreur visible pour l'utilisateur.</div>
+      <h4>Étape 3bis — Envoi d'email (Mailjet)</h4>
+      <div class="modop-note">⚠️ Étape facile à oublier : sans elle, l'instance fonctionne normalement mais n'envoie jamais aucun email, sans erreur visible pour l'utilisateur.</div>
       <ol>
-        <li>5 secrets à définir sur le Worker (jamais dans le code, pour ne pas les exposer dans Git) : <code>MAILJET_API_KEY</code>, <code>MAILJET_API_SECRET</code>, <code>MAILJET_FROM_EMAIL</code>, <code>MAILJET_FROM_NAME</code>, <code>NTFY_TOPIC</code> (choisis un nom de topic unique et difficile à deviner).</li>
-        <li>Depuis le dépôt : <code>npx wrangler secret put MAILJET_API_KEY</code> (idem pour les 4 autres) — ou depuis le tableau de bord Cloudflare : Workers &amp; Pages &gt; le Worker &gt; Settings &gt; Variables and Secrets &gt; "Add" (cocher "Encrypt").</li>
+        <li>4 secrets à définir sur le Worker (jamais dans le code, pour ne pas les exposer dans Git) : <code>MAILJET_API_KEY</code>, <code>MAILJET_API_SECRET</code>, <code>MAILJET_FROM_EMAIL</code>, <code>MAILJET_FROM_NAME</code>.</li>
+        <li>Depuis le dépôt : <code>npx wrangler secret put MAILJET_API_KEY</code> (idem pour les 3 autres) — ou depuis le tableau de bord Cloudflare : Workers &amp; Pages &gt; le Worker &gt; Settings &gt; Variables and Secrets &gt; "Add" (cocher "Encrypt").</li>
         <li>Un redéploiement (<code>wrangler deploy</code>) n'écrase pas les secrets déjà définis.</li>
-        <li><strong>À ne pas oublier une fois <code>NTFY_TOPIC</code> défini</strong> : cette page (<code>administration.html</code>) contient en plus, pour l'affichage uniquement (QR code de la modale "📲 Recevoir les notifications"), une chaîne en dur <code>const topic = 'cse-invivoag-cssct';</code> — remplace-la par le même topic que le secret ci-dessus. Sinon le Worker envoie bien sur le bon topic, mais le QR code généré ici abonnerait les collaborateurs de la nouvelle instance au topic de SMAG.</li>
-        <li>À vérifier : crée un signalement ou une expression de besoin de test et confirme que l'email et la notification ntfy arrivent bien. En cas de souci, les logs du Worker (Cloudflare &gt; le Worker &gt; Logs, ou <code>npx wrangler tail</code>) affichent les erreurs Mailjet/ntfy.</li>
+        <li>À vérifier : crée un signalement ou une expression de besoin de test et confirme que l'email arrive bien. En cas de souci, les logs du Worker (Cloudflare &gt; le Worker &gt; Logs, ou <code>npx wrangler tail</code>) affichent les erreurs Mailjet.</li>
       </ol>
 
       <h4>Étape 3ter — Compte de service Firebase (accès privilégié du Worker)</h4>
@@ -651,7 +646,7 @@
 
       <h4>Étape 3quater — Notifications sur téléphone (Web Push)</h4>
       <div class="modop-note">⚠️ Nécessite l'étape 3ter (compte de service) et les règles Firestore de la collection <code>abonnements_push</code> (fichier <code>claude/firestore.rules</code>). Sans les clés ci-dessous, la page « Notifications » affiche un message explicite et rien ne part.</div>
-      <p class="s-help" style="margin:6px 0;">Aucune valeur propre à SMAG : les clés sont générées par chaque instance, le contact d'envoi est facultatif et les messages indiquent le type, le numéro et la nature du dossier (jamais de nom, de description ni de code de suivi) ; un clic ouvre directement le dossier. Les canaux ntfy restent génériques.</p>
+      <p class="s-help" style="margin:6px 0;">Aucune valeur propre à SMAG : les clés sont générées par chaque instance, le contact d'envoi est facultatif et les messages indiquent le type, le numéro et la nature du dossier (jamais de nom, de description ni de code de suivi) ; un clic ouvre directement le dossier.</p>
       <ol>
         <li>Republie dans le dépôt de la nouvelle instance : <code>sw.js</code>, <code>notifications.html</code> (avec le <code>firebaseConfig</code> de l'instance, voir étape 2), <code>src/push.js</code> et <code>src/worker.js</code>.</li>
         <li>Firestore &rarr; Règles : colle le fichier <code>firestore.rules</code> à jour (bloc <code>abonnements_push</code>) et publie.</li>
@@ -669,7 +664,7 @@
         <li>Ajoute ensuite les comptes autorisés suivants et la config du mail de relance, toujours depuis Administration.</li>
       </ol>
 
-      <div class="modop-note">Limite à connaître : le code est aujourd'hui dupliqué à l'identique entre chaque instance (pas de configuration centralisée), donc toute correction ou nouvelle fonctionnalité doit être reportée manuellement sur chaque dépôt. Les valeurs en dur (projet Firebase, email de repli des notifications) sont dupliquées dans chaque page qui en a besoin, parfois sous une forme différente d'un simple <code>firebaseConfig</code> (cf. <code>cr_reunion_collaborateurs.html</code> ci-dessus) : dès qu'un nouveau fichier HTML fait un appel direct à Firebase/Firestore, vérifie s'il doit être ajouté à la liste de l'étape 2.3, et grep le dépôt entier sur <code>cssct-cs2e-c655b</code> et <code>choudayer@smag.tech</code> avant de considérer une instance prête. Les secrets Mailjet/ntfy (étape 3bis) et le compte de service Google + KV (étape 3ter) sont eux aussi à reconfigurer à chaque instance — aucune interface d'administration pour les saisir depuis l'appli, ce sont des éléments d'infrastructure. Le mot de passe collaborateurs, lui, reste partagé par tous les collaborateurs d'une même instance (pas de compte individuel) : à changer régulièrement et à ne diffuser que par un canal interne.</div>
+      <div class="modop-note">Limite à connaître : le code est aujourd'hui dupliqué à l'identique entre chaque instance (pas de configuration centralisée), donc toute correction ou nouvelle fonctionnalité doit être reportée manuellement sur chaque dépôt. Les valeurs en dur (projet Firebase, email de repli des notifications) sont dupliquées dans chaque page qui en a besoin, parfois sous une forme différente d'un simple <code>firebaseConfig</code> (cf. <code>cr_reunion_collaborateurs.html</code> ci-dessus) : dès qu'un nouveau fichier HTML fait un appel direct à Firebase/Firestore, vérifie s'il doit être ajouté à la liste de l'étape 2.3, et grep le dépôt entier sur <code>cssct-cs2e-c655b</code> et <code>choudayer@smag.tech</code> avant de considérer une instance prête. Les secrets Mailjet (étape 3bis) et le compte de service Google + KV (étape 3ter) sont eux aussi à reconfigurer à chaque instance — aucune interface d'administration pour les saisir depuis l'appli, ce sont des éléments d'infrastructure. Le mot de passe collaborateurs, lui, reste partagé par tous les collaborateurs d'une même instance (pas de compte individuel) : à changer régulièrement et à ne diffuser que par un canal interne.</div>
     </div>
   </div>
 </div>
@@ -1942,7 +1937,6 @@ window.renderQR = function(){
   setupShareLink('annuaire_cse.html', 'qrCanvasAnnuaire', 'qrUrlAnnuaire', 'copyUrlBtnAnnuaire');
 };
 
-document.getElementById('ntfy-share-btn').addEventListener('click', showNtfyShareModal);
 
 // ---- Notifications Web Push : génération et vérification des clés VAPID ----
 // Les clés ne sont jamais enregistrées ici ni dans Firestore : elles s'affichent une seule fois,
@@ -1997,26 +1991,6 @@ document.getElementById('vapid-check-btn').addEventListener('click', function ()
     else { zone.style.color = '#A85D45'; zone.textContent = d.erreur || 'Configuration incomplète.'; }
   }).catch(function (e) { zone.style.color = '#A85D45'; zone.textContent = 'Vérification impossible : ' + e.message; });
 });
-
-function showNtfyShareModal() {
-  const topic = 'cse-invivoag-cssct';
-  const subscribeUrl = `https://ntfy.sh/${topic}`;
-  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(subscribeUrl)}`;
-
-  const overlay = document.createElement('div');
-  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.8);z-index:999;display:flex;align-items:center;justify-content:center;padding:16px;';
-  overlay.innerHTML = `
-    <div style="background:#163C74;border-radius:16px;padding:20px;width:100%;max-width:340px;text-align:center;">
-      <div style="color:#fff;font-size:16px;font-weight:600;margin-bottom:6px;">📲 Recevoir les notifications</div>
-      <div style="color:#9FB3D6;font-size:12px;margin-bottom:12px;">La personne doit installer l'app gratuite "ntfy" (App Store/Play Store), puis scanner ce code pour s'abonner.</div>
-      <img src="${qrUrl}" alt="QR code" style="border-radius:10px;background:#fff;padding:10px;">
-      <div style="color:#9FB3D6;font-size:11px;margin-top:10px;word-break:break-all;">${subscribeUrl}</div>
-      <button class="detail-action-btn" id="ntfy-share-close" style="margin-top:14px;">Fermer</button>
-    </div>
-  `;
-  document.body.appendChild(overlay);
-  overlay.querySelector('#ntfy-share-close').addEventListener('click', () => overlay.remove());
-}
 </script>
 </body>
 </html>
