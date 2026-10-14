@@ -1,6 +1,12 @@
 import { nettoyer, verifierCles, envoyer, expliquerCode } from './push.js';
 
 export default {
+  async scheduled(event, env, ctx) {
+    ctx.waitUntil(envoyerRappels(env, new Date(event.scheduledTime || Date.now())).catch(function (err) {
+      console.error('Rappels programmés impossibles : ' + err.message);
+    }));
+  },
+
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
     let response;
@@ -1111,6 +1117,37 @@ const SUJET_NTFY_PERSONNEL = /^cssct-[0-9a-f]{32}$/;
 // pour la lecture de la base, le journal et les e-mails, le reste sert aux envois (1 par appareil, +1 par canal ntfy personnel).
 const MAX_ENVOIS_PAR_EXECUTION = 33;
 
+// Envoie un message à un appareil (Web Push), puis sur son canal ntfy personnel s'il en a un (une seule fois par canal).
+// Met à jour le bilan ; supprime l'abonnement si le service de notification dit qu'il n'existe plus.
+async function servirAppareil(env, a, message, ntfy, bilan, partage) {
+  if (a.endpoint) {
+    const r = await envoyer(env, a, message);
+    if (r.code >= 200 && r.code < 300) bilan.envoyes++;
+    else {
+      bilan.echecs++;
+      if (!bilan.erreur) bilan.erreur = r.code === 0 ? r.detail : expliquerCode(r.code, r.detail);
+      if (r.code === 404 || r.code === 410) {
+        try { await firestoreDeleteDoc(env, 'abonnements_push/' + a.id); bilan.supprimes++; } catch (e) { console.error('Suppression abonnement périmé impossible : ' + e.message); }
+      } else if (r.code === 0 && !partage.avertissementCles) {
+        partage.avertissementCles = true;
+        console.error('Notification non envoyée : ' + r.detail);
+      } else if (r.code !== 0) {
+        console.error('Notification refusée par le service (code ' + r.code + ')');
+      }
+    }
+  }
+  // Canal ntfy personnel (sujet aléatoire propre à la personne), en complément du Web Push.
+  const sujet = String(a.ntfySujet || '');
+  if (SUJET_NTFY_PERSONNEL.test(sujet) && !partage.sujetsServis.has(sujet)) {
+    partage.sujetsServis.add(sujet);
+    try {
+      const entetes = { Title: ntfy.titre, Priority: 'default', Tags: 'bell' };
+      if (a.origine && /^https:\/\//.test(a.origine)) entetes.Click = a.origine.replace(/\/$/, '') + '/' + ntfy.url;
+      await fetch('https://ntfy.sh/' + sujet, { method: 'POST', headers: entetes, body: ntfy.corps });
+    } catch (e) { console.error('Erreur ntfy personnel : ' + e.message); }
+  }
+}
+
 // Envoie l'événement à chaque appareil abonné dont la personne est toujours autorisée et a gardé ce type coché.
 async function diffuserNotification(env, evenement) {
   const bilan = { appareils: 0, envoyes: 0, supprimes: 0, echecs: 0, erreur: '' };
@@ -1137,37 +1174,171 @@ async function diffuserNotification(env, evenement) {
   if (retenues.length < cibles.length) console.error('Trop d\u2019appareils pour une seule exécution : ' + retenues.length + ' notifiés sur ' + cibles.length + ' (limite de requêtes sortantes du forfait gratuit).');
   cibles = retenues;
   bilan.appareils = cibles.length;
-  const sujetsDejaServis = new Set();
-  let avertissementCles = false;
+  const partage = { sujetsServis: new Set(), avertissementCles: false };
   await Promise.all(cibles.map(async function (a) {
     const message = { titre: evenement.titre, corps: evenement.corps, url: evenement.url, tag: evenement.type + '-' + Date.now() };
-    if (a.endpoint) {
-      const r = await envoyer(env, a, message);
-      if (r.code >= 200 && r.code < 300) bilan.envoyes++;
-      else {
-        bilan.echecs++;
-        if (!bilan.erreur) bilan.erreur = r.code === 0 ? r.detail : expliquerCode(r.code, r.detail);
-        if (r.code === 404 || r.code === 410) {
-          try { await firestoreDeleteDoc(env, 'abonnements_push/' + a.id); bilan.supprimes++; } catch (e) { console.error('Suppression abonnement périmé impossible : ' + e.message); }
-        } else if (r.code === 0 && !avertissementCles) {
-          avertissementCles = true;
-          console.error('Notification non envoyée : ' + r.detail);
-        } else if (r.code !== 0) {
-          console.error('Notification refusée par le service (code ' + r.code + ')');
-        }
+    await servirAppareil(env, a, message, { titre: evenement.ntfyTitre, corps: evenement.ntfyCorps, url: evenement.ntfyUrl }, bilan, partage);
+  }));
+  return bilan;
+}
+
+
+// ---------------------------------------------------------------------------------------------
+// Rappels programmés (déclenchés chaque heure par le planificateur Cloudflare).
+// Un seul message groupé par jour et par appareil, à l'heure choisie sur l'appareil (9 h par défaut).
+// Un appareil manqué (limite d'envois, panne) est rattrapé dans les heures qui suivent, jamais le lendemain.
+// ---------------------------------------------------------------------------------------------
+const SEUIL_PREAVIS_JOURS = 30;
+const SEUIL_NON_CLOS_JOURS = 30;
+const FENETRE_RATTRAPAGE_HEURES = 6;
+const MAX_APPAREILS_RAPPEL = 14; // 2 requêtes par appareil (envoi + marque du jour), +1 par canal ntfy, sous les 50 du forfait gratuit
+
+// Date (AAAA-MM-JJ) et heure dans le fuseau de l'application (Europe/Paris par défaut, variable FUSEAU_HORAIRE).
+function dateEtHeureLocales(instant, fuseau) {
+  const parties = {};
+  new Intl.DateTimeFormat('en-GB', { timeZone: fuseau || 'Europe/Paris', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', hourCycle: 'h23' })
+    .formatToParts(instant).forEach(function (p) { parties[p.type] = p.value; });
+  return { date: parties.year + '-' + parties.month + '-' + parties.day, heure: Number(parties.hour) };
+}
+function joursEntre(dateA, dateB) { // dateB - dateA, en jours, pour deux dates AAAA-MM-JJ
+  return Math.round((Date.UTC(+dateB.slice(0, 4), +dateB.slice(5, 7) - 1, +dateB.slice(8, 10)) - Date.UTC(+dateA.slice(0, 4), +dateA.slice(5, 7) - 1, +dateA.slice(8, 10))) / 86400000);
+}
+function prochainControle(article) {
+  if (article.dateProchainControle) return String(article.dateProchainControle).slice(0, 10);
+  if (article.dateDernierControle && article.periodiciteControleMois) {
+    const d = new Date(String(article.dateDernierControle).slice(0, 10) + 'T00:00:00Z');
+    if (isNaN(d.getTime())) return null;
+    d.setUTCMonth(d.getUTCMonth() + Number(article.periodiciteControleMois));
+    return d.toISOString().slice(0, 10);
+  }
+  return null;
+}
+const dateValide = function (v) { return typeof v === 'string' && /^\d{4}-\d{2}-\d{2}/.test(v); };
+
+// Compte ce qui mérite un rappel. Ne contient que des nombres : aucun nom ni description.
+function calculerRappels(aujourdhui, articles, signalements) {
+  const r = { peremptes: 0, peremptionProche: 0, controlesRetard: 0, controlesProches: 0, nonClos: 0 };
+  (articles || []).forEach(function (a) {
+    if (dateValide(a.datePeremption)) {
+      const j = joursEntre(aujourdhui, a.datePeremption.slice(0, 10));
+      if (j < 0) r.peremptes++; else if (j <= SEUIL_PREAVIS_JOURS) r.peremptionProche++;
+    }
+    const c = prochainControle(a);
+    if (c && dateValide(c)) {
+      const j = joursEntre(aujourdhui, c);
+      if (j < 0) r.controlesRetard++; else if (j <= SEUIL_PREAVIS_JOURS) r.controlesProches++;
+    }
+  });
+  (signalements || []).forEach(function (d) {
+    if (String(d.statut || '').charAt(0) === '3') return;
+    const depuis = dateValide(d.date) ? d.date.slice(0, 10) : (dateValide(d.createdAt) ? d.createdAt.slice(0, 10) : null);
+    if (depuis && joursEntre(depuis, aujourdhui) > SEUIL_NON_CLOS_JOURS) r.nonClos++;
+  });
+  return r;
+}
+const pluriel = function (n, un, plusieurs) { return n + ' ' + (n > 1 ? plusieurs : un); };
+
+// Message groupé pour un appareil, selon les familles cochées. Renvoie null s'il n'y a rien à signaler.
+function messageRappel(r, types, aujourdhui) {
+  const t = types || {};
+  const morceaux = [];
+  const pages = [];
+  if (t.trousses !== false) {
+    const trousses = [];
+    if (r.peremptes) trousses.push(pluriel(r.peremptes, 'article périmé', 'articles périmés'));
+    if (r.peremptionProche) trousses.push(pluriel(r.peremptionProche, 'péremption proche', 'péremptions proches'));
+    if (r.controlesRetard) trousses.push(pluriel(r.controlesRetard, 'contrôle en retard', 'contrôles en retard'));
+    if (r.controlesProches) trousses.push(pluriel(r.controlesProches, 'contrôle à venir', 'contrôles à venir'));
+    if (trousses.length) { morceaux.push('Trousses : ' + trousses.join(', ')); pages.push('trousses_secours.html'); }
+  }
+  if (t.nonclos !== false && r.nonClos) {
+    morceaux.push(pluriel(r.nonClos, 'signalement non clos', 'signalements non clos') + ' depuis plus de ' + SEUIL_NON_CLOS_JOURS + ' jours');
+    pages.push('signalement_liste.html');
+  }
+  if (!morceaux.length) return null;
+  return {
+    titre: 'Rappels CSSCT',
+    corps: morceaux.join(' · '),
+    url: pages.length === 1 ? pages[0] : 'index.html',
+    tag: 'rappel-' + aujourdhui
+  };
+}
+
+// Reconnaît les appareils à servir maintenant (heure atteinte, pas encore servis aujourd'hui, personne toujours autorisée).
+function appareilsAServir(abonnements, autorises, local) {
+  return abonnements.filter(function (a) {
+    const email = String(a.email || '').toLowerCase();
+    if (!autorises.has(email)) return false;
+    if (a.dernierRappel === local.date) return false;
+    const heure = Number.isInteger(a.heure) ? a.heure : (a.heure !== undefined && a.heure !== '' && !isNaN(Number(a.heure)) ? Number(a.heure) : 9);
+    if (heure < 0 || heure > 23) return false;
+    if (local.heure < heure || local.heure - heure > FENETRE_RATTRAPAGE_HEURES) return false;
+    // Appareil activé aujourd'hui après son heure de rappel : premier rappel le lendemain.
+    if (a.creeLe) {
+      const cree = new Date(a.creeLe);
+      if (!isNaN(cree.getTime())) {
+        const c = dateEtHeureLocales(cree, local.fuseau);
+        if (c.date === local.date && c.heure >= heure) return false;
       }
     }
-    // Canal ntfy personnel (sujet aléatoire propre à la personne), en complément du Web Push.
-    const sujet = String(a.ntfySujet || '');
-    if (SUJET_NTFY_PERSONNEL.test(sujet) && !sujetsDejaServis.has(sujet)) {
-      sujetsDejaServis.add(sujet);
-      try {
-        const entetes = { Title: evenement.ntfyTitre, Priority: 'default', Tags: 'bell' };
-        if (a.origine && /^https:\/\//.test(a.origine)) entetes.Click = a.origine.replace(/\/$/, '') + '/' + evenement.ntfyUrl;
-        await fetch('https://ntfy.sh/' + sujet, { method: 'POST', headers: entetes, body: evenement.ntfyCorps });
-      } catch (e) { console.error('Erreur ntfy personnel : ' + e.message); }
+    return true;
+  });
+}
+
+async function firestoreMarquerRappel(env, abonnementId, date) {
+  const token = await getGoogleAccessToken(env);
+  const resp = await fetch('https://firestore.googleapis.com/v1/projects/' + FIREBASE_PROJECT_ID + '/databases/(default)/documents/abonnements_push/' + encodeURIComponent(abonnementId) + '?updateMask.fieldPaths=dernierRappel&currentDocument.exists=true', {
+    method: 'PATCH',
+    headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ fields: { dernierRappel: { stringValue: date } } })
+  });
+  if (!resp.ok && resp.status !== 404) throw new Error('Firestore ' + resp.status);
+}
+
+async function envoyerRappels(env, maintenant) {
+  const bilan = { appareils: 0, envoyes: 0, supprimes: 0, echecs: 0, erreur: '' };
+  if (!env.GOOGLE_SERVICE_ACCOUNT_KEY) return bilan;
+  const fuseau = nettoyerTexte(env.FUSEAU_HORAIRE, 40) || 'Europe/Paris';
+  const local = Object.assign(dateEtHeureLocales(maintenant, fuseau), { fuseau: fuseau });
+  const lectures = await Promise.all([firestoreListStrict(env, 'abonnements_push'), firestoreListStrict(env, 'authorized_emails')]);
+  const autorises = new Set(lectures[1].map(function (d) { let id = d.id; try { id = decodeURIComponent(id); } catch (e) { /* tel quel */ } return String(id).toLowerCase(); }));
+  const aServir = appareilsAServir(lectures[0], autorises, local);
+  if (!aServir.length) return bilan;
+  const debut = Date.now();
+  const base = { type: 'rappel', date: new Date(debut).toISOString() };
+  await journaliser(env, Object.assign({ etat: 'en cours', appareils: 0, envoyes: 0, echecs: 0, erreur: '', dureeMs: 0 }, base));
+  try {
+    const veutTrousses = aServir.some(function (a) { return !(a.types && a.types.trousses === false); });
+    const veutNonClos = aServir.some(function (a) { return !(a.types && a.types.nonclos === false); });
+    const donnees = await Promise.all([
+      veutTrousses ? firestoreListStrict(env, 'trousses_secours') : [],
+      veutNonClos ? firestoreListStrict(env, 'signalements') : []
+    ]);
+    const rappels = calculerRappels(local.date, donnees[0], donnees[1]);
+    let budget = 38;
+    const partage = { sujetsServis: new Set(), avertissementCles: false };
+    let traites = 0;
+    for (const a of aServir) {
+      if (traites >= MAX_APPAREILS_RAPPEL) break;
+      const sujet = String(a.ntfySujet || '');
+      const ntfyNeuf = SUJET_NTFY_PERSONNEL.test(sujet) && !partage.sujetsServis.has(sujet);
+      const cout = 2 + (ntfyNeuf ? 1 : 0);
+      if (cout > budget) break;
+      budget -= cout;
+      traites++;
+      const message = messageRappel(rappels, a.types, local.date);
+      if (message) {
+        bilan.appareils++;
+        await servirAppareil(env, a, message, { titre: 'Rappels CSSCT', corps: 'Des rappels sont à consulter dans l’application.', url: 'index.html' }, bilan, partage);
+      }
+      // Marque le jour même s'il n'y avait rien à dire : un seul passage par jour et par appareil.
+      try { await firestoreMarquerRappel(env, a.id, local.date); } catch (e) { console.error('Marque du rappel impossible : ' + e.message); }
     }
-  }));
+    await journaliser(env, Object.assign({ etat: 'terminé', appareils: bilan.appareils, envoyes: bilan.envoyes, echecs: bilan.echecs, erreur: bilan.erreur || '', dureeMs: Date.now() - debut }, base));
+  } catch (err) {
+    await journaliser(env, Object.assign({ etat: 'échec', appareils: 0, envoyes: 0, echecs: 0, erreur: expliquerErreurBase(err), dureeMs: Date.now() - debut }, base));
+    throw err;
+  }
   return bilan;
 }
 
