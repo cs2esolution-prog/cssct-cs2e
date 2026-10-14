@@ -773,6 +773,13 @@
       payload.numero = await getNextNumero();
       payload.createdAt = new Date().toISOString();
       const ref = await addDoc(signalementsCol, payload);
+      // Prévient les personnes abonnées aux notifications (message générique, sans détail), y compris l'auteur.
+      // Sans attendre la réponse, et sans jamais gêner l'enregistrement en cas d'échec.
+      try{
+        auth.currentUser.getIdToken().then(function(jeton){
+          return fetch('/api/notif-statut', { method:'POST', headers:{ 'Content-Type':'application/json', 'Authorization':'Bearer ' + jeton }, body: JSON.stringify({ evenement:'signalement' }) });
+        }).catch(function(){ /* la notification est un confort */ });
+      }catch(err){ /* idem */ }
       return { id: ref.id, ...payload };
     },
     async listAllForSearch(){
