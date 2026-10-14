@@ -204,33 +204,6 @@ async function sendMailjet(env, messages) {
   return mjResp;
 }
 
-async function sendNtfy(env, title, body) {
-  if (!env.NTFY_TOPIC) {
-    console.error('NTFY_TOPIC absent du Worker');
-    return;
-  }
-  const ntfyUrl = 'https://ntfy.sh/' + env.NTFY_TOPIC;
-  try {
-    const ntfyResponse = await fetch(ntfyUrl, {
-      method: 'POST',
-      headers: {
-        'Title': title,
-        'Priority': 'default',
-        'Tags': 'bell'
-      },
-      body: body
-    });
-    const ntfyResponseText = await ntfyResponse.text();
-    console.log('NTFY HTTP status:', ntfyResponse.status);
-    console.log('NTFY réponse:', ntfyResponseText);
-    if (!ntfyResponse.ok) {
-      console.error('Erreur NTFY');
-    }
-  } catch (error) {
-    console.error('Erreur appel NTFY:', error.message);
-  }
-}
-
 async function handleCollaborateurSubmission(request, env, ctx) {
   if (request.method === 'OPTIONS') {
     return new Response(null, { headers: CORS_HEADERS });
@@ -297,11 +270,6 @@ async function handleCollaborateurSubmission(request, env, ctx) {
       const errText = await mjResp.text();
       return new Response(JSON.stringify({ error: 'Erreur envoi email', detail: errText }), { status: 502, headers: CORS_HEADERS });
     }
-
-    // Sécurité/confidentialité : le contenu envoyé à ntfy.sh (service tiers, sans contrôle
-    // d'accès fiable sur le nom du topic) reste volontairement générique — jamais le nom du
-    // rapporteur, le site, la nature ou l'objet du signalement, ni le code de suivi.
-    await sendNtfy(env, 'Nouveau signalement CSSCT', 'Un nouveau signalement (n°' + numero + ') a été déposé. Consulte l\'application pour le détail.');
 
     return new Response(JSON.stringify({ ok: true }), { status: 200, headers: CORS_HEADERS });
   } catch (err) {
@@ -375,10 +343,6 @@ async function handleBesoinSubmission(request, env, ctx) {
       }
     }
 
-    // Sécurité/confidentialité : idem, contenu générique envoyé à ntfy.sh (jamais le nom,
-    // le thème ou la description).
-    await sendNtfy(env, 'Nouvelle expression de besoin CSSCT', 'Une nouvelle expression de besoin a été déposée. Consulte l\'application pour le détail.');
-
     return new Response(JSON.stringify({ ok: true }), { status: 200, headers: CORS_HEADERS });
   } catch (err) {
     return new Response(JSON.stringify({ error: err.message }), { status: 500, headers: CORS_HEADERS });
@@ -417,11 +381,6 @@ async function handleComplementSubmission(request, env, ctx) {
     const label = kind === 'signalement'
       ? ('dossier de signalement' + (numero ? ' n°' + numero : '') + ' (' + code + ')')
       : ('expression de besoin (' + code + ')');
-    // Version sans le code de suivi, pour la notification ntfy.sh (canal tiers non fiable) :
-    // le code est un jeton d'accès au dossier, il ne doit jamais transiter par ce canal.
-    const labelSansCode = kind === 'signalement'
-      ? ('un dossier de signalement' + (numero ? ' n°' + numero : ''))
-      : ('une expression de besoin');
 
     const cssctBody =
 `Bonjour,
@@ -445,10 +404,6 @@ Ce message a été envoyé automatiquement de l'application CSSCT.`;
         return new Response(JSON.stringify({ error: 'Erreur envoi email', detail: errText }), { status: 502, headers: CORS_HEADERS });
       }
     }
-
-    // Sécurité/confidentialité : ni le code de suivi (jeton d'accès au dossier), ni le texte
-    // du complément, ne partent vers ntfy.sh.
-    await sendNtfy(env, 'Complément ajouté - CSSCT', 'Un complément a été ajouté sur ' + labelSansCode + '. Consulte l\'application pour le détail.');
 
     return new Response(JSON.stringify({ ok: true }), { status: 200, headers: CORS_HEADERS });
   } catch (err) {
@@ -1005,20 +960,8 @@ async function handleNotifTest(request, env) {
     if (resultat.code === 404 || resultat.code === 410) {
       try { await firestoreDeleteDoc(env, 'abonnements_push/' + abonnement.id); } catch (e) { console.error('Suppression abonnement périmé impossible : ' + e.message); }
     }
-    let ok = resultat.code >= 200 && resultat.code < 300;
-    let erreur = ok ? null : (resultat.code === 0 ? resultat.detail : expliquerCode(resultat.code, resultat.detail));
-    // Test du canal ntfy personnel, à la demande de la page de réglages.
-    if (corps.ntfy === true) {
-      const sujet = String(abonnement.ntfySujet || '');
-      if (!SUJET_NTFY_PERSONNEL.test(sujet)) {
-        ok = false; erreur = 'Aucun canal ntfy personnel n\u2019est enregistré pour cet appareil : créez-le d\u2019abord.';
-      } else {
-        try {
-          const r = await fetch('https://ntfy.sh/' + sujet, { method: 'POST', headers: { Title: 'Notification de test', Priority: 'default', Tags: 'bell' }, body: 'Ton canal ntfy fonctionne.' });
-          if (!r.ok) { ok = false; erreur = 'Le service ntfy a refusé le message (code ' + r.status + ').' + (erreur ? ' ' + erreur : ''); }
-        } catch (e) { ok = false; erreur = 'Service ntfy injoignable : ' + String(e.message || e).slice(0, 100) + (erreur ? ' ' + erreur : ''); }
-      }
-    }
+    const ok = resultat.code >= 200 && resultat.code < 300;
+    const erreur = ok ? null : (resultat.code === 0 ? resultat.detail : expliquerCode(resultat.code, resultat.detail));
     return reponseJson({ ok: ok, erreur: erreur, code: resultat.code }, ok ? 200 : 502);
   } catch (err) {
     return reponseJson({ erreur: expliquerErreurBase(err) }, 503);
@@ -1030,7 +973,6 @@ async function handleNotifTest(request, env) {
 // Contenu des notifications.
 // - Notification poussée (chiffrée de bout en bout jusqu'à l'appareil) : type, numéro et nature/thème/site du dossier,
 //   lus dans la base par le Worker (jamais pris dans la requête). Jamais de nom, de description ni de code de suivi.
-// - ntfy (service tiers lisible en clair) : texte générique et lien vers la liste, sans identifiant de dossier.
 function nettoyerTexte(valeur, max) {
   return String(valeur == null ? '' : valeur).replace(/[\u0000-\u001f\u007f]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, max || 40);
 }
@@ -1051,7 +993,7 @@ function evenementNotification(type, kind, exclure, dossier) {
     statut: { titre: 'Changement de statut', corps: 'Une demande a changé de statut. Consulte l’application.', url: pageListe }
   };
   const g = generiques[type];
-  const ev = { type: type, titre: g.titre, corps: g.corps, url: g.url, ntfyTitre: g.titre, ntfyCorps: g.corps, ntfyUrl: g.url, exclure: exclure || null };
+  const ev = { type: type, titre: g.titre, corps: g.corps, url: g.url, exclure: exclure || null };
   if (!d) return ev;
   ev.url = lien;
   if (type === 'signalement') {
@@ -1125,14 +1067,13 @@ function declencherNotification(env, ctx, type, fabrique) {
   return tache;
 }
 
-const SUJET_NTFY_PERSONNEL = /^cssct-[0-9a-f]{32}$/;
 // Un Worker du forfait gratuit est limité à 50 requêtes sortantes par exécution : on en réserve une douzaine
-// pour la lecture de la base, le journal et les e-mails, le reste sert aux envois (1 par appareil, +1 par canal ntfy personnel).
+// pour la lecture de la base, le journal et les e-mails, le reste sert aux envois (1 par appareil).
 const MAX_ENVOIS_PAR_EXECUTION = 33;
 
-// Envoie un message à un appareil (Web Push), puis sur son canal ntfy personnel s'il en a un (une seule fois par canal).
+// Envoie un message à un appareil (Web Push).
 // Met à jour le bilan ; supprime l'abonnement si le service de notification dit qu'il n'existe plus.
-async function servirAppareil(env, a, message, ntfy, bilan, partage) {
+async function servirAppareil(env, a, message, bilan, partage) {
   if (a.endpoint) {
     const r = await envoyer(env, a, message);
     if (r.code >= 200 && r.code < 300) bilan.envoyes++;
@@ -1149,16 +1090,6 @@ async function servirAppareil(env, a, message, ntfy, bilan, partage) {
       }
     }
   }
-  // Canal ntfy personnel (sujet aléatoire propre à la personne), en complément du Web Push.
-  const sujet = String(a.ntfySujet || '');
-  if (SUJET_NTFY_PERSONNEL.test(sujet) && !partage.sujetsServis.has(sujet)) {
-    partage.sujetsServis.add(sujet);
-    try {
-      const entetes = { Title: ntfy.titre, Priority: 'default', Tags: 'bell' };
-      if (a.origine && /^https:\/\//.test(a.origine)) entetes.Click = a.origine.replace(/\/$/, '') + '/' + ntfy.url;
-      await fetch('https://ntfy.sh/' + sujet, { method: 'POST', headers: entetes, body: ntfy.corps });
-    } catch (e) { console.error('Erreur ntfy personnel : ' + e.message); }
-  }
 }
 
 // Envoie l'événement à chaque appareil abonné dont la personne est toujours autorisée et a gardé ce type coché.
@@ -1174,23 +1105,19 @@ async function diffuserNotification(env, evenement) {
   });
   let budget = MAX_ENVOIS_PAR_EXECUTION;
   const retenues = [];
-  const sujetsComptes = new Set();
   for (const a of cibles) {
-    const sujet = String(a.ntfySujet || '');
-    const ntfyNeuf = SUJET_NTFY_PERSONNEL.test(sujet) && !sujetsComptes.has(sujet);
-    const cout = (a.endpoint ? 1 : 0) + (ntfyNeuf ? 1 : 0);
+    const cout = a.endpoint ? 1 : 0;
     if (cout > budget) break;
     budget -= cout;
-    if (ntfyNeuf) sujetsComptes.add(sujet);
     retenues.push(a);
   }
   if (retenues.length < cibles.length) console.error('Trop d\u2019appareils pour une seule exécution : ' + retenues.length + ' notifiés sur ' + cibles.length + ' (limite de requêtes sortantes du forfait gratuit).');
   cibles = retenues;
   bilan.appareils = cibles.length;
-  const partage = { sujetsServis: new Set(), avertissementCles: false };
+  const partage = { avertissementCles: false };
   await Promise.all(cibles.map(async function (a) {
     const message = { titre: evenement.titre, corps: evenement.corps, url: evenement.url, tag: evenement.type + '-' + Date.now() };
-    await servirAppareil(env, a, message, { titre: evenement.ntfyTitre, corps: evenement.ntfyCorps, url: evenement.ntfyUrl }, bilan, partage);
+    await servirAppareil(env, a, message, bilan, partage);
   }));
   return bilan;
 }
@@ -1204,7 +1131,7 @@ async function diffuserNotification(env, evenement) {
 const SEUIL_PREAVIS_JOURS = 30;
 const SEUIL_NON_CLOS_JOURS = 30;
 const FENETRE_RATTRAPAGE_HEURES = 6;
-const MAX_APPAREILS_RAPPEL = 14; // 2 requêtes par appareil (envoi + marque du jour), +1 par canal ntfy, sous les 50 du forfait gratuit
+const MAX_APPAREILS_RAPPEL = 14; // 2 requêtes par appareil (envoi + marque du jour), sous les 50 du forfait gratuit
 
 // Date (AAAA-MM-JJ) et heure dans le fuseau de l'application (Europe/Paris par défaut, variable FUSEAU_HORAIRE).
 function dateEtHeureLocales(instant, fuseau) {
@@ -1329,20 +1256,17 @@ async function envoyerRappels(env, maintenant) {
     ]);
     const rappels = calculerRappels(local.date, donnees[0], donnees[1]);
     let budget = 38;
-    const partage = { sujetsServis: new Set(), avertissementCles: false };
+    const partage = { avertissementCles: false };
     let traites = 0;
     for (const a of aServir) {
       if (traites >= MAX_APPAREILS_RAPPEL) break;
-      const sujet = String(a.ntfySujet || '');
-      const ntfyNeuf = SUJET_NTFY_PERSONNEL.test(sujet) && !partage.sujetsServis.has(sujet);
-      const cout = 2 + (ntfyNeuf ? 1 : 0);
-      if (cout > budget) break;
-      budget -= cout;
+      if (2 > budget) break;
+      budget -= 2;
       traites++;
       const message = messageRappel(rappels, a.types, local.date);
       if (message) {
         bilan.appareils++;
-        await servirAppareil(env, a, message, { titre: 'Rappels CSSCT', corps: 'Des rappels sont à consulter dans l’application.', url: 'index.html' }, bilan, partage);
+        await servirAppareil(env, a, message, bilan, partage);
       }
       // Marque le jour même s'il n'y avait rien à dire : un seul passage par jour et par appareil.
       try { await firestoreMarquerRappel(env, a.id, local.date); } catch (e) { console.error('Marque du rappel impossible : ' + e.message); }
