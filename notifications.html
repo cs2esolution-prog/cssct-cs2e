@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Notifications . CSSCT</title>
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-title" content="Mon appli CSSCT">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#2B2A2E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,500;8..60,600;8..60,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --teal:#019682; --teal-dark:#017162; --purple:#5A4570; --gold:#C6AB76;
+    --paper:#F7F5F1; --paper-raised:#fff; --ink:#2B2A2E; --ink-soft:#6B6873; --line:#E4E0D8; --danger:#A85D45; --radius:14px;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0; background:var(--paper); color:var(--ink); font-family:'Inter',system-ui,sans-serif; line-height:1.5;}
+  .wrap{max-width:520px; margin:0 auto; padding:24px 20px 60px;}
+  .back{display:inline-block; font-size:12.5px; color:var(--ink-soft); text-decoration:none; margin-bottom:14px;}
+  h1{font-family:'Source Serif 4',serif; font-size:21px; margin:0 0 4px;}
+  .sub{font-size:12.5px; color:var(--ink-soft); margin:0 0 18px;}
+  .card{background:#fff; border:1px solid var(--line); border-radius:var(--radius); padding:16px; margin-bottom:14px;}
+  .card h2{font-size:14px; margin:0 0 10px;}
+  .etat{font-size:13px; margin:0 0 12px;}
+  .etat.ok{color:var(--teal-dark); font-weight:600;}
+  .etat.ko{color:var(--danger); font-weight:600;}
+  .etat.neutre{color:var(--ink-soft);}
+  .btn{display:block; width:100%; border:none; border-radius:20px; padding:11px; font-weight:600; font-size:13.5px; cursor:pointer; margin-bottom:8px;}
+  .btn.primary{background:var(--teal); color:#fff;}
+  .btn.dark{background:var(--ink); color:#fff;}
+  .btn.ghost{background:#fff; color:var(--ink-soft); border:1px solid var(--line);}
+  .btn:disabled{opacity:.5; cursor:not-allowed;}
+  .msg{font-size:12.5px; min-height:16px; margin-top:4px; white-space:pre-wrap; word-break:break-word;}
+  .msg.ok{color:var(--teal-dark);} .msg.ko{color:var(--danger);}
+  .guide h3{font-size:13px; margin:14px 0 4px;}
+  .guide ol{margin:0; padding-left:20px; font-size:12.5px; color:var(--ink);}
+  .guide li{margin-bottom:4px;}
+  .guide p{font-size:12.5px; color:var(--ink-soft); margin:6px 0;}
+  .version{font-size:11.5px; color:var(--ink-soft); text-align:center; margin-top:18px;}
+  #authGate{position:fixed;inset:0;background:#2B2A2E;display:flex;align-items:center;justify-content:center;z-index:200;padding:20px;}
+  #authForm{display:none;background:#fff;border-radius:14px;padding:32px;max-width:360px;width:100%;text-align:center;}
+</style>
+</head>
+<body>
+
+<div id="authGate">
+  <div id="authChecking" style="color:#ffffffaa;font-size:13.5px;">Vérification de la connexion…</div>
+  <div id="authForm">
+    <div style="font-family:'Source Serif 4',serif;font-weight:700;font-size:18px;margin-bottom:6px;">CS<span style="color:#019682;">2E</span> · CSSCT</div>
+    <p style="font-size:13px;color:#6B6873;margin:0 0 18px;">Connecte-toi avec ton email professionnel.</p>
+    <input type="email" id="authEmail" placeholder="prenom.nom@entreprise.com" style="width:100%;padding:10px 12px;border:1px solid #E4E0D8;border-radius:8px;font-size:13.5px;margin-bottom:10px;">
+    <button id="authSendLink" style="width:100%;background:#2B2A2E;color:#fff;border:none;padding:11px;border-radius:20px;font-weight:600;cursor:pointer;">Recevoir un lien de connexion</button>
+    <div id="authMsg" style="font-size:12px;color:#A85D45;margin-top:10px;min-height:14px;"></div>
+  </div>
+</div>
+
+<div class="wrap">
+  <a class="back" href="index.html">← Accueil</a>
+  <h1>🔔 Notifications</h1>
+  <p class="sub">Reçois une alerte sur cet appareil, application fermée. Le contenu reste toujours générique : aucun nom ni détail de dossier.</p>
+
+  <div class="card">
+    <h2>Cet appareil</h2>
+    <p class="etat neutre" id="etat">Vérification…</p>
+    <div id="aideInstallation" style="display:none;font-size:12.5px;background:#FBF3E4;border:1px solid #E8D7B0;border-radius:10px;padding:10px 12px;margin-bottom:12px;">
+      Sur iPhone et iPad, les notifications ne fonctionnent que si l'application est installée sur l'écran d'accueil.
+      Ouvre cette page dans Safari, touche le bouton Partager, puis « Sur l'écran d'accueil », et rouvre l'application depuis son icône.
+    </div>
+    <button class="btn primary" id="btnActiver" disabled>Activer sur cet appareil</button>
+    <button class="btn ghost" id="btnTest" style="display:none;">Envoyer un test</button>
+    <button class="btn ghost" id="btnDesactiver" style="display:none;">Désactiver sur cet appareil</button>
+    <div class="msg" id="msg"></div>
+  </div>
+
+  <div class="card guide">
+    <h2>Mode d'emploi</h2>
+    <h3>iPhone / iPad</h3>
+    <ol>
+      <li>Ouvre l'application dans Safari (iOS 16.4 ou plus récent).</li>
+      <li>Touche Partager, puis « Sur l'écran d'accueil ».</li>
+      <li>Ouvre l'application depuis son icône, connecte-toi, puis va sur cette page.</li>
+      <li>Touche « Activer sur cet appareil » et accepte la demande d'autorisation.</li>
+      <li>Touche « Envoyer un test » : la notification doit arriver en quelques secondes.</li>
+    </ol>
+    <h3>Android</h3>
+    <ol>
+      <li>Ouvre l'application dans Chrome, connecte-toi, puis va sur cette page.</li>
+      <li>Touche « Activer sur cet appareil » et accepte l'autorisation.</li>
+      <li>Touche « Envoyer un test ».</li>
+    </ol>
+    <h3>Ordinateur</h3>
+    <ol>
+      <li>Ouvre l'application dans Chrome, Edge ou Firefox, connecte-toi, puis va sur cette page.</li>
+      <li>Clique sur « Activer sur cet appareil », autorise les notifications, puis « Envoyer un test ».</li>
+    </ol>
+    <p>Chaque appareil s'active séparément. Si le test échoue, la cause exacte s'affiche sous les boutons.
+    Pour arrêter, utilise « Désactiver sur cet appareil ».</p>
+  </div>
+
+  <div class="version" id="version">Version des notifications : …</div>
+</div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js";
+  import { getAuth, sendSignInLinkToEmail, isSignInWithEmailLink, signInWithEmailLink, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js";
+  import { getFirestore, doc, getDoc, setDoc, deleteDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyACY8fyy8Rd9NyLJ855xsDyknuUMV-pAag",
+  authDomain: "cssct-cs2e-c655b.firebaseapp.com",
+  projectId: "cssct-cs2e-c655b",
+  storageBucket: "cssct-cs2e-c655b.firebasestorage.app",
+  messagingSenderId: "277603883255",
+  appId: "1:277603883255:web:b3b7a5c3097a60caac1bf2"
+};
+  const VERSION_NOTIFICATIONS = '1.0.0';
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+  const actionCodeSettings = { url: window.location.origin + window.location.pathname, handleCodeInApp: true };
+
+  const $ = (id) => document.getElementById(id);
+  let utilisateur = null;
+  let enregistrement = null;   // registration du service worker
+  let abonnementCourant = null;
+
+  document.getElementById('version').textContent = 'Version des notifications : ' + VERSION_NOTIFICATIONS;
+
+  if (isSignInWithEmailLink(auth, window.location.href)) {
+    const email = window.prompt("Confirme ton adresse email pour terminer la connexion :");
+    signInWithEmailLink(auth, email, window.location.href)
+      .then(() => window.history.replaceState({}, document.title, window.location.pathname))
+      .catch(err => alert("Connexion impossible : " + err.message));
+  }
+
+  onAuthStateChanged(auth, (user) => {
+    $('authChecking').style.display = 'none';
+    if (user) {
+      utilisateur = user;
+      $('authGate').style.display = 'none';
+      demarrer();
+    } else {
+      $('authGate').style.display = 'flex';
+      $('authForm').style.display = 'block';
+    }
+  });
+
+  $('authSendLink').addEventListener('click', () => {
+    const email = $('authEmail').value.trim();
+    const msg = $('authMsg');
+    if (!email) { msg.textContent = "Merci de saisir ton email."; return; }
+    sendSignInLinkToEmail(auth, email, actionCodeSettings)
+      .then(() => { msg.style.color = '#019682'; msg.textContent = "Lien envoyé, vérifie ta boîte mail et tes spams."; })
+      .catch(err => { msg.textContent = "Erreur : " + err.message; });
+  });
+
+  function afficher(texte, genre) { const m = $('msg'); m.textContent = texte || ''; m.className = 'msg' + (genre ? ' ' + genre : ''); }
+  function etat(texte, genre) { const e = $('etat'); e.textContent = texte; e.className = 'etat ' + (genre || 'neutre'); }
+
+  function estIOS() { return /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1); }
+  function estInstallee() { return window.navigator.standalone === true || (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches); }
+
+  function cleVersOctets(b64u) {
+    let s = String(b64u).replace(/-/g, '+').replace(/_/g, '/');
+    while (s.length % 4) s += '=';
+    const bin = atob(s); const out = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+    return out;
+  }
+  async function identifiantAppareil(endpoint) {
+    const h = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(endpoint));
+    return Array.from(new Uint8Array(h)).map(b => b.toString(16).padStart(2, '0')).join('').slice(0, 40);
+  }
+
+  function boutons(etatAppareil) {
+    $('btnActiver').style.display = etatAppareil === 'actif' ? 'none' : 'block';
+    $('btnTest').style.display = etatAppareil === 'actif' ? 'block' : 'none';
+    $('btnDesactiver').style.display = etatAppareil === 'actif' ? 'block' : 'none';
+  }
+
+  async function demarrer() {
+    afficher('');
+    const ios = estIOS();
+    if (ios && !estInstallee()) {
+      $('aideInstallation').style.display = 'block';
+      etat("Installe d'abord l'application sur l'écran d'accueil (voir l'encadré ci-dessous).", 'ko');
+      $('btnActiver').disabled = true;
+      return;
+    }
+    if (!('serviceWorker' in navigator) || !('PushManager' in window) || !('Notification' in window)) {
+      etat("Ce navigateur ne permet pas les notifications. Essaie Chrome, Edge ou Firefox, ou installe l'application sur l'écran d'accueil.", 'ko');
+      $('btnActiver').disabled = true;
+      return;
+    }
+    try {
+      enregistrement = await navigator.serviceWorker.register('sw.js');
+      await navigator.serviceWorker.ready;
+      try {
+        navigator.serviceWorker.addEventListener('message', (ev) => {
+          if (ev.data && ev.data.version) $('version').textContent = 'Version des notifications : ' + VERSION_NOTIFICATIONS + ' (service ' + ev.data.version + ')';
+        });
+        const actif = enregistrement.active || navigator.serviceWorker.controller;
+        if (actif) actif.postMessage('version');
+      } catch (e) { /* affichage de version facultatif */ }
+      abonnementCourant = await enregistrement.pushManager.getSubscription();
+    } catch (e) {
+      etat("Impossible de démarrer le service de notifications : " + e.message, 'ko');
+      return;
+    }
+    await rafraichirEtat();
+  }
+
+  async function rafraichirEtat() {
+    $('btnActiver').disabled = false;
+    if (Notification.permission === 'denied') {
+      etat("Les notifications sont bloquées pour ce site dans les réglages de l'appareil ou du navigateur. Autorise-les puis reviens ici.", 'ko');
+      boutons('inactif');
+      return;
+    }
+    if (abonnementCourant) {
+      try {
+        const id = await identifiantAppareil(abonnementCourant.endpoint);
+        const snap = await getDoc(doc(db, 'abonnements_push', id));
+        if (snap.exists()) { etat('Notifications activées sur cet appareil.', 'ok'); boutons('actif'); return; }
+      } catch (e) {
+        etat("Impossible de lire l'état de l'abonnement : " + e.message, 'ko');
+        boutons('inactif');
+        return;
+      }
+    }
+    etat("Les notifications ne sont pas activées sur cet appareil.", 'neutre');
+    boutons('inactif');
+  }
+
+  $('btnActiver').addEventListener('click', async () => {
+    afficher('');
+    $('btnActiver').disabled = true;
+    try {
+      const reponse = await fetch('/api/notif-cle', { cache: 'no-store' });
+      const infos = await reponse.json();
+      if (!infos.cle) { afficher(infos.erreur || 'Les notifications ne sont pas configurées sur le serveur.', 'ko'); $('btnActiver').disabled = false; return; }
+
+      const permission = await Notification.requestPermission();
+      if (permission !== 'granted') {
+        afficher("Autorisation refusée : les notifications ne peuvent pas être activées. Autorise-les dans les réglages puis réessaie.", 'ko');
+        await rafraichirEtat();
+        return;
+      }
+      // Un ancien abonnement créé avec une autre clé serveur doit être remplacé.
+      const ancien = await enregistrement.pushManager.getSubscription();
+      if (ancien) { try { await ancien.unsubscribe(); } catch (e) { /* on continue */ } }
+      const abonnement = await enregistrement.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: cleVersOctets(infos.cle) });
+      const json = abonnement.toJSON();
+      const id = await identifiantAppareil(json.endpoint);
+      const reference = doc(db, 'abonnements_push', id);
+      const existant = await getDoc(reference);
+      const identite = {
+        email: (utilisateur.email || '').toLowerCase(),
+        endpoint: json.endpoint,
+        p256dh: json.keys.p256dh,
+        auth: json.keys.auth,
+        origine: window.location.origin,
+        plateforme: estIOS() ? 'iOS' : (/Android/.test(navigator.userAgent) ? 'Android' : 'Ordinateur'),
+        misAJourLe: serverTimestamp()
+      };
+      if (existant.exists()) {
+        await setDoc(reference, identite, { merge: true });
+      } else {
+        // Réglages par défaut : tout est coché, rappels programmés à 9 h.
+        await setDoc(reference, Object.assign(identite, {
+          creeLe: serverTimestamp(),
+          heure: 9,
+          types: { signalement: true, besoin: true, complement: true, statut: true, trousses: true, nonclos: true }
+        }));
+      }
+      abonnementCourant = abonnement;
+      afficher("Notifications activées. Touche « Envoyer un test » pour vérifier.", 'ok');
+      await rafraichirEtat();
+    } catch (e) {
+      afficher("Activation impossible : " + (e && e.message ? e.message : e), 'ko');
+      $('btnActiver').disabled = false;
+    }
+  });
+
+  $('btnTest').addEventListener('click', async () => {
+    afficher('Envoi du test…');
+    $('btnTest').disabled = true;
+    try {
+      const jeton = await utilisateur.getIdToken();
+      const reponse = await fetch('/api/notif-test', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + jeton },
+        body: JSON.stringify({ endpoint: abonnementCourant ? abonnementCourant.endpoint : '' })
+      });
+      let donnees = {};
+      try { donnees = (await reponse.json()) || {}; } catch (e) { /* réponse non JSON */ }
+      if (reponse.ok && donnees.ok) afficher('Test envoyé : la notification doit arriver dans quelques secondes.', 'ok');
+      else afficher(donnees.erreur || ("Échec du test (code " + reponse.status + ")."), 'ko');
+      if (reponse.status === 404 || donnees.code === 410) await rafraichirEtat();
+    } catch (e) {
+      afficher("Échec du test : " + e.message, 'ko');
+    }
+    $('btnTest').disabled = false;
+  });
+
+  $('btnDesactiver').addEventListener('click', async () => {
+    afficher('');
+    try {
+      if (abonnementCourant) {
+        const id = await identifiantAppareil(abonnementCourant.endpoint);
+        await deleteDoc(doc(db, 'abonnements_push', id));
+        await abonnementCourant.unsubscribe();
+        abonnementCourant = null;
+      }
+      afficher("Notifications désactivées sur cet appareil.", 'ok');
+      await rafraichirEtat();
+    } catch (e) {
+      afficher("Désactivation impossible : " + e.message, 'ko');
+    }
+  });
+</script>
+</body>
+</html>

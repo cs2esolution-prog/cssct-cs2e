@@ -41,7 +41,7 @@ Le plus simple : dupliquer le dépôt actuel dans un nouveau dépôt GitHub, pui
    rm -rf cssct-cs2e.git
    git clone https://github.com/<compte>/cssct-<nom-entreprise>.git
    ```
-3. Dans ce nouveau dépôt, remplace l'objet `firebaseConfig` (le bloc à 6 valeurs vu à l'étape 1.7) dans **tous** les fichiers HTML qui le contiennent. À date, cela concerne au moins : `index.html`, `signalement_liste.html`, `nouveau_signalement.html`, `_signalement_formulaire.html`, `signalement_collaborateur.html`, `administration.html`, `dashboard.html`, `inspections.html`, `exercices_evacuation.html`, `comptes_rendus_reunion.html`, `trousses_secours.html`, `import_excel.html`, `a_propos.html`. Une recherche/remplacement global sur `apiKey: "AIzaSyACY8fyy8Rd9NyLJ855xsDyknuUMV-pAag"` (et les 5 autres valeurs qui l'accompagnent) permet de repérer chaque occurrence.
+3. Dans ce nouveau dépôt, remplace l'objet `firebaseConfig` (le bloc à 6 valeurs vu à l'étape 1.7) dans **tous** les fichiers HTML qui le contiennent. À date, cela concerne au moins : `index.html`, `signalement_liste.html`, `nouveau_signalement.html`, `_signalement_formulaire.html`, `signalement_collaborateur.html`, `administration.html`, `dashboard.html`, `inspections.html`, `exercices_evacuation.html`, `comptes_rendus_reunion.html`, `trousses_secours.html`, `import_excel.html`, `a_propos.html`, `notifications.html`. Une recherche/remplacement global sur `apiKey: "AIzaSyACY8fyy8Rd9NyLJ855xsDyknuUMV-pAag"` (et les 5 autres valeurs qui l'accompagnent) permet de repérer chaque occurrence.
 4. Adapte l'identité visuelle pour ce CSSCT :
    - Nom de l'appli : cherche `CS2E · CSSCT` / `Mon appli CSSCT` (titres, `manifest.json`, balises `apple-mobile-web-app-title`) et remplace par le nom voulu.
    - Logos : les constantes `CS2E_LOGO_B64` et `CSSCT_LOGO_B64` dans `signalement_liste.html` (réutilisées dans le rapport imprimé et le `.docx`) sont pour l'instant à remplacer manuellement par les logos de la nouvelle entreprise, converties en base64. **Cette étape sera bien plus simple une fois le paramétrage du logo depuis l'interface développé** (demande déjà notée dans le backlog) — d'ici là, c'est une modification de code à chaque nouvelle instance.
@@ -68,6 +68,17 @@ Une fois le site en ligne :
 1. Console Firebase du nouveau projet → Firestore Database → crée la collection `authorized_emails` (si elle n'existe pas déjà) → ajoute un document dont l'ID est ton adresse email (copie la structure d'un document existant dans le projet SMAG pour rester cohérent).
 2. Ouvre le site déployé, saisis ton email, récupère le lien de connexion reçu par mail, connecte-toi une première fois : ton compte Firebase Authentication se crée automatiquement à cette occasion.
 3. Une fois connecté, complète la configuration "Mail de relance" dans Administration (président CSE, élus CSSCT de cette organisation) et ajoute les comptes autorisés suivants (collègues élus CSSCT de cette organisation) selon le même principe.
+
+## Étape 3quater — Notifications sur téléphone (Web Push)
+
+Nécessite le compte de service Google du Worker (secret `GOOGLE_SERVICE_ACCOUNT_KEY`, voir l'étape correspondante dans la section « Mode opératoire » de la page Administration) et les règles Firestore à jour. Aucune valeur propre à SMAG : chaque instance génère ses propres clés ; les messages sont toujours génériques (aucun nom, code de suivi ni détail).
+
+1. Dans le dépôt de la nouvelle instance : `sw.js`, `notifications.html` (avec le `firebaseConfig` de l'instance), `src/push.js` et `src/worker.js`.
+2. Firestore > Règles : coller le fichier `claude/firestore.rules` à jour (bloc `abonnements_push` : chaque personne autorisée lit et écrit uniquement ses propres appareils), puis publier.
+3. Administration > « Générer les clés de notification » : copier les deux valeurs (affichées une seule fois, jamais enregistrées). Dans Cloudflare (Workers & Pages > le Worker > Settings > Variables and Secrets) : `VAPID_PUBLIC` en variable de type texte, `VAPID_PRIVATE` en secret. Facultatif : `VAPID_SUBJECT` (`mailto:adresse` ou `https://adresse-du-site`) ; à défaut, l'adresse du site de chaque abonné est utilisée. Déployer (`keep_vars: true` conserve les variables).
+4. Administration > « Vérifier la configuration » : doit afficher « Configuration correcte » ; sinon le message indique la cause (clé absente, tronquée, paire incohérente).
+5. Chaque membre : page « Notifications » depuis l'accueil > « Activer sur cet appareil » > « Envoyer un test ». Sur iPhone et iPad, installer d'abord l'application sur l'écran d'accueil.
+6. Ne jamais régénérer les clés d'une instance en service : tous les appareils devraient être réactivés.
 
 ## Récapitulatif à conserver
 

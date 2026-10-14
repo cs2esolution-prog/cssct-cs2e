@@ -313,6 +313,19 @@
         <div class="tile-title">Partager les notifs (QR)</div>
       </button>
 
+  <div class="section-lbl">Notifications sur téléphone (Web Push)</div>
+  <p style="font-size:12px;color:var(--ink-soft);margin:0 0 8px;">Chaque membre active ses notifications depuis la page « Notifications ». Une seule fois par installation, un administrateur génère ici les clés du serveur.</p>
+  <button class="tile" id="vapid-gen-btn" style="border:none;width:100%;margin-top:6px;">
+    <div class="tile-icon">🔑</div>
+    <div class="tile-title">Générer les clés de notification</div>
+  </button>
+  <button class="tile" id="vapid-check-btn" style="border:none;width:100%;margin-top:10px;">
+    <div class="tile-icon">✅</div>
+    <div class="tile-title">Vérifier la configuration</div>
+  </button>
+  <div id="vapid-check-result" style="font-size:12.5px;margin-top:8px;white-space:pre-wrap;word-break:break-word;"></div>
+  <a class="sitemap-link" href="notifications.html" style="display:block;margin-top:10px;">🔔 Page « Notifications » (activation par appareil)</a>
+
   <div class="section-lbl">Toutes les pages de l'application</div>
   <div class="sitemap-grid">
     <a class="sitemap-link" href="index.html">Accueil</a>
@@ -325,6 +338,7 @@
     <a class="sitemap-link" href="dashboard.html">Tableau de bord</a>
     <a class="sitemap-link" href="import_excel.html">Import historique Excel</a>
     <a class="sitemap-link" href="changelog.html">Notes de mise à jour</a>
+    <a class="sitemap-link" href="notifications.html">Notifications (activation par appareil)</a>
     <a class="sitemap-link" href="signalement_collaborateur.html">Signalement collaborateur (public)</a>
     <a class="sitemap-link" href="expression_besoin.html">Expression de besoin (public)</a>
     <a class="sitemap-link" href="suivi_demande.html">Suivre ma demande (public)</a>
@@ -583,7 +597,7 @@
       <h4>Étape 2 — Dépôt Git dédié</h4>
       <ol>
         <li>Crée un nouveau dépôt GitHub vide, puis duplique le dépôt actuel dedans (clone --bare + push --mirror).</li>
-        <li>Remplace l'objet <code>firebaseConfig</code> dans <strong>tous</strong> les fichiers HTML qui le contiennent (recherche <code>apiKey: "AIzaSyACY8fyy8Rd9NyLJ855xsDyknuUMV-pAag"</code>). Liste vérifiée (audit de septembre 2026) : <code>index.html</code>, <code>signalement_liste.html</code>, <code>nouveau_signalement.html</code>, <code>_signalement_formulaire.html</code>, <code>signalement_collaborateur.html</code>, <code>administration.html</code>, <code>dashboard.html</code>, <code>inspections.html</code>, <code>exercices_evacuation.html</code>, <code>comptes_rendus_reunion.html</code>, <code>trousses_secours.html</code>, <code>trousses_secours_saisie_masse.html</code>, <code>import_excel.html</code>, <code>installer_application.html</code>, <code>expression_besoin.html</code>, <code>expression_besoin_liste.html</code>, <code>annuaire_cse.html</code>, <code>portail.html</code>, <code>suivi_demande.html</code>. Pense à relancer cette recherche sur tout le dépôt à chaque nouvelle instance (cette liste a déjà été incomplète une fois) — pas de <code>firebaseConfig</code> en revanche dans <code>a_propos.html</code>, <code>changelog.html</code>, <code>guide_vigilance.html</code> (contenu statique).</li>
+        <li>Remplace l'objet <code>firebaseConfig</code> dans <strong>tous</strong> les fichiers HTML qui le contiennent (recherche <code>apiKey: "AIzaSyACY8fyy8Rd9NyLJ855xsDyknuUMV-pAag"</code>). Liste vérifiée (audit de septembre 2026) : <code>index.html</code>, <code>signalement_liste.html</code>, <code>nouveau_signalement.html</code>, <code>_signalement_formulaire.html</code>, <code>signalement_collaborateur.html</code>, <code>administration.html</code>, <code>dashboard.html</code>, <code>inspections.html</code>, <code>exercices_evacuation.html</code>, <code>comptes_rendus_reunion.html</code>, <code>trousses_secours.html</code>, <code>trousses_secours_saisie_masse.html</code>, <code>import_excel.html</code>, <code>installer_application.html</code>, <code>expression_besoin.html</code>, <code>expression_besoin_liste.html</code>, <code>annuaire_cse.html</code>, <code>portail.html</code>, <code>suivi_demande.html</code>, <code>notifications.html</code>. Pense à relancer cette recherche sur tout le dépôt à chaque nouvelle instance (cette liste a déjà été incomplète une fois) — pas de <code>firebaseConfig</code> en revanche dans <code>a_propos.html</code>, <code>changelog.html</code>, <code>guide_vigilance.html</code> (contenu statique).</li>
         <li><strong>Cas particulier — <code>cr_reunion_collaborateurs.html</code></strong> : pas de <code>firebaseConfig</code> (pas de SDK Firebase chargé), donc la recherche ci-dessus ne le détecte pas. Une URL REST Firestore y est construite directement avec l'ID du projet SMAG (pour récupérer le logo) : <code>fetch('https://firestore.googleapis.com/v1/projects/cssct-cs2e-c655b/databases/(default)/documents/config/branding')</code>. Remplace <code>cssct-cs2e-c655b</code> par le <code>projectId</code> de la nouvelle instance.</li>
         <li><strong>Cas particulier le plus important — <code>worker.js</code></strong>, en tête de fichier : <code>const FIREBASE_PROJECT_ID = 'cssct-cs2e-c655b';</code> et <code>const DEFAULT_CSSCT_EMAILS = ['choudayer@smag.tech'];</code>
           <ul>
@@ -633,6 +647,18 @@
           <div class="modop-note">⚠️ À ne pas oublier : contrairement aux secrets (protégés par <code>keep_vars</code>), ce binding KV n'est pas préservé automatiquement par un déploiement en ligne de commande — un futur <code>wrangler deploy</code> sans mise à jour du fichier pourrait le casser. Copie l'<code>id</code> du namespace (visible sur sa page dans le tableau de bord) dans <code>wrangler.jsonc</code> de cette instance (<code>kv_namespaces</code>, à la place de <code>REMPLACER_PAR_ID_NAMESPACE</code>) et committe ce changement sur le dépôt.</div>
         </li>
         <li>À vérifier : Administration &gt; CR réunion &gt; Accès collaborateurs, définis un mot de passe test, ouvre <code>cr_reunion_collaborateurs.html</code> en navigation privée et confirme que le mot de passe est accepté.</li>
+      </ol>
+
+      <h4>Étape 3quater — Notifications sur téléphone (Web Push)</h4>
+      <div class="modop-note">⚠️ Nécessite l'étape 3ter (compte de service) et les règles Firestore de la collection <code>abonnements_push</code> (fichier <code>claude/firestore.rules</code>). Sans les clés ci-dessous, la page « Notifications » affiche un message explicite et rien ne part.</div>
+      <p class="s-help" style="margin:6px 0;">Aucune valeur propre à SMAG : les clés sont générées par chaque instance, le contact d'envoi est facultatif et les messages restent génériques (aucun nom, code de suivi ni détail).</p>
+      <ol>
+        <li>Republie dans le dépôt de la nouvelle instance : <code>sw.js</code>, <code>notifications.html</code> (avec le <code>firebaseConfig</code> de l'instance, voir étape 2), <code>src/push.js</code> et <code>src/worker.js</code>.</li>
+        <li>Firestore &rarr; Règles : colle le fichier <code>firestore.rules</code> à jour (bloc <code>abonnements_push</code>) et publie.</li>
+        <li>Administration &rarr; « Générer les clés de notification » : copie les deux valeurs affichées (elles ne sont enregistrées nulle part). Dans Cloudflare (Workers &amp; Pages &rarr; le Worker &rarr; Settings &rarr; Variables and Secrets) : <code>VAPID_PUBLIC</code> en variable de type texte, <code>VAPID_PRIVATE</code> en secret. Facultatif : <code>VAPID_SUBJECT</code> (<code>mailto:adresse</code> ou <code>https://adresse-du-site</code>), sinon l'adresse du site de chaque abonné est utilisée. Clique « Deploy ».</li>
+        <li>Administration &rarr; « Vérifier la configuration » : doit afficher « Configuration correcte ». Sinon le message dit exactement ce qui manque (clé absente, tronquée ou paire incohérente).</li>
+        <li>Chaque membre ouvre la page « Notifications » depuis l'accueil, active son appareil (sur iPhone : installer d'abord l'application sur l'écran d'accueil) puis touche « Envoyer un test ».</li>
+        <li>Ne régénère jamais les clés d'une instance en service : tous les appareils devraient être réactivés un par un.</li>
       </ol>
 
       <h4>Étape 4 — Premiers comptes</h4>
@@ -1917,6 +1943,60 @@ window.renderQR = function(){
 };
 
 document.getElementById('ntfy-share-btn').addEventListener('click', showNtfyShareModal);
+
+// ---- Notifications Web Push : génération et vérification des clés VAPID ----
+// Les clés ne sont jamais enregistrées ici ni dans Firestore : elles s'affichent une seule fois,
+// à copier dans Cloudflare (VAPID_PUBLIC en variable, VAPID_PRIVATE en secret).
+function vapidVersB64u(octets) {
+  let t = ''; for (let i = 0; i < octets.length; i++) t += String.fromCharCode(octets[i]);
+  return btoa(t).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+document.getElementById('vapid-gen-btn').addEventListener('click', function () {
+  if (!confirm("Générer une nouvelle paire de clés ?\n\nSi des clés sont déjà enregistrées dans Cloudflare, les remplacer oblige chaque membre à réactiver ses notifications. Ne continue que pour une première installation.")) return;
+  crypto.subtle.generateKey({ name: 'ECDSA', namedCurve: 'P-256' }, true, ['sign', 'verify']).then(async function (paire) {
+    const publique = vapidVersB64u(new Uint8Array(await crypto.subtle.exportKey('raw', paire.publicKey)));
+    const privee = (await crypto.subtle.exportKey('jwk', paire.privateKey)).d;
+    const overlay = document.createElement('div');
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.8);z-index:999;display:flex;align-items:center;justify-content:center;padding:16px;overflow:auto;';
+    overlay.innerHTML =
+      '<div style="background:#fff;border-radius:16px;padding:20px;width:100%;max-width:420px;">' +
+        '<div style="font-size:16px;font-weight:600;margin-bottom:6px;">🔑 Clés de notification</div>' +
+        '<div style="font-size:12px;color:#6B6873;margin-bottom:12px;">Copie ces deux valeurs dans Cloudflare (Workers et Pages, ton Worker, Paramètres, Variables et secrets), puis redéploie. Elles ne sont affichées qu’une fois et ne sont enregistrées nulle part ailleurs.</div>' +
+        '<div style="font-size:12px;font-weight:600;">1. Variable : <code>VAPID_PUBLIC</code> (type texte)</div>' +
+        '<textarea id="vapid-pub" readonly rows="3" style="width:100%;font-size:11px;font-family:monospace;margin:4px 0;"></textarea>' +
+        '<button class="copy-btn" id="vapid-pub-copy">Copier la clé publique</button>' +
+        '<div style="font-size:12px;font-weight:600;margin-top:12px;">2. Secret : <code>VAPID_PRIVATE</code> (type secret)</div>' +
+        '<textarea id="vapid-priv" readonly rows="2" style="width:100%;font-size:11px;font-family:monospace;margin:4px 0;"></textarea>' +
+        '<button class="copy-btn" id="vapid-priv-copy">Copier la clé privée</button>' +
+        '<div style="font-size:11.5px;color:#A85D45;margin-top:12px;">La clé privée est un secret : ne la colle ni dans un message, ni dans un fichier, ni dans GitHub.</div>' +
+        '<button class="detail-action-btn" id="vapid-close" style="margin-top:14px;">Fermer</button>' +
+      '</div>';
+    document.body.appendChild(overlay);
+    overlay.querySelector('#vapid-pub').value = publique;
+    overlay.querySelector('#vapid-priv').value = privee;
+    function copier(idBouton, idZone) {
+      overlay.querySelector(idBouton).addEventListener('click', function (ev) {
+        const bouton = ev.currentTarget; const ancien = bouton.textContent;
+        const zone = overlay.querySelector(idZone); zone.select();
+        const fini = function () { bouton.textContent = 'Copié ✓'; setTimeout(function () { bouton.textContent = ancien; }, 1500); };
+        if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(zone.value).then(fini, function () { document.execCommand('copy'); fini(); });
+        else { document.execCommand('copy'); fini(); }
+      });
+    }
+    copier('#vapid-pub-copy', '#vapid-pub');
+    copier('#vapid-priv-copy', '#vapid-priv');
+    overlay.querySelector('#vapid-close').addEventListener('click', function () { overlay.remove(); });
+  }).catch(function (e) { alert('Génération impossible : ' + e.message); });
+});
+
+document.getElementById('vapid-check-btn').addEventListener('click', function () {
+  const zone = document.getElementById('vapid-check-result');
+  zone.style.color = ''; zone.textContent = 'Vérification…';
+  fetch('/api/notif-cle', { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (d) {
+    if (d.cle) { zone.style.color = '#017162'; zone.textContent = 'Configuration correcte : clés valides et cohérentes.'; }
+    else { zone.style.color = '#A85D45'; zone.textContent = d.erreur || 'Configuration incomplète.'; }
+  }).catch(function (e) { zone.style.color = '#A85D45'; zone.textContent = 'Vérification impossible : ' + e.message; });
+});
 
 function showNtfyShareModal() {
   const topic = 'cse-invivoag-cssct';
