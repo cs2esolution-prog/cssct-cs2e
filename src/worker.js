@@ -251,7 +251,7 @@ async function handleCollaborateurSubmission(request, env, ctx) {
     }
 
     // Notification sur téléphone : générique, indépendante de l'envoi des e-mails.
-    declencherNotification(env, ctx, evenementNotification('signalement'));
+    declencherNotification(env, ctx, 'signalement', function () { return construireEvenement(env, 'signalement', 'signalement', codeSuivi, null, { fraicheur: true, public: true }); });
 
     const vars = { numero, codeSuivi, rapporteur, site, nature, objet };
     const templatesDoc = await fetchEmailTemplatesConfig(env);
@@ -327,7 +327,7 @@ async function handleBesoinSubmission(request, env, ctx) {
       return new Response(JSON.stringify({ error: 'Champs obligatoires manquants' }), { status: 400, headers: CORS_HEADERS });
     }
 
-    declencherNotification(env, ctx, evenementNotification('besoin'));
+    declencherNotification(env, ctx, 'besoin', function () { return construireEvenement(env, 'besoin', 'besoin', codeSuivi, null, { fraicheur: true, public: true }); });
 
     const fromEmail = env.MAILJET_FROM_EMAIL || 'cs2esolution@gmail.com';
     const fromName = env.MAILJET_FROM_NAME || 'CSSCT';
@@ -406,7 +406,7 @@ async function handleComplementSubmission(request, env, ctx) {
     const fromName = env.MAILJET_FROM_NAME || 'CSSCT';
     const cssctEmails = resolveDestinataires(await fetchDestinatairesConfig(env, kind === 'signalement' ? 'notifications_signalement' : 'notifications_besoin'));
 
-    declencherNotification(env, ctx, evenementNotification('complement', kind));
+    declencherNotification(env, ctx, 'complement', function () { return construireEvenement(env, 'complement', kind, code, null, { public: true }); });
 
     const label = kind === 'signalement'
       ? ('dossier de signalement' + (numero ? ' n°' + numero : '') + ' (' + code + ')')
@@ -532,9 +532,19 @@ async function verifyFirebaseIdToken(idToken) {
 // aux collaborateurs et vérification de la liste des admins autorisés). ---
 
 let _googleTokenCache = null;
-async function getGoogleAccessToken(env) {
+let _googleTokenEnCours = null;
+// Plusieurs lectures peuvent démarrer en même temps (e-mails, notifications) : on ne signe et ne demande
+// le jeton qu'une seule fois, les autres attendent le même résultat (économie de temps de calcul).
+function getGoogleAccessToken(env) {
   const now = Math.floor(Date.now() / 1000);
-  if (_googleTokenCache && _googleTokenCache.exp > now + 60) return _googleTokenCache.token;
+  if (_googleTokenCache && _googleTokenCache.exp > now + 60) return Promise.resolve(_googleTokenCache.token);
+  if (!_googleTokenEnCours) {
+    _googleTokenEnCours = obtenirGoogleAccessToken(env).finally(function () { _googleTokenEnCours = null; });
+  }
+  return _googleTokenEnCours;
+}
+async function obtenirGoogleAccessToken(env) {
+  const now = Math.floor(Date.now() / 1000);
 
   if (!env.GOOGLE_SERVICE_ACCOUNT_KEY) {
     throw new Error("Secret GOOGLE_SERVICE_ACCOUNT_KEY absent du Worker (compte de service Firebase non configuré).");
@@ -998,27 +1008,87 @@ async function handleNotifTest(request, env) {
 
 // ---- Diffusion des notifications à tous les appareils concernés ----
 
-// Texte toujours générique : jamais de nom, de numéro, de code de suivi ni de détail.
-function evenementNotification(type, kind, exclure) {
-  const pageDossiers = kind === 'besoin' ? 'expression_besoin_liste.html' : 'signalement_liste.html';
-  const definitions = {
-    signalement: { titre: 'Nouveau signalement CSSCT', corps: 'Un nouveau signalement a été déposé. Consulte l\u2019application.', url: 'signalement_liste.html' },
-    besoin: { titre: 'Nouvelle expression de besoin', corps: 'Une nouvelle expression de besoin a été déposée. Consulte l\u2019application.', url: 'expression_besoin_liste.html' },
-    complement: { titre: 'Complément ajouté', corps: 'Un complément a été ajouté sur une demande. Consulte l\u2019application.', url: pageDossiers },
-    statut: { titre: 'Changement de statut', corps: 'Une demande a changé de statut. Consulte l\u2019application.', url: pageDossiers }
+// Contenu des notifications.
+// - Notification poussée (chiffrée de bout en bout jusqu'à l'appareil) : type, numéro et nature/thème/site du dossier,
+//   lus dans la base par le Worker (jamais pris dans la requête). Jamais de nom, de description ni de code de suivi.
+// - ntfy (service tiers lisible en clair) : texte générique et lien vers la liste, sans identifiant de dossier.
+function nettoyerTexte(valeur, max) {
+  return String(valeur == null ? '' : valeur).replace(/[\u0000-\u001f\u007f]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, max || 40);
+}
+function libelleStatut(statut) {
+  return nettoyerTexte(String(statut || '').replace(/^\d+\s*-\s*/, ''), 30);
+}
+
+function evenementNotification(type, kind, exclure, dossier) {
+  const pageListe = kind === 'besoin' ? 'expression_besoin_liste.html' : 'signalement_liste.html';
+  const parametre = kind === 'besoin' ? 'besoin' : 'dossier';
+  const d = dossier || null;
+  const lien = d && d.id ? pageListe + '?' + parametre + '=' + encodeURIComponent(d.id) : pageListe;
+  const nomDossier = d ? (kind === 'besoin' ? (d.theme ? 'Expression de besoin · ' + d.theme : 'Expression de besoin') : (d.numero ? 'Signalement n°' + d.numero : 'Signalement')) : '';
+  const generiques = {
+    signalement: { titre: 'Nouveau signalement CSSCT', corps: 'Un nouveau signalement a été déposé. Consulte l’application.', url: 'signalement_liste.html' },
+    besoin: { titre: 'Nouvelle expression de besoin', corps: 'Une nouvelle expression de besoin a été déposée. Consulte l’application.', url: 'expression_besoin_liste.html' },
+    complement: { titre: 'Complément ajouté', corps: 'Un complément a été ajouté sur une demande. Consulte l’application.', url: pageListe },
+    statut: { titre: 'Changement de statut', corps: 'Une demande a changé de statut. Consulte l’application.', url: pageListe }
   };
-  const d = definitions[type];
-  return { type: type, titre: d.titre, corps: d.corps, url: d.url, exclure: exclure || null };
+  const g = generiques[type];
+  const ev = { type: type, titre: g.titre, corps: g.corps, url: g.url, ntfyTitre: g.titre, ntfyCorps: g.corps, ntfyUrl: g.url, exclure: exclure || null };
+  if (!d) return ev;
+  ev.url = lien;
+  if (type === 'signalement') {
+    ev.titre = d.numero ? 'Nouveau signalement n°' + d.numero : 'Nouveau signalement';
+    ev.corps = [d.nature, d.site].filter(Boolean).join(' · ') || g.corps;
+  } else if (type === 'besoin') {
+    ev.corps = d.theme || g.corps;
+  } else if (type === 'complement') {
+    ev.corps = nomDossier;
+  } else if (type === 'statut') {
+    ev.corps = nomDossier + (d.statut ? ' : ' + d.statut : '');
+  }
+  return ev;
+}
+
+// Lit le dossier dans la base (accès privilégié) et prépare l'événement. Renvoie null si la notification doit être ignorée.
+// options.fraicheur : refuse un dossier créé il y a plus de 30 minutes (empêche de rejouer une fausse alerte).
+// options.public : l'appel vient d'un formulaire public, le dossier doit avoir été déposé par un collaborateur.
+// options.tolerant : en cas de dossier introuvable, envoie quand même la version générique, sans lien.
+async function construireEvenement(env, type, kind, id, exclure, options) {
+  const opts = options || {};
+  const identifiant = String(id || '');
+  let doc = null;
+  if (/^[A-Za-z0-9_-]{4,64}$/.test(identifiant)) {
+    doc = await firestoreGetStrict(env, (kind === 'besoin' ? 'expressions_besoin/' : 'signalements/') + identifiant);
+  }
+  if (!doc) return opts.tolerant ? evenementNotification(type, kind, exclure) : null;
+  if (opts.fraicheur && doc.createdAt) {
+    const age = Date.now() - Date.parse(doc.createdAt);
+    if (isNaN(age) || age > 30 * 60 * 1000 || age < -5 * 60 * 1000) return null;
+  }
+  if (opts.public && kind !== 'besoin' && doc.origineCollaborateur !== true) return null;
+  const dossier = {
+    id: identifiant,
+    numero: doc.numero != null ? nettoyerTexte(doc.numero, 12).replace(/^n\s*[°o]\s*/i, '') : '',
+    nature: nettoyerTexte(doc.natureIncident, 40),
+    site: nettoyerTexte(doc.site, 40),
+    theme: nettoyerTexte(doc.theme, 60),
+    statut: libelleStatut(doc.statut)
+  };
+  return evenementNotification(type, kind, exclure, dossier);
 }
 
 // Diffuse puis note le résultat dans le journal. Si l'exécution est interrompue en route (par exemple par la
 // limite de temps de calcul du forfait gratuit), le journal reste sur « en cours » : c'est le signal.
-async function diffuserEtJournaliser(env, evenement) {
+async function diffuserEtJournaliser(env, type, fabrique) {
   if (!env.GOOGLE_SERVICE_ACCOUNT_KEY) return { appareils: 0, envoyes: 0, supprimes: 0, echecs: 0 };
   const debut = Date.now();
-  const base = { type: evenement.type, date: new Date(debut).toISOString() };
+  const base = { type: type, date: new Date(debut).toISOString() };
   await journaliser(env, Object.assign({ etat: 'en cours', appareils: 0, envoyes: 0, echecs: 0, erreur: '', dureeMs: 0 }, base));
   try {
+    const evenement = await fabrique();
+    if (!evenement) {
+      await journaliser(env, Object.assign({ etat: 'terminé', appareils: 0, envoyes: 0, echecs: 0, erreur: 'Dossier introuvable ou trop ancien : notification ignorée.', dureeMs: Date.now() - debut }, base));
+      return { appareils: 0, envoyes: 0, supprimes: 0, echecs: 0 };
+    }
     const bilan = await diffuserNotification(env, evenement);
     await journaliser(env, Object.assign({ etat: 'terminé', appareils: bilan.appareils, envoyes: bilan.envoyes, echecs: bilan.echecs, erreur: bilan.erreur || '', dureeMs: Date.now() - debut }, base));
     return bilan;
@@ -1028,8 +1098,8 @@ async function diffuserEtJournaliser(env, evenement) {
   }
 }
 
-function declencherNotification(env, ctx, evenement) {
-  const tache = diffuserEtJournaliser(env, evenement).catch(function (err) {
+function declencherNotification(env, ctx, type, fabrique) {
+  const tache = diffuserEtJournaliser(env, type, fabrique).catch(function (err) {
     console.error('Diffusion des notifications impossible : ' + err.message);
   });
   if (ctx && typeof ctx.waitUntil === 'function') ctx.waitUntil(tache);
@@ -1039,7 +1109,7 @@ function declencherNotification(env, ctx, evenement) {
 const SUJET_NTFY_PERSONNEL = /^cssct-[0-9a-f]{32}$/;
 // Un Worker du forfait gratuit est limité à 50 requêtes sortantes par exécution : on en réserve une douzaine
 // pour la lecture de la base, le journal et les e-mails, le reste sert aux envois (1 par appareil, +1 par canal ntfy personnel).
-const MAX_ENVOIS_PAR_EXECUTION = 34;
+const MAX_ENVOIS_PAR_EXECUTION = 33;
 
 // Envoie l'événement à chaque appareil abonné dont la personne est toujours autorisée et a gardé ce type coché.
 async function diffuserNotification(env, evenement) {
@@ -1092,9 +1162,9 @@ async function diffuserNotification(env, evenement) {
     if (SUJET_NTFY_PERSONNEL.test(sujet) && !sujetsDejaServis.has(sujet)) {
       sujetsDejaServis.add(sujet);
       try {
-        const entetes = { Title: evenement.titre, Priority: 'default', Tags: 'bell' };
-        if (a.origine && /^https:\/\//.test(a.origine)) entetes.Click = a.origine.replace(/\/$/, '') + '/' + evenement.url;
-        await fetch('https://ntfy.sh/' + sujet, { method: 'POST', headers: entetes, body: evenement.corps });
+        const entetes = { Title: evenement.ntfyTitre, Priority: 'default', Tags: 'bell' };
+        if (a.origine && /^https:\/\//.test(a.origine)) entetes.Click = a.origine.replace(/\/$/, '') + '/' + evenement.ntfyUrl;
+        await fetch('https://ntfy.sh/' + sujet, { method: 'POST', headers: entetes, body: evenement.ntfyCorps });
       } catch (e) { console.error('Erreur ntfy personnel : ' + e.message); }
     }
   }));
@@ -1121,8 +1191,11 @@ async function handleNotifStatut(request, env) {
     const kind = corps.kind === 'besoin' ? 'besoin' : 'signalement';
     // Nouveau signalement créé depuis l'application : tout le monde est prévenu, l'auteur compris.
     // Changement de statut : l'auteur du changement n'est pas prévenu (il vient de le faire).
-    const evenement = corps.evenement === 'signalement' ? evenementNotification('signalement') : evenementNotification('statut', kind, email);
-    const bilan = await diffuserEtJournaliser(env, evenement);
+    const creation = corps.evenement === 'signalement';
+    const type = creation ? 'signalement' : 'statut';
+    const bilan = await diffuserEtJournaliser(env, type, function () {
+      return construireEvenement(env, type, creation ? 'signalement' : kind, corps.id, creation ? null : email, { tolerant: true });
+    });
     return reponseJson({ ok: true, appareils: bilan.appareils, envoyes: bilan.envoyes });
   } catch (err) {
     return reponseJson({ erreur: expliquerErreurBase(err) }, 503);
