@@ -913,6 +913,29 @@ async function firestoreGetStrict(env, docPath) {
   return data.fields ? fsDecodeDoc(data) : null;
 }
 
+// Écriture d'un document simple (chaînes et entiers), qui remplace l'existant ou le crée.
+async function firestoreEcrireDoc(env, docPath, champs) {
+  const token = await getGoogleAccessToken(env);
+  const fields = {};
+  Object.keys(champs).forEach(function (k) {
+    const v = champs[k];
+    fields[k] = typeof v === 'number' ? { integerValue: String(Math.trunc(v)) } : { stringValue: String(v == null ? '' : v) };
+  });
+  const resp = await fetch('https://firestore.googleapis.com/v1/projects/' + FIREBASE_PROJECT_ID + '/databases/(default)/documents/' + docPath, {
+    method: 'PATCH',
+    headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ fields: fields })
+  });
+  if (!resp.ok) throw new Error('Firestore ' + resp.status);
+}
+
+// Journal du dernier envoi, affiché dans la page « Notifications » pour comprendre ce qui s'est passé
+// (aucun nom ni détail de dossier : seulement le type d'événement et des compteurs).
+async function journaliser(env, champs) {
+  try { await firestoreEcrireDoc(env, 'config/dernier_envoi_notifications', champs); }
+  catch (err) { console.error('Journal des notifications impossible : ' + err.message); }
+}
+
 async function firestoreDeleteDoc(env, docPath) {
   const token = await getGoogleAccessToken(env);
   const resp = await fetch('https://firestore.googleapis.com/v1/projects/' + FIREBASE_PROJECT_ID + '/databases/(default)/documents/' + docPath, {
@@ -988,8 +1011,25 @@ function evenementNotification(type, kind, exclure) {
   return { type: type, titre: d.titre, corps: d.corps, url: d.url, exclure: exclure || null };
 }
 
+// Diffuse puis note le résultat dans le journal. Si l'exécution est interrompue en route (par exemple par la
+// limite de temps de calcul du forfait gratuit), le journal reste sur « en cours » : c'est le signal.
+async function diffuserEtJournaliser(env, evenement) {
+  if (!env.GOOGLE_SERVICE_ACCOUNT_KEY) return { appareils: 0, envoyes: 0, supprimes: 0, echecs: 0 };
+  const debut = Date.now();
+  const base = { type: evenement.type, date: new Date(debut).toISOString() };
+  await journaliser(env, Object.assign({ etat: 'en cours', appareils: 0, envoyes: 0, echecs: 0, erreur: '', dureeMs: 0 }, base));
+  try {
+    const bilan = await diffuserNotification(env, evenement);
+    await journaliser(env, Object.assign({ etat: 'terminé', appareils: bilan.appareils, envoyes: bilan.envoyes, echecs: bilan.echecs, erreur: bilan.erreur || '', dureeMs: Date.now() - debut }, base));
+    return bilan;
+  } catch (err) {
+    await journaliser(env, Object.assign({ etat: 'échec', appareils: 0, envoyes: 0, echecs: 0, erreur: expliquerErreurBase(err), dureeMs: Date.now() - debut }, base));
+    throw err;
+  }
+}
+
 function declencherNotification(env, ctx, evenement) {
-  const tache = diffuserNotification(env, evenement).catch(function (err) {
+  const tache = diffuserEtJournaliser(env, evenement).catch(function (err) {
     console.error('Diffusion des notifications impossible : ' + err.message);
   });
   if (ctx && typeof ctx.waitUntil === 'function') ctx.waitUntil(tache);
@@ -998,12 +1038,12 @@ function declencherNotification(env, ctx, evenement) {
 
 const SUJET_NTFY_PERSONNEL = /^cssct-[0-9a-f]{32}$/;
 // Un Worker du forfait gratuit est limité à 50 requêtes sortantes par exécution : on en réserve une douzaine
-// pour la lecture de la base et les e-mails, le reste sert aux envois (1 par appareil, +1 par canal ntfy personnel).
-const MAX_ENVOIS_PAR_EXECUTION = 36;
+// pour la lecture de la base, le journal et les e-mails, le reste sert aux envois (1 par appareil, +1 par canal ntfy personnel).
+const MAX_ENVOIS_PAR_EXECUTION = 34;
 
 // Envoie l'événement à chaque appareil abonné dont la personne est toujours autorisée et a gardé ce type coché.
 async function diffuserNotification(env, evenement) {
-  const bilan = { appareils: 0, envoyes: 0, supprimes: 0, echecs: 0 };
+  const bilan = { appareils: 0, envoyes: 0, supprimes: 0, echecs: 0, erreur: '' };
   if (!env.GOOGLE_SERVICE_ACCOUNT_KEY) return bilan;
   const lectures = await Promise.all([firestoreListStrict(env, 'abonnements_push'), firestoreListStrict(env, 'authorized_emails')]);
   const autorises = new Set(lectures[1].map(function (d) { let id = d.id; try { id = decodeURIComponent(id); } catch (e) { /* identifiant laissé tel quel */ } return String(id).toLowerCase(); }));
@@ -1036,6 +1076,7 @@ async function diffuserNotification(env, evenement) {
       if (r.code >= 200 && r.code < 300) bilan.envoyes++;
       else {
         bilan.echecs++;
+        if (!bilan.erreur) bilan.erreur = r.code === 0 ? r.detail : expliquerCode(r.code, r.detail);
         if (r.code === 404 || r.code === 410) {
           try { await firestoreDeleteDoc(env, 'abonnements_push/' + a.id); bilan.supprimes++; } catch (e) { console.error('Suppression abonnement périmé impossible : ' + e.message); }
         } else if (r.code === 0 && !avertissementCles) {
@@ -1081,7 +1122,7 @@ async function handleNotifStatut(request, env) {
     // Nouveau signalement créé depuis l'application : tout le monde est prévenu, l'auteur compris.
     // Changement de statut : l'auteur du changement n'est pas prévenu (il vient de le faire).
     const evenement = corps.evenement === 'signalement' ? evenementNotification('signalement') : evenementNotification('statut', kind, email);
-    const bilan = await diffuserNotification(env, evenement);
+    const bilan = await diffuserEtJournaliser(env, evenement);
     return reponseJson({ ok: true, appareils: bilan.appareils, envoyes: bilan.envoyes });
   } catch (err) {
     return reponseJson({ erreur: expliquerErreurBase(err) }, 503);
