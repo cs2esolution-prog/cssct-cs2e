@@ -211,7 +211,7 @@
   </a>
   <button type="button" class="admin-card" onclick="document.getElementById('modopModal').classList.add('show')">
     <div class="a-icon">🧭</div>
-    <div><div class="a-title">Créer une nouvelle instance CSSCT</div><div class="a-desc">Mode opératoire complet pour dupliquer l'appli pour un autre CSSCT</div></div>
+    <div><div class="a-title">Créer une nouvelle instance CSSCT</div><div class="a-desc">Mode opératoire pas à pas, sans code, pour dupliquer l'appli pour un autre CSSCT</div></div>
     <div class="a-arrow">›</div>
   </button>
 
@@ -578,93 +578,105 @@
       <button class="modal-close" onclick="document.getElementById('modopModal').classList.remove('show')">×</button>
     </div>
     <div class="modal-body modop-body">
-      <p class="s-help" style="margin:0 0 12px;">Chaque CSSCT a sa propre instance complètement séparée (projet Firebase dédié + site Cloudflare dédié) : aucune donnée n'est jamais partagée entre CSSCT. Prévoir environ 60-75 minutes par nouvelle instance une fois la procédure rodée.</p>
-
-      <h4>Étape 1 — Projet Firebase</h4>
+      <p class="s-help" style="margin:0 0 12px;">Chaque CSSCT a sa propre instance, complètement séparée : projet Firebase dédié, site Cloudflare dédié, dépôt GitHub dédié. Aucune donnée n'est jamais partagée entre CSSCT. Tout se fait depuis les sites web (aucun logiciel à installer, aucune ligne de commande), avec des comptes dédiés à l'organisation, et non ton compte personnel. Prévoir environ 1 h 30 la première fois.</p>
+      <h4>Étape 0 — Créer les comptes de l'organisation</h4>
       <ol>
-        <li>Sur <code>console.firebase.google.com</code>, crée un projet nommé par ex. <code>cssct-&lt;nom-entreprise&gt;</code>.</li>
-        <li>Authentication → Sign-in method → active <strong>Email/Password</strong>, puis dans ses paramètres avancés active <strong>"Lien de messagerie (connexion sans mot de passe)"</strong>.</li>
-        <li>Authentication → Settings → Authorized domains : ajoute le futur domaine Cloudflare (tu peux revenir compléter après l'étape 3).</li>
+        <li>Choisis une adresse e-mail dédiée à l'organisation (pas ton adresse personnelle), qui servira de propriétaire de l'instance.</li>
+        <li>Crée avec cette adresse : un compte Google (pour Firebase), un compte GitHub (le code), un compte Cloudflare (l'hébergement) et un compte Mailjet (l'envoi des e-mails).</li>
+        <li>Note les identifiants dans un gestionnaire de mots de passe, jamais dans un fichier du dépôt.</li>
+      </ol>
+      <div class="modop-note">Ces comptes appartiennent ensuite à l'organisation : tu peux lui en transmettre la gestion en changeant l'adresse e-mail ou en ajoutant un administrateur dans chaque service.</div>
+
+      <h4>Étape 1 — Projet Firebase (compte Google dédié)</h4>
+      <ol>
+        <li>Sur <code>console.firebase.google.com</code>, crée un projet nommé par ex. <code>cssct-&lt;nom-organisation&gt;</code>. Désactive Google Analytics.</li>
+        <li>Authentication → Sign-in method → active <strong>Email/Password</strong>, puis dans ses paramètres avancés active <strong>« Lien de messagerie (connexion sans mot de passe) »</strong>.</li>
         <li>Firestore Database → Créer une base → région proche (ex. <code>eur3</code>) → mode production.</li>
-        <li>Paramètres du projet → Général → "Vos applications" → icône <code>&lt;/&gt;</code> (Web) → n'active pas Firebase Hosting → copie l'objet <code>firebaseConfig</code> affiché (6 valeurs), il sert à l'étape 2. Note aussi le <code>projectId</code> seul de côté, il est redemandé tel quel à l'étape 2.5.</li>
+        <li>Firestore Database → onglet <strong>Règles</strong> → remplace tout le contenu par le fichier <code>firestore.rules</code> à jour, puis <strong>Publier</strong>. Ce fichier se trouve dans les Connaissances du projet Claude « CSSCT — Suivi &amp; Signalements » (<code>claude/firestore-regles-a-jour.txt</code>, copie des règles actuellement publiées) ; il contient aussi le bloc des notifications (<code>abonnements_push</code>). Le fichier <code>claude/firestore.rules</code> plus ancien est périmé : ne l'utilise pas.</li>
+        <li>Paramètres du projet (roue crantée) → Général → « Vos applications » → icône <code>&lt;/&gt;</code> (Web) → nom libre, <strong>sans</strong> Firebase Hosting → Enregistrer. Firebase affiche 6 valeurs (<code>apiKey</code>, <code>authDomain</code>, <code>projectId</code>, <code>storageBucket</code>, <code>messagingSenderId</code>, <code>appId</code>) : recopie-les dans un bloc-notes, elles servent à l'étape 2.</li>
+        <li>Authentication → Settings → Authorized domains : tu ajouteras le domaine du site à l'étape 3.</li>
       </ol>
-      <div class="modop-note">⚠️ Les règles de sécurité Firestore ne sont pas dans ce dépôt (console uniquement). Avant d'ouvrir l'instance à qui que ce soit, récupère les règles du projet existant et adapte-les au nouveau projet — demande à Claude si besoin d'aide pour les relire.</div>
+      <div class="modop-note">Sans les règles de l'étape 1.4, la base est soit ouverte à tous, soit fermée : ne donne l'adresse du site à personne avant de les avoir publiées.</div>
 
-      <h4>Étape 2 — Dépôt Git dédié</h4>
+      <h4>Étape 2 — Dépôt GitHub (compte GitHub dédié)</h4>
       <ol>
-        <li>Crée un nouveau dépôt GitHub vide, puis duplique le dépôt actuel dedans (clone --bare + push --mirror).</li>
-        <li>Remplace l'objet <code>firebaseConfig</code> dans <strong>tous</strong> les fichiers HTML qui le contiennent (recherche <code>apiKey: "AIzaSyACY8fyy8Rd9NyLJ855xsDyknuUMV-pAag"</code>). Liste vérifiée (audit de septembre 2026) : <code>index.html</code>, <code>signalement_liste.html</code>, <code>nouveau_signalement.html</code>, <code>_signalement_formulaire.html</code>, <code>signalement_collaborateur.html</code>, <code>administration.html</code>, <code>dashboard.html</code>, <code>inspections.html</code>, <code>exercices_evacuation.html</code>, <code>comptes_rendus_reunion.html</code>, <code>trousses_secours.html</code>, <code>trousses_secours_saisie_masse.html</code>, <code>import_excel.html</code>, <code>installer_application.html</code>, <code>expression_besoin.html</code>, <code>expression_besoin_liste.html</code>, <code>annuaire_cse.html</code>, <code>portail.html</code>, <code>suivi_demande.html</code>, <code>notifications.html</code>. Pense à relancer cette recherche sur tout le dépôt à chaque nouvelle instance (cette liste a déjà été incomplète une fois) — pas de <code>firebaseConfig</code> en revanche dans <code>a_propos.html</code>, <code>changelog.html</code>, <code>guide_vigilance.html</code> (contenu statique).</li>
-        <li><strong>Cas particulier — <code>cr_reunion_collaborateurs.html</code></strong> : pas de <code>firebaseConfig</code> (pas de SDK Firebase chargé), donc la recherche ci-dessus ne le détecte pas. Une URL REST Firestore y est construite directement avec l'ID du projet SMAG (pour récupérer le logo) : <code>fetch('https://firestore.googleapis.com/v1/projects/cssct-cs2e-c655b/databases/(default)/documents/config/branding')</code>. Remplace <code>cssct-cs2e-c655b</code> par le <code>projectId</code> de la nouvelle instance.</li>
-        <li><strong>Cas particulier le plus important — <code>worker.js</code></strong>, en tête de fichier : <code>const FIREBASE_PROJECT_ID = 'cssct-cs2e-c655b';</code> et <code>const DEFAULT_CSSCT_EMAILS = ['choudayer@smag.tech'];</code>
-          <ul>
-            <li><code>FIREBASE_PROJECT_ID</code> doit obligatoirement correspondre au <code>projectId</code> de la nouvelle instance (même valeur que <code>firebaseConfig</code>). Sert à vérifier les jetons de connexion (<code>payload.aud</code>/<code>payload.iss</code>) et à construire les URLs d'accès privilégié aux CR (étape 3ter). <strong>Si elle n'est pas changée, personne ne peut se connecter</strong> (erreur "Audience invalide" — bloquant à 100%, mais explicite).</li>
-            <li><code>DEFAULT_CSSCT_EMAILS</code> est la liste de secours pour les emails de notification (nouveau signalement, nouvelle expression de besoin), utilisée quand la config Firestore correspondante est vide ou pas encore accessible. Tant que cette constante garde l'adresse de SMAG, <strong>une nouvelle instance mal configurée enverrait silencieusement les notifications de son client à <code>choudayer@smag.tech</code></strong> — sans erreur visible. Remplace-la (ou vide-la <code>[]</code>).</li>
-            <li>Point mineur, même fichier : <code>env.MAILJET_FROM_EMAIL || 'cs2esolution@gmail.com'</code> (3 occurrences) retombe sur l'adresse générique CS2E si le secret n'est pas configuré (étape 3bis) — pas une fuite vers SMAG, mais à vérifier.</li>
-          </ul>
+        <li>Sur le dépôt d'origine (ton compte) : bouton <strong>Code</strong> → <strong>Download ZIP</strong>, puis dézippe le fichier sur ton ordinateur.</li>
+        <li>Connecte-toi au compte GitHub dédié → <strong>New repository</strong> → nom <code>cssct-&lt;nom-organisation&gt;</code>, <strong>Private</strong>, sans README → Create. Sur la page du dépôt vide, clique <strong>uploading an existing file</strong>, glisse tout le contenu dézippé (dossier <code>src</code> compris), puis <strong>Commit changes</strong>.</li>
+        <li>Sur la page du dépôt, appuie sur la touche <strong>point (.)</strong> : l'éditeur web s'ouvre. Clique sur la loupe à gauche (Rechercher), puis sur la flèche à gauche du champ pour afficher « Remplacer ». Fais les remplacements du tableau ci-dessous, <strong>dans cet ordre</strong>, avec « Tout remplacer » (une icône à droite du champ) :
+        <ul style="margin:4px 0 8px;">
+          <li>1. Chercher <code>1:277603883255:web:b3b7a5c3097a60caac1bf2</code> → remplacer par le nouvel <code>appId</code>.</li>
+          <li>2. Chercher <code>277603883255</code> → remplacer par le nouveau <code>messagingSenderId</code>.</li>
+          <li>3. Chercher <code>AIzaSyACY8fyy8Rd9NyLJ855xsDyknuUMV-pAag</code> → remplacer par la nouvelle <code>apiKey</code>.</li>
+          <li>4. Chercher <code>cssct-cs2e-c655b</code> → remplacer par le nouveau <code>projectId</code> (remplace aussi <code>authDomain</code>, <code>storageBucket</code> et les liens de la console).</li>
+          <li>5. Chercher <code>cdizien@agrosolutions.com;imariotti@smag.tech;choudayer@smag.tech</code> → remplacer par les adresses des élus CSSCT de l'organisation, séparées par <code>;</code> (2 fichiers).</li>
+          <li>6. Chercher <code>alhermitte@smag.tech</code> → remplacer par l'adresse du président du CSE.</li>
+          <li>7. Chercher <code>choudayer@smag.tech</code> → remplacer par l'adresse qui reçoit les notifications de secours (administrateur).</li>
+          <li>8. Chercher <code>cs2esolution@gmail.com</code> → remplacer par l'adresse d'expédition validée dans Mailjet (même valeur que <code>MAILJET_FROM_EMAIL</code>).</li>
+          <li>9. Chercher <code>["Bezannes","Chalons-en-Champagne","Evreux","Milly-la-Forêt","Montpellier","Nancy","Paris","Poitiers","Reims","Télétravail","Wavre"]</code> → remplacer par <code>["Site principal"]</code> ou la liste de l'organisation (8 fichiers).</li>
+          <li>10. Chercher <code>["Smag","Agrinovex","Fermes Leader","Be API","Agrosolutions","Carbon &amp; Co"]</code> → remplacer par <code>["Nom de l'organisation"]</code> ou la liste de l'organisation (4 fichiers).</li>
+          <li>11. Chercher <code>Mon appli CSSCT</code> → remplacer par le nom de l'application.</li>
+        </ul>
         </li>
-        <li>Adapte l'identité visuelle : nom de l'appli (<code>CS2E · CSSCT</code> / <code>Mon appli CSSCT</code>) dans les titres, <code>manifest.json</code> et <code>manifest-portail.json</code>, et <code>README.md</code> du dépôt (contient "Appli mobile CSSCT SMAG" en dur, sans impact fonctionnel). Le logo, lui, se change directement depuis Administration &gt; Identité visuelle une fois l'instance en ligne — pas besoin de toucher au code pour ça.</li>
-        <li>Icônes PWA (<code>manifest.json</code>, <code>manifest-portail.json</code>, <code>apple-touch-icon.png</code>, <code>icon-192.png</code>, <code>icon-512.png</code>) : à remplacer manuellement, pas encore paramétrables depuis l'interface.</li>
-        <li>Adapte les valeurs par défaut de mail de relance (<code>MAIL_RELANCE_DEFAULTS</code>, dupliquée dans <code>signalement_liste.html</code> et <code>administration.html</code>) et le nom dans <code>wrangler.jsonc</code>.</li>
-        <li>Commit et push.</li>
+        <li>Contrôle : cherche <code>c655b</code> → les seuls résultats admis sont dans le texte de ce mode opératoire (<code>administration.html</code> et <code>mode-operatoire-multi-cssct.md</code>). Cherche aussi <code>smag</code> et <code>agrosolutions</code> pour repérer les exemples restants (sans impact sur le fonctionnement).</li>
+        <li>Compare dans <code>index.html</code> le bloc <code>firebaseConfig</code> avec les 6 valeurs notées à l'étape 1 : <code>authDomain</code> et <code>storageBucket</code> doivent y être identiques. Sinon, corrige-les dans les 20 fichiers (cherche l'ancienne valeur) ou demande de l'aide à Claude.</li>
+        <li>Remplace les images <code>icon-192.png</code> et <code>apple-touch-icon.png</code> par celles de l'organisation, ainsi que <code>icon-512.png</code> s'il est présent (le manifeste le cite). Dans GitHub : page du dépôt → Add file → Upload files, en gardant exactement les mêmes noms.</li>
+        <li>Dans l'éditeur web, onglet <strong>Source Control</strong> (à gauche) → écris un message → <strong>Commit &amp; Push</strong>.</li>
+      </ol>
+      <div class="modop-note">Décide liste par liste (sites, entreprises, destinataires) si tu reprends celle d'origine ou si tu pars vierge. Une fois l'instance en ligne, ces listes se modifient sans toucher au code : Administration → Sites, Entreprises, Mail de relance.</div>
+
+      <h4>Étape 3 — Hébergement Cloudflare (compte Cloudflare dédié)</h4>
+      <ol>
+        <li>Cloudflare → <strong>Storage &amp; Databases</strong> → <strong>KV</strong> → Create instance → nom <code>CR_FILES</code>. Copie l'<strong>ID</strong> affiché sur sa page.</li>
+        <li>Dans l'éditeur web du dépôt (touche <strong>point</strong>), ouvre <code>wrangler.jsonc</code> : remplace l'<code>id</code> situé à côté de <code>"binding": "CR_FILES"</code> par l'ID copié, et la valeur de <code>"name"</code> par <code>cssct-&lt;nom-organisation&gt;</code> (minuscules, chiffres et tirets). Commit &amp; Push.</li>
+        <li>Cloudflare → <strong>Workers &amp; Pages</strong> → <strong>Create</strong> → <strong>Import a repository</strong> (ou « Connect to Git ») → autorise le compte GitHub dédié → choisis le dépôt. Le nom du Worker doit être <strong>exactement</strong> celui de <code>wrangler.jsonc</code>. Laisse les commandes de build vides → <strong>Deploy</strong>.</li>
+        <li>Note l'adresse <code>*.workers.dev</code> obtenue. Ajoute-la dans Firebase → Authentication → Settings → <strong>Authorized domains</strong> (étape 1.6). Si tu utilises un domaine personnalisé (Worker → Settings → Domains &amp; Routes), ajoute-le aussi.</li>
+        <li>Worker → Settings → <strong>Triggers</strong> : une planification <code>0 * * * *</code> (toutes les heures) doit apparaître. Elle déclenche les rappels quotidiens des notifications ; si elle manque, vérifie que <code>wrangler.jsonc</code> contient la ligne <code>triggers</code>.</li>
+        <li>Worker → Settings → Bindings : <code>CR_FILES</code> doit apparaître comme lié (KV).</li>
+      </ol>
+      <div class="modop-note">Une fois le dépôt relié, chaque modification validée (commit) dans GitHub redéploie automatiquement le site : c'est ainsi que se déposent ensuite les mises à jour.</div>
+
+      <h4>Étape 4 — E-mails (Mailjet)</h4>
+      <ol>
+        <li>Mailjet → crée une clé API (API key + Secret key) et <strong>valide l'adresse d'expédition</strong> (Sender addresses) : sans validation, Mailjet refuse d'envoyer.</li>
+        <li>Cloudflare → le Worker → Settings → <strong>Variables and Secrets</strong> → Add → type <strong>Secret</strong> (jamais en clair, jamais dans GitHub) : <code>MAILJET_API_KEY</code>, <code>MAILJET_API_SECRET</code>, <code>MAILJET_FROM_EMAIL</code> (l'adresse validée), <code>MAILJET_FROM_NAME</code> (nom affiché). Puis <strong>Deploy</strong>.</li>
+        <li>À vérifier plus tard avec un signalement de test : l'e-mail doit arriver. Sinon, les journaux du Worker (Observability / Logs) affichent l'erreur Mailjet.</li>
+      </ol>
+      <div class="modop-note">Étape facile à oublier : sans elle, l'application fonctionne mais n'envoie aucun e-mail, sans erreur visible pour l'utilisateur. Les secrets sont conservés lors des mises à jour.</div>
+
+      <h4>Étape 5 — Compte de service Firebase (accès privilégié du Worker)</h4>
+      <ol>
+        <li>Sur <code>console.cloud.google.com</code>, sélectionne le projet de cette instance (même nom que le projet Firebase).</li>
+        <li>IAM et administration → Comptes de service → Créer un compte de service (ex. <code>worker-acces</code>), rôle <strong>Cloud Datastore User</strong>. Onglet Clés → Ajouter une clé → JSON → télécharge le fichier (jamais dans GitHub ; il ne peut pas être retéléchargé).</li>
+        <li>Cloudflare → le Worker → Settings → Variables and Secrets → type <strong>Secret</strong> : <code>GOOGLE_SERVICE_ACCOUNT_KEY</code> = tout le contenu du fichier JSON ; <code>CR_ACCESS_SECRET</code> = une longue chaîne aléatoire (générateur de mot de passe). <strong>Deploy</strong>. Supprime ensuite le fichier JSON de ton ordinateur.</li>
+        <li>À vérifier : Administration → CR réunion → Accès collaborateurs : définis un mot de passe test, ouvre <code>cr_reunion_collaborateurs.html</code> en navigation privée et confirme qu'il est accepté.</li>
+      </ol>
+      <div class="modop-note">Ce compte est nécessaire pour deux fonctions : les comptes rendus protégés par mot de passe et <strong>toutes les notifications</strong> (immédiates et rappels quotidiens). Sans lui, l'erreur est explicite (<code>GOOGLE_SERVICE_ACCOUNT_KEY absent</code>) et le reste de l'application fonctionne.</div>
+
+      <h4>Étape 6 — Premiers comptes</h4>
+      <ol>
+        <li>Firebase → Firestore → crée la collection <code>authorized_emails</code> avec un document dont l'identifiant est ton adresse e-mail (en minuscules).</li>
+        <li>Ouvre le site, saisis ton adresse, clique sur le lien reçu par e-mail : tu es connecté.</li>
+        <li>Administration → Comptes autorisés &amp; administrateurs : la liste des administrateurs est vide au départ (« mode bootstrap »), nomme-toi premier administrateur en priorité. Ajoute ensuite les autres comptes et la configuration du mail de relance.</li>
       </ol>
 
-      <h4>Étape 3 — Site Cloudflare Workers</h4>
+      <h4>Étape 7 — Notifications sur téléphone</h4>
       <ol>
-        <li><code>npx wrangler deploy</code> depuis le nouveau dépôt.</li>
-        <li>Ajoute l'URL <code>*.workers.dev</code> obtenue (ou ton domaine personnalisé) aux "Authorized domains" Firebase (étape 1.3).</li>
-      </ol>
-
-      <h4>Étape 3bis — Envoi d'email (Mailjet)</h4>
-      <div class="modop-note">⚠️ Étape facile à oublier : sans elle, l'instance fonctionne normalement mais n'envoie jamais aucun email, sans erreur visible pour l'utilisateur.</div>
-      <ol>
-        <li>4 secrets à définir sur le Worker (jamais dans le code, pour ne pas les exposer dans Git) : <code>MAILJET_API_KEY</code>, <code>MAILJET_API_SECRET</code>, <code>MAILJET_FROM_EMAIL</code>, <code>MAILJET_FROM_NAME</code>.</li>
-        <li>Depuis le dépôt : <code>npx wrangler secret put MAILJET_API_KEY</code> (idem pour les 3 autres) — ou depuis le tableau de bord Cloudflare : Workers &amp; Pages &gt; le Worker &gt; Settings &gt; Variables and Secrets &gt; "Add" (cocher "Encrypt").</li>
-        <li>Un redéploiement (<code>wrangler deploy</code>) n'écrase pas les secrets déjà définis.</li>
-        <li>À vérifier : crée un signalement ou une expression de besoin de test et confirme que l'email arrive bien. En cas de souci, les logs du Worker (Cloudflare &gt; le Worker &gt; Logs, ou <code>npx wrangler tail</code>) affichent les erreurs Mailjet.</li>
-      </ol>
-
-      <h4>Étape 3ter — Compte de service Firebase (accès privilégié du Worker)</h4>
-      <div class="modop-note">⚠️ Nécessaire uniquement pour l'accès collaborateurs aux CR de réunion protégés par mot de passe (<code>cr_reunion_collaborateurs.html</code>) et l'upload de fichiers CR. Sans cette étape, ces deux fonctionnalités renvoient une erreur explicite (<code>GOOGLE_SERVICE_ACCOUNT_KEY absent</code>) — le reste de l'appli continue de fonctionner normalement.</div>
-      <p class="s-help" style="margin:6px 0;">Pourquoi : la page collaborateurs n'a aucune connexion (juste un mot de passe partagé). Pour que ce mot de passe soit une vraie barrière et pas une façade, le Worker doit pouvoir lire les CR accessibles en contournant les règles Firestore classiques — sinon il faudrait rendre ces CR publiquement lisibles, ce qui rendrait le mot de passe décoratif.</p>
-      <ol>
-        <li>Sur <code>console.cloud.google.com</code>, sélectionne le même projet que le projet Firebase de cette instance.</li>
-        <li>IAM et administration → Comptes de service → Créer un compte de service (ex. <code>worker-cr-access</code>), rôle <strong>Cloud Datastore User</strong> (<code>roles/datastore.user</code>).</li>
-        <li>Onglet Clés → Ajouter une clé → JSON → télécharge le fichier (jamais dans Git, non re-téléchargeable ensuite).</li>
-        <li>Ajoute ces deux secrets <strong>depuis le tableau de bord Cloudflare</strong> (pas besoin de terminal) : <code>dash.cloudflare.com</code> → Workers &amp; Pages → le Worker de cette instance → Settings → Variables and Secrets → Add → type "Secret" :
-          <ul>
-            <li>Variable name <code>GOOGLE_SERVICE_ACCOUNT_KEY</code> → Value : colle tout le contenu du fichier JSON téléchargé à l'étape précédente.</li>
-            <li>Variable name <code>CR_ACCESS_SECRET</code> → Value : une chaîne aléatoire (un générateur de mot de passe/UUID en ligne convient).</li>
-          </ul>
-          Clique "Deploy" pour valider. <em>(Équivalent en ligne de commande : <code>npx wrangler secret put GOOGLE_SERVICE_ACCOUNT_KEY</code> / <code>npx wrangler secret put CR_ACCESS_SECRET</code>.)</em>
-        </li>
-        <li>Crée le namespace, toujours depuis le tableau de bord : menu de gauche → Storage &amp; Databases → KV → Create instance → nomme-le <code>CR_FILES</code> → Create.</li>
-        <li>Lie-le au Worker : reviens sur le Worker de cette instance → Settings → Bindings → Add binding → KV namespace → Variable name <code>CR_FILES</code> → sélectionne le namespace créé → Add binding → Deploy.
-          <div class="modop-note">⚠️ À ne pas oublier : contrairement aux secrets (protégés par <code>keep_vars</code>), ce binding KV n'est pas préservé automatiquement par un déploiement en ligne de commande — un futur <code>wrangler deploy</code> sans mise à jour du fichier pourrait le casser. Copie l'<code>id</code> du namespace (visible sur sa page dans le tableau de bord) dans <code>wrangler.jsonc</code> de cette instance (<code>kv_namespaces</code>, à la place de <code>REMPLACER_PAR_ID_NAMESPACE</code>) et committe ce changement sur le dépôt.</div>
-        </li>
-        <li>À vérifier : Administration &gt; CR réunion &gt; Accès collaborateurs, définis un mot de passe test, ouvre <code>cr_reunion_collaborateurs.html</code> en navigation privée et confirme que le mot de passe est accepté.</li>
-      </ol>
-
-      <h4>Étape 3quater — Notifications sur téléphone (Web Push)</h4>
-      <div class="modop-note">⚠️ Nécessite l'étape 3ter (compte de service) et les règles Firestore de la collection <code>abonnements_push</code> (fichier <code>claude/firestore.rules</code>). Sans les clés ci-dessous, la page « Notifications » affiche un message explicite et rien ne part.</div>
-      <p class="s-help" style="margin:6px 0;">Aucune valeur propre à SMAG : les clés sont générées par chaque instance, le contact d'envoi est facultatif et les messages indiquent le type, le numéro et la nature du dossier (jamais de nom, de description ni de code de suivi) ; un clic ouvre directement le dossier.</p>
-      <ol>
-        <li>Republie dans le dépôt de la nouvelle instance : <code>sw.js</code>, <code>notifications.html</code> (avec le <code>firebaseConfig</code> de l'instance, voir étape 2), <code>src/push.js</code> et <code>src/worker.js</code>.</li>
-        <li>Firestore &rarr; Règles : colle le fichier <code>firestore.rules</code> à jour (bloc <code>abonnements_push</code>) et publie.</li>
-        <li>Administration &rarr; « Générer les clés de notification » : copie les deux valeurs affichées (elles ne sont enregistrées nulle part). Dans Cloudflare (Workers &amp; Pages &rarr; le Worker &rarr; Settings &rarr; Variables and Secrets) : <code>VAPID_PUBLIC</code> en variable de type texte, <code>VAPID_PRIVATE</code> en secret. Facultatif : <code>VAPID_SUBJECT</code> (<code>mailto:adresse</code> ou <code>https://adresse-du-site</code>), sinon l'adresse du site de chaque abonné est utilisée. Clique « Deploy ».</li>
-        <li>Administration &rarr; « Vérifier la configuration » : doit afficher « Configuration correcte ». Sinon le message dit exactement ce qui manque (clé absente, tronquée ou paire incohérente).</li>
-        <li>Chaque membre ouvre la page « Notifications » depuis l'accueil, active son appareil (sur iPhone : installer d'abord l'application sur l'écran d'accueil) puis touche « Envoyer un test ».</li>
+        <li>Administration → <strong>Générer les clés de notification</strong> : copie les deux valeurs affichées (elles ne sont enregistrées nulle part).</li>
+        <li>Cloudflare → le Worker → Variables and Secrets : <code>VAPID_PUBLIC</code> en variable de type <strong>texte</strong>, <code>VAPID_PRIVATE</code> en <strong>secret</strong>. Facultatif : <code>VAPID_SUBJECT</code> (<code>mailto:adresse</code>) et <code>FUSEAU_HORAIRE</code> (par défaut <code>Europe/Paris</code>, pour l'heure des rappels). <strong>Deploy</strong>.</li>
+        <li>Administration → <strong>Vérifier la configuration</strong> : doit afficher « Configuration correcte ». Sinon le message dit ce qui manque.</li>
+        <li>Chaque membre ouvre « Notifications » (cloche de l'accueil), active son appareil puis touche « Envoyer un test ». Sur iPhone, l'application doit d'abord être installée sur l'écran d'accueil (iOS 16.4 ou plus récent).</li>
+        <li>Chaque appareil a ses réglages : heure du rappel quotidien (9 h par défaut) et familles de notifications. Les rappels portent sur les trousses (péremptions, contrôles) et les signalements non clos depuis plus de 30 jours.</li>
         <li>Ne régénère jamais les clés d'une instance en service : tous les appareils devraient être réactivés un par un.</li>
       </ol>
 
-      <h4>Étape 4 — Premiers comptes</h4>
+      <h4>Vérifications finales</h4>
       <ol>
-        <li>Ajoute ton email dans <code>authorized_emails</code> (console Firebase du nouveau projet).</li>
-        <li>Connecte-toi une première fois sur le site déployé.</li>
-        <li>Va dans Administration &gt; Comptes autorisés &amp; administrateurs : la liste d'administrateurs est vide au départ ("mode bootstrap"), nomme-toi premier administrateur en priorité.</li>
-        <li>Ajoute ensuite les comptes autorisés suivants et la config du mail de relance, toujours depuis Administration.</li>
+        <li>Dépose un signalement depuis le portail salarié : e-mail reçu, notification reçue sur un téléphone abonné, dossier visible dans l'application.</li>
+        <li>Administration → Sites et Entreprises : les listes sont celles de l'organisation (ou vierges), pas celles d'origine.</li>
+        <li>La recherche <code>c655b</code> dans l'éditeur web du dépôt ne trouve plus rien en dehors du texte de ce mode opératoire.</li>
       </ol>
 
-      <div class="modop-note">Limite à connaître : le code est aujourd'hui dupliqué à l'identique entre chaque instance (pas de configuration centralisée), donc toute correction ou nouvelle fonctionnalité doit être reportée manuellement sur chaque dépôt. Les valeurs en dur (projet Firebase, email de repli des notifications) sont dupliquées dans chaque page qui en a besoin, parfois sous une forme différente d'un simple <code>firebaseConfig</code> (cf. <code>cr_reunion_collaborateurs.html</code> ci-dessus) : dès qu'un nouveau fichier HTML fait un appel direct à Firebase/Firestore, vérifie s'il doit être ajouté à la liste de l'étape 2.3, et grep le dépôt entier sur <code>cssct-cs2e-c655b</code> et <code>choudayer@smag.tech</code> avant de considérer une instance prête. Les secrets Mailjet (étape 3bis) et le compte de service Google + KV (étape 3ter) sont eux aussi à reconfigurer à chaque instance — aucune interface d'administration pour les saisir depuis l'appli, ce sont des éléments d'infrastructure. Le mot de passe collaborateurs, lui, reste partagé par tous les collaborateurs d'une même instance (pas de compte individuel) : à changer régulièrement et à ne diffuser que par un canal interne.</div>
+      <div class="modop-note">Limites : le code est dupliqué entre les instances. Chaque évolution livrée pour l'instance d'origine (fichiers à déposer dans GitHub) doit aussi être déposée dans le dépôt de chaque copie. Les intitulés des menus de Firebase, GitHub et Cloudflare évoluent : en cas de doute, cherche le mot-clé dans la barre de recherche du service. Garde une fiche par instance : organisation, projet Firebase, dépôt GitHub, nom du Worker et adresse du site, domaine personnalisé, adresse e-mail propriétaire des comptes.</div>
     </div>
   </div>
 </div>

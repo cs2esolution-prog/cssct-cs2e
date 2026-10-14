@@ -1,98 +1,99 @@
-# Mode opératoire — déployer l'appli pour 2 ou 3 CSSCT indépendants
+# Mode opératoire — créer une nouvelle instance CSSCT
 
-Option retenue : **une instance complètement séparée par CSSCT** (projet Firebase dédié + site Cloudflare dédié). Aucune donnée n'est jamais partagée entre CSSCT — chaque organisation a sa propre base, ses propres comptes autorisés, son propre nom de domaine.
+Chaque CSSCT a sa propre instance, complètement séparée : projet Firebase dédié, site Cloudflare dédié, dépôt GitHub dédié. Aucune donnée n'est jamais partagée entre CSSCT. Tout se fait depuis les sites web (aucun logiciel à installer, aucune ligne de commande), avec des comptes dédiés à l'organisation, et non ton compte personnel. Prévoir environ 1 h 30 la première fois.
 
-Contrepartie à garder en tête : le code (HTML/CSS/JS) est aujourd'hui dupliqué à l'identique entre `signalement_liste.html`, `administration.html`, `trousses_secours.html`, etc. — il n'y a pas de "build" qui injecte une config par environnement. Concrètement, **toute correction de bug ou nouvelle fonctionnalité devra être appliquée manuellement sur chaque dépôt** (celui de SMAG, et un par CSSCT supplémentaire), sauf si on bascule un jour vers un dépôt unique avec configuration au runtime (piste d'optimisation, pas nécessaire pour démarrer avec 2-3 instances).
+## Étape 0 — Créer les comptes de l'organisation
 
-Prévoir environ 45-60 minutes par nouvelle instance une fois la procédure rodée.
+1. Choisis une adresse e-mail dédiée à l'organisation (pas ton adresse personnelle), qui servira de propriétaire de l'instance.
+2. Crée avec cette adresse : un compte Google (pour Firebase), un compte GitHub (le code), un compte Cloudflare (l'hébergement) et un compte Mailjet (l'envoi des e-mails).
+3. Note les identifiants dans un gestionnaire de mots de passe, jamais dans un fichier du dépôt.
 
-## Vue d'ensemble
+> Ces comptes appartiennent ensuite à l'organisation : tu peux lui en transmettre la gestion en changeant l'adresse e-mail ou en ajoutant un administrateur dans chaque service.
 
-Pour chaque nouveau CSSCT, il faut créer 4 choses, dans cet ordre :
+## Étape 1 — Projet Firebase (compte Google dédié)
 
-1. Un projet Firebase dédié (authentification + base de données)
-2. Un dépôt Git dédié (copie du code, avec sa propre configuration Firebase et sa propre identité visuelle)
-3. Un site Cloudflare Workers dédié (l'hébergement)
-4. Les premiers comptes autorisés (au minimum toi-même en tant qu'administrateur)
+1. Sur `console.firebase.google.com`, crée un projet nommé par ex. `cssct-<nom-organisation>`. Désactive Google Analytics.
+2. Authentication → Sign-in method → active **Email/Password**, puis dans ses paramètres avancés active **« Lien de messagerie (connexion sans mot de passe) »**.
+3. Firestore Database → Créer une base → région proche (ex. `eur3`) → mode production.
+4. Firestore Database → onglet **Règles** → remplace tout le contenu par le fichier `firestore.rules` à jour, puis **Publier**. Ce fichier se trouve dans les Connaissances du projet Claude « CSSCT — Suivi & Signalements » (`claude/firestore-regles-a-jour.txt`, copie des règles actuellement publiées) ; il contient aussi le bloc des notifications (`abonnements_push`). Le fichier `claude/firestore.rules` plus ancien est périmé : ne l'utilise pas.
+5. Paramètres du projet (roue crantée) → Général → « Vos applications » → icône `</>` (Web) → nom libre, **sans** Firebase Hosting → Enregistrer. Firebase affiche 6 valeurs (`apiKey`, `authDomain`, `projectId`, `storageBucket`, `messagingSenderId`, `appId`) : recopie-les dans un bloc-notes, elles servent à l'étape 2.
+6. Authentication → Settings → Authorized domains : tu ajouteras le domaine du site à l'étape 3.
 
-## Étape 1 — Créer le projet Firebase
+> Sans les règles de l'étape 1.4, la base est soit ouverte à tous, soit fermée : ne donne l'adresse du site à personne avant de les avoir publiées.
 
-1. Va sur [console.firebase.google.com](https://console.firebase.google.com/) et clique sur "Ajouter un projet".
-2. Nomme-le clairement, par ex. `cssct-<nom-entreprise>` (garde une trace de ce nom quelque part — tu en auras besoin partout ensuite).
-3. Désactive Google Analytics si proposé (pas nécessaire ici) et valide la création.
-4. Dans le menu de gauche : **Build > Authentication** → onglet "Sign-in method" → active le fournisseur **Email/Password**, puis dans les paramètres avancés de ce même fournisseur, active **"Lien de messagerie (connexion sans mot de passe)"**. C'est le mode d'authentification déjà utilisé par l'appli (email + lien magique, pas de mot de passe).
-5. Toujours dans Authentication → onglet "Settings" → "Authorized domains" : ajoute le futur domaine du site Cloudflare (voir étape 3 — tu pourras revenir compléter cette étape après avoir créé le site, l'ordre n'est pas bloquant).
-6. Dans le menu de gauche : **Build > Firestore Database** → "Créer une base de données" → choisis une région proche des utilisateurs (ex. `eur3 (europe-west)`) → démarre en mode production (les règles de sécurité, à copier depuis le projet existant, sont à mettre en place avant tout accès réel — voir encart ci-dessous).
-7. Dans les paramètres du projet (roue crantée en haut à gauche > "Paramètres du projet") → onglet "Général" → section "Vos applications" → clique sur l'icône `</>` (Web) → donne un nom (ex. "Appli web") → **ne coche pas** Firebase Hosting (on utilise Cloudflare) → "Enregistrer l'application". Firebase affiche alors un objet `firebaseConfig` avec 6 valeurs (`apiKey`, `authDomain`, `projectId`, `storageBucket`, `messagingSenderId`, `appId`) : **copie-le intégralement**, il servira à l'étape 2.
+## Étape 2 — Dépôt GitHub (compte GitHub dédié)
 
-> ⚠️ **Règles de sécurité Firestore** : le dépôt actuel ne contient pas les règles de sécurité (elles se configurent uniquement dans la console Firebase, onglet "Règles" de Firestore, pas dans le code). Avant de rendre une instance accessible à qui que ce soit, il faut aller récupérer les règles du projet Firebase existant (`cssct-cs2e-c655b`) dans sa console, et les recopier à l'identique (ou adaptées) dans le nouveau projet. Sans ça, la base sera soit totalement ouverte, soit totalement fermée par défaut selon le mode choisi à la création — dans les deux cas ce n'est pas la configuration voulue. Note-toi cette étape, on peut la détailler ensemble si tu veux que je t'aide à relire les règles actuelles.
+1. Sur le dépôt d'origine (ton compte) : bouton **Code** → **Download ZIP**, puis dézippe le fichier sur ton ordinateur.
+2. Connecte-toi au compte GitHub dédié → **New repository** → nom `cssct-<nom-organisation>`, **Private**, sans README → Create. Sur la page du dépôt vide, clique **uploading an existing file**, glisse tout le contenu dézippé (dossier `src` compris), puis **Commit changes**.
+3. Sur la page du dépôt, appuie sur la touche **point (.)** : l'éditeur web s'ouvre. Clique sur la loupe à gauche (Rechercher), puis sur la flèche à gauche du champ pour afficher « Remplacer ». Fais les remplacements du tableau ci-dessous, **dans cet ordre**, avec « Tout remplacer » (une icône à droite du champ) :
+   Remplacements, dans cet ordre :
+   - 1. Chercher `1:277603883255:web:b3b7a5c3097a60caac1bf2` → remplacer par le nouvel `appId`.
+   - 2. Chercher `277603883255` → remplacer par le nouveau `messagingSenderId`.
+   - 3. Chercher `AIzaSyACY8fyy8Rd9NyLJ855xsDyknuUMV-pAag` → remplacer par la nouvelle `apiKey`.
+   - 4. Chercher `cssct-cs2e-c655b` → remplacer par le nouveau `projectId` (remplace aussi `authDomain`, `storageBucket` et les liens de la console).
+   - 5. Chercher `cdizien@agrosolutions.com;imariotti@smag.tech;choudayer@smag.tech` → remplacer par les adresses des élus CSSCT de l'organisation, séparées par `;` (2 fichiers).
+   - 6. Chercher `alhermitte@smag.tech` → remplacer par l'adresse du président du CSE.
+   - 7. Chercher `choudayer@smag.tech` → remplacer par l'adresse qui reçoit les notifications de secours (administrateur).
+   - 8. Chercher `cs2esolution@gmail.com` → remplacer par l'adresse d'expédition validée dans Mailjet (même valeur que `MAILJET_FROM_EMAIL`).
+   - 9. Chercher `["Bezannes","Chalons-en-Champagne","Evreux","Milly-la-Forêt","Montpellier","Nancy","Paris","Poitiers","Reims","Télétravail","Wavre"]` → remplacer par `["Site principal"]` ou la liste de l'organisation (8 fichiers).
+   - 10. Chercher `["Smag","Agrinovex","Fermes Leader","Be API","Agrosolutions","Carbon & Co"]` → remplacer par `["Nom de l'organisation"]` ou la liste de l'organisation (4 fichiers).
+   - 11. Chercher `Mon appli CSSCT` → remplacer par le nom de l'application.
+4. Contrôle : cherche `c655b` → les seuls résultats admis sont dans le texte de ce mode opératoire (`administration.html` et `mode-operatoire-multi-cssct.md`). Cherche aussi `smag` et `agrosolutions` pour repérer les exemples restants (sans impact sur le fonctionnement).
+5. Compare dans `index.html` le bloc `firebaseConfig` avec les 6 valeurs notées à l'étape 1 : `authDomain` et `storageBucket` doivent y être identiques. Sinon, corrige-les dans les 20 fichiers (cherche l'ancienne valeur) ou demande de l'aide à Claude.
+6. Remplace les images `icon-192.png` et `apple-touch-icon.png` par celles de l'organisation, ainsi que `icon-512.png` s'il est présent (le manifeste le cite). Dans GitHub : page du dépôt → Add file → Upload files, en gardant exactement les mêmes noms.
+7. Dans l'éditeur web, onglet **Source Control** (à gauche) → écris un message → **Commit & Push**.
 
-## Étape 2 — Créer le dépôt Git de la nouvelle instance
+> Décide liste par liste (sites, entreprises, destinataires) si tu reprends celle d'origine ou si tu pars vierge. Une fois l'instance en ligne, ces listes se modifient sans toucher au code : Administration → Sites, Entreprises, Mail de relance.
 
-Le plus simple : dupliquer le dépôt actuel dans un nouveau dépôt GitHub, puis adapter la configuration.
+## Étape 3 — Hébergement Cloudflare (compte Cloudflare dédié)
 
-1. Sur GitHub, crée un nouveau dépôt vide (ex. `cssct-<nom-entreprise>`), sans README/licence.
-2. En local (ou depuis un poste avec Git) :
-   ```
-   git clone --bare https://github.com/cs2esolution-prog/cssct-cs2e.git
-   cd cssct-cs2e.git
-   git push --mirror https://github.com/<compte>/cssct-<nom-entreprise>.git
-   cd ..
-   rm -rf cssct-cs2e.git
-   git clone https://github.com/<compte>/cssct-<nom-entreprise>.git
-   ```
-3. Dans ce nouveau dépôt, remplace l'objet `firebaseConfig` (le bloc à 6 valeurs vu à l'étape 1.7) dans **tous** les fichiers HTML qui le contiennent. À date, cela concerne au moins : `index.html`, `signalement_liste.html`, `nouveau_signalement.html`, `_signalement_formulaire.html`, `signalement_collaborateur.html`, `administration.html`, `dashboard.html`, `inspections.html`, `exercices_evacuation.html`, `comptes_rendus_reunion.html`, `trousses_secours.html`, `import_excel.html`, `a_propos.html`, `notifications.html`. Une recherche/remplacement global sur `apiKey: "AIzaSyACY8fyy8Rd9NyLJ855xsDyknuUMV-pAag"` (et les 5 autres valeurs qui l'accompagnent) permet de repérer chaque occurrence.
-4. Adapte l'identité visuelle pour ce CSSCT :
-   - Nom de l'appli : cherche `CS2E · CSSCT` / `Mon appli CSSCT` (titres, `manifest.json`, balises `apple-mobile-web-app-title`) et remplace par le nom voulu.
-   - Logos : les constantes `CS2E_LOGO_B64` et `CSSCT_LOGO_B64` dans `signalement_liste.html` (réutilisées dans le rapport imprimé et le `.docx`) sont pour l'instant à remplacer manuellement par les logos de la nouvelle entreprise, converties en base64. **Cette étape sera bien plus simple une fois le paramétrage du logo depuis l'interface développé** (demande déjà notée dans le backlog) — d'ici là, c'est une modification de code à chaque nouvelle instance.
-   - Icônes PWA : `manifest.json`, `apple-touch-icon.png`, `icon-192.png`, `icon-512.png` sont à remplacer par les fichiers de la nouvelle identité (même remarque : sera aussi simplifié par la configuration du logo/icône via l'interface).
-5. Adapte `config/mail_relance` par défaut (les constantes `MAIL_RELANCE_DEFAULTS` dans `signalement_liste.html` et `administration.html`) avec le président du CSE et les élus CSSCT de cette organisation — à ajuster ensuite via l'interface d'administration une fois l'instance en ligne.
-6. Adapte `wrangler.jsonc` : change la valeur `"name"` (ex. `cssct-<nom-entreprise>`), qui déterminera le sous-domaine Cloudflare par défaut.
-7. Commit et push ces changements sur le nouveau dépôt.
+1. Cloudflare → **Storage & Databases** → **KV** → Create instance → nom `CR_FILES`. Copie l'**ID** affiché sur sa page.
+2. Dans l'éditeur web du dépôt (touche **point**), ouvre `wrangler.jsonc` : remplace l'`id` situé à côté de `"binding": "CR_FILES"` par l'ID copié, et la valeur de `"name"` par `cssct-<nom-organisation>` (minuscules, chiffres et tirets). Commit & Push.
+3. Cloudflare → **Workers & Pages** → **Create** → **Import a repository** (ou « Connect to Git ») → autorise le compte GitHub dédié → choisis le dépôt. Le nom du Worker doit être **exactement** celui de `wrangler.jsonc`. Laisse les commandes de build vides → **Deploy**.
+4. Note l'adresse `*.workers.dev` obtenue. Ajoute-la dans Firebase → Authentication → Settings → **Authorized domains** (étape 1.6). Si tu utilises un domaine personnalisé (Worker → Settings → Domains & Routes), ajoute-le aussi.
+5. Worker → Settings → **Triggers** : une planification `0 * * * *` (toutes les heures) doit apparaître. Elle déclenche les rappels quotidiens des notifications ; si elle manque, vérifie que `wrangler.jsonc` contient la ligne `triggers`.
+6. Worker → Settings → Bindings : `CR_FILES` doit apparaître comme lié (KV).
 
-## Étape 3 — Créer le site Cloudflare Workers
+> Une fois le dépôt relié, chaque modification validée (commit) dans GitHub redéploie automatiquement le site : c'est ainsi que se déposent ensuite les mises à jour.
 
-1. Depuis un poste avec `wrangler` installé (ou via le tableau de bord Cloudflare) et authentifié sur le compte Cloudflare qui hébergera cette instance :
-   ```
-   cd cssct-<nom-entreprise>
-   npx wrangler deploy
-   ```
-2. Wrangler crée le Worker avec le nom défini dans `wrangler.jsonc` et affiche l'URL `*.workers.dev` attribuée.
-3. Retourne dans la console Firebase (Authentication > Settings > Authorized domains, voir étape 1.5) et ajoute cette URL (ou le domaine personnalisé si tu en configures un ensuite) pour que la connexion par lien magique fonctionne.
-4. (Optionnel mais recommandé si tu veux un nom propre par client) Configure un domaine personnalisé dans le tableau de bord Cloudflare (Workers & Pages > ton Worker > Settings > Domains & Routes), puis ajoute aussi ce domaine personnalisé aux "Authorized domains" Firebase.
+## Étape 4 — E-mails (Mailjet)
 
-## Étape 4 — Créer les premiers comptes autorisés
+1. Mailjet → crée une clé API (API key + Secret key) et **valide l'adresse d'expédition** (Sender addresses) : sans validation, Mailjet refuse d'envoyer.
+2. Cloudflare → le Worker → Settings → **Variables and Secrets** → Add → type **Secret** (jamais en clair, jamais dans GitHub) : `MAILJET_API_KEY`, `MAILJET_API_SECRET`, `MAILJET_FROM_EMAIL` (l'adresse validée), `MAILJET_FROM_NAME` (nom affiché). Puis **Deploy**.
+3. À vérifier plus tard avec un signalement de test : l'e-mail doit arriver. Sinon, les journaux du Worker (Observability / Logs) affichent l'erreur Mailjet.
 
-Une fois le site en ligne :
+> Étape facile à oublier : sans elle, l'application fonctionne mais n'envoie aucun e-mail, sans erreur visible pour l'utilisateur. Les secrets sont conservés lors des mises à jour.
 
-1. Console Firebase du nouveau projet → Firestore Database → crée la collection `authorized_emails` (si elle n'existe pas déjà) → ajoute un document dont l'ID est ton adresse email (copie la structure d'un document existant dans le projet SMAG pour rester cohérent).
-2. Ouvre le site déployé, saisis ton email, récupère le lien de connexion reçu par mail, connecte-toi une première fois : ton compte Firebase Authentication se crée automatiquement à cette occasion.
-3. Une fois connecté, complète la configuration "Mail de relance" dans Administration (président CSE, élus CSSCT de cette organisation) et ajoute les comptes autorisés suivants (collègues élus CSSCT de cette organisation) selon le même principe.
+## Étape 5 — Compte de service Firebase (accès privilégié du Worker)
 
-## Étape 3quater — Notifications sur téléphone (Web Push)
+1. Sur `console.cloud.google.com`, sélectionne le projet de cette instance (même nom que le projet Firebase).
+2. IAM et administration → Comptes de service → Créer un compte de service (ex. `worker-acces`), rôle **Cloud Datastore User**. Onglet Clés → Ajouter une clé → JSON → télécharge le fichier (jamais dans GitHub ; il ne peut pas être retéléchargé).
+3. Cloudflare → le Worker → Settings → Variables and Secrets → type **Secret** : `GOOGLE_SERVICE_ACCOUNT_KEY` = tout le contenu du fichier JSON ; `CR_ACCESS_SECRET` = une longue chaîne aléatoire (générateur de mot de passe). **Deploy**. Supprime ensuite le fichier JSON de ton ordinateur.
+4. À vérifier : Administration → CR réunion → Accès collaborateurs : définis un mot de passe test, ouvre `cr_reunion_collaborateurs.html` en navigation privée et confirme qu'il est accepté.
 
-Nécessite le compte de service Google du Worker (secret `GOOGLE_SERVICE_ACCOUNT_KEY`, voir l'étape correspondante dans la section « Mode opératoire » de la page Administration) et les règles Firestore à jour. Aucune valeur propre à SMAG : chaque instance génère ses propres clés ; les messages indiquent le type, le numéro et la nature du dossier (jamais de nom, de description ni de code de suivi) et un clic ouvre directement le dossier concerné. Le service tiers ntfy n'est plus utilisé : la variable `NTFY_TOPIC` peut être supprimée de Cloudflare. Accès : cloche en haut de l'accueil et lien en bas ; l'accueil propose une fois d'activer les notifications (« Plus tard » : nouvelle proposition après 30 jours, rien si déjà activé ou bloqué). Réglages par appareil (page notifications.html) : heure du rappel, familles cochées. Rappels programmés : le fichier `wrangler.jsonc` déclare un déclencheur horaire (`triggers.crons`, une des 5 planifications du forfait gratuit) ; chaque appareil reçoit au plus un message groupé par jour, à l'heure choisie (9 h par défaut, fuseau Europe/Paris sauf variable facultative `FUSEAU_HORAIRE`). Après le déploiement, vérifier dans Cloudflare (Worker > Paramètres > Déclencheurs) que la planification apparaît.
+> Ce compte est nécessaire pour deux fonctions : les comptes rendus protégés par mot de passe et **toutes les notifications** (immédiates et rappels quotidiens). Sans lui, l'erreur est explicite (`GOOGLE_SERVICE_ACCOUNT_KEY absent`) et le reste de l'application fonctionne.
 
-1. Dans le dépôt de la nouvelle instance : `sw.js`, `notifications.html` (avec le `firebaseConfig` de l'instance), `src/push.js` et `src/worker.js`.
-2. Firestore > Règles : coller le fichier `claude/firestore.rules` à jour (bloc `abonnements_push` : chaque personne autorisée lit et écrit uniquement ses propres appareils), puis publier.
-3. Administration > « Générer les clés de notification » : copier les deux valeurs (affichées une seule fois, jamais enregistrées). Dans Cloudflare (Workers & Pages > le Worker > Settings > Variables and Secrets) : `VAPID_PUBLIC` en variable de type texte, `VAPID_PRIVATE` en secret. Facultatif : `VAPID_SUBJECT` (`mailto:adresse` ou `https://adresse-du-site`) ; à défaut, l'adresse du site de chaque abonné est utilisée. Déployer (`keep_vars: true` conserve les variables).
-4. Administration > « Vérifier la configuration » : doit afficher « Configuration correcte » ; sinon le message indique la cause (clé absente, tronquée, paire incohérente).
-5. Chaque membre : page « Notifications » depuis l'accueil > « Activer sur cet appareil » > « Envoyer un test ». Sur iPhone et iPad, installer d'abord l'application sur l'écran d'accueil.
-6. Ne jamais régénérer les clés d'une instance en service : tous les appareils devraient être réactivés.
+## Étape 6 — Premiers comptes
 
-## Récapitulatif à conserver
+1. Firebase → Firestore → crée la collection `authorized_emails` avec un document dont l'identifiant est ton adresse e-mail (en minuscules).
+2. Ouvre le site, saisis ton adresse, clique sur le lien reçu par e-mail : tu es connecté.
+3. Administration → Comptes autorisés & administrateurs : la liste des administrateurs est vide au départ (« mode bootstrap »), nomme-toi premier administrateur en priorité. Ajoute ensuite les autres comptes et la configuration du mail de relance.
 
-Pour ne pas se perdre entre plusieurs instances, garde une petite fiche de suivi (par ex. dans ce même dépôt de connaissances) avec, pour chaque CSSCT :
+## Étape 7 — Notifications sur téléphone
 
-- Nom de l'organisation
-- Nom du projet Firebase
-- Nom / URL du dépôt Git
-- Nom / URL du site Cloudflare
-- Domaine personnalisé (si configuré)
-- Contacts admin (qui a accès à la console Firebase et au dépôt Git de cette instance)
+1. Administration → **Générer les clés de notification** : copie les deux valeurs affichées (elles ne sont enregistrées nulle part).
+2. Cloudflare → le Worker → Variables and Secrets : `VAPID_PUBLIC` en variable de type **texte**, `VAPID_PRIVATE` en **secret**. Facultatif : `VAPID_SUBJECT` (`mailto:adresse`) et `FUSEAU_HORAIRE` (par défaut `Europe/Paris`, pour l'heure des rappels). **Deploy**.
+3. Administration → **Vérifier la configuration** : doit afficher « Configuration correcte ». Sinon le message dit ce qui manque.
+4. Chaque membre ouvre « Notifications » (cloche de l'accueil), active son appareil puis touche « Envoyer un test ». Sur iPhone, l'application doit d'abord être installée sur l'écran d'accueil (iOS 16.4 ou plus récent).
+5. Chaque appareil a ses réglages : heure du rappel quotidien (9 h par défaut) et familles de notifications. Les rappels portent sur les trousses (péremptions, contrôles) et les signalements non clos depuis plus de 30 jours.
+6. Ne régénère jamais les clés d'une instance en service : tous les appareils devraient être réactivés un par un.
 
-## Limites à connaître avant de se lancer sur 2-3 instances
+## Vérifications finales
 
-- **Maintenance x N** : toute évolution de l'appli (comme celles en cours) doit être reportée manuellement sur chaque dépôt tant qu'il n'y a pas de configuration centralisée. Pour 2-3 CSSCT ça reste gérable, au-delà ce sera à reconsidérer.
-- **Règles de sécurité Firestore** : à recopier et vérifier à chaque nouveau projet (étape 1, encart ci-dessus) — c'est la seule vraie barrière de confidentialité entre les CSSCT si jamais un compte se retrouvait mal configuré.
-- **Logos et icônes** : tant que la configuration depuis l'interface n'est pas développée, ce sont des modifications de code à chaque nouvelle instance (étape 2.4).
+1. Dépose un signalement depuis le portail salarié : e-mail reçu, notification reçue sur un téléphone abonné, dossier visible dans l'application.
+2. Administration → Sites et Entreprises : les listes sont celles de l'organisation (ou vierges), pas celles d'origine.
+3. La recherche `c655b` dans l'éditeur web du dépôt ne trouve plus rien en dehors du texte de ce mode opératoire.
+
+## Limites
+
+Limites : le code est dupliqué entre les instances. Chaque évolution livrée pour l'instance d'origine (fichiers à déposer dans GitHub) doit aussi être déposée dans le dépôt de chaque copie. Les intitulés des menus de Firebase, GitHub et Cloudflare évoluent : en cas de doute, cherche le mot-clé dans la barre de recherche du service. Garde une fiche par instance : organisation, projet Firebase, dépôt GitHub, nom du Worker et adresse du site, domaine personnalisé, adresse e-mail propriétaire des comptes.
