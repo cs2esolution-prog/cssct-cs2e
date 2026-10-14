@@ -1005,8 +1005,21 @@ async function handleNotifTest(request, env) {
     if (resultat.code === 404 || resultat.code === 410) {
       try { await firestoreDeleteDoc(env, 'abonnements_push/' + abonnement.id); } catch (e) { console.error('Suppression abonnement périmé impossible : ' + e.message); }
     }
-    const ok = resultat.code >= 200 && resultat.code < 300;
-    return reponseJson({ ok: ok, erreur: ok ? null : (resultat.code === 0 ? resultat.detail : expliquerCode(resultat.code, resultat.detail)), code: resultat.code }, ok ? 200 : 502);
+    let ok = resultat.code >= 200 && resultat.code < 300;
+    let erreur = ok ? null : (resultat.code === 0 ? resultat.detail : expliquerCode(resultat.code, resultat.detail));
+    // Test du canal ntfy personnel, à la demande de la page de réglages.
+    if (corps.ntfy === true) {
+      const sujet = String(abonnement.ntfySujet || '');
+      if (!SUJET_NTFY_PERSONNEL.test(sujet)) {
+        ok = false; erreur = 'Aucun canal ntfy personnel n\u2019est enregistré pour cet appareil : créez-le d\u2019abord.';
+      } else {
+        try {
+          const r = await fetch('https://ntfy.sh/' + sujet, { method: 'POST', headers: { Title: 'Notification de test', Priority: 'default', Tags: 'bell' }, body: 'Ton canal ntfy fonctionne.' });
+          if (!r.ok) { ok = false; erreur = 'Le service ntfy a refusé le message (code ' + r.status + ').' + (erreur ? ' ' + erreur : ''); }
+        } catch (e) { ok = false; erreur = 'Service ntfy injoignable : ' + String(e.message || e).slice(0, 100) + (erreur ? ' ' + erreur : ''); }
+      }
+    }
+    return reponseJson({ ok: ok, erreur: erreur, code: resultat.code }, ok ? 200 : 502);
   } catch (err) {
     return reponseJson({ erreur: expliquerErreurBase(err) }, 503);
   }
