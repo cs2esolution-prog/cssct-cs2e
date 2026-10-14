@@ -1,5 +1,23 @@
 [
   {
+    "hash": "ed1b71b",
+    "date": "14/10/2026",
+    "title": "Add files via upload",
+    "description": ""
+  },
+  {
+    "hash": "5593cab",
+    "date": "14/10/2026",
+    "title": "Add files via upload",
+    "description": ""
+  },
+  {
+    "hash": "f3d0717",
+    "date": "09/09/2026",
+    "title": "chore: mise a jour automatique du changelog [skip ci]",
+    "description": ""
+  },
+  {
     "hash": "ac6d26b",
     "date": "09/09/2026",
     "title": "Update worker.js",
