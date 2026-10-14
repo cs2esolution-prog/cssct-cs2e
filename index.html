@@ -145,13 +145,23 @@
 </div>
 
 <div class="wrap">
-  <div style="display:flex;justify-content:flex-end;">
+  <div style="display:flex;justify-content:flex-end;gap:8px;">
+    <a href="notifications.html" id="notifBtn" title="Notifications sur cet appareil" aria-label="Notifications sur cet appareil" style="background:#fff;border:1px solid #E4E0D8;color:#2B2A2E;width:34px;height:34px;border-radius:50%;font-size:15px;text-decoration:none;display:flex;align-items:center;justify-content:center;">🔔</a>
     <button id="logoutBtn" title="Se déconnecter" style="background:#fff;border:1px solid #E4E0D8;color:#A85D45;width:34px;height:34px;border-radius:50%;font-weight:700;cursor:pointer;font-size:14px;">✕</button>
   </div>
   <div class="hero">
     <div class="brand-mark" id="brandMark"></div>
     <h1>CS<span>2E</span> · CSSCT</h1>
     <p>Tableau de bord de mandat</p>
+  </div>
+
+  <div id="bandeauNotif" style="display:none;background:#fff;border:1px solid #E4E0D8;border-left:4px solid #019682;border-radius:12px;padding:12px 14px;margin-bottom:14px;">
+    <div style="font-size:13.5px;font-weight:600;margin-bottom:4px;">🔔 Recevoir les alertes sur ce téléphone ?</div>
+    <p id="bandeauNotifTexte" style="font-size:12.5px;color:#6B6873;margin:0 0 10px;">Nouveau signalement, demande de suivi, rappel des trousses : une notification même application fermée. Réglable à tout moment.</p>
+    <div style="display:flex;gap:8px;">
+      <a id="bandeauNotifActiver" href="notifications.html" style="flex:1;text-align:center;background:#019682;color:#fff;text-decoration:none;font-weight:600;font-size:13px;padding:9px;border-radius:20px;">Activer</a>
+      <button id="bandeauNotifPlusTard" type="button" style="flex:1;background:#fff;color:#6B6873;border:1px solid #E4E0D8;font-weight:600;font-size:13px;padding:9px;border-radius:20px;cursor:pointer;">Plus tard</button>
+    </div>
   </div>
 
   <div class="alert-stack" id="alertStack">
@@ -234,10 +244,37 @@ const firebaseConfig = {
       loadHighlights();
       loadEcheances();
       applyBrandingLogo();
+      proposerNotifications();
     } else {
       document.getElementById('authGate').style.display = 'flex';
       document.getElementById('authForm').style.display = 'block';
     }
+  });
+
+  // Proposition unique d'activer les notifications : une fois proposée puis refusée (« Plus tard »),
+  // elle ne revient qu'après 30 jours. Rien n'est proposé si c'est impossible ou déjà fait sur cet appareil.
+  async function proposerNotifications() {
+    try {
+      if (!('serviceWorker' in navigator) || !('PushManager' in window) || !('Notification' in window)) return;
+      if (Notification.permission === 'denied') return;
+      const ios = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+      const installee = window.navigator.standalone === true || (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches);
+      let plusTard = 0;
+      try { plusTard = Number(localStorage.getItem('cssct_notif_plus_tard') || 0); } catch (e) { /* stockage indisponible : on propose */ }
+      if (plusTard && Date.now() - plusTard < 30 * 24 * 3600 * 1000) return;
+      const reg = await navigator.serviceWorker.getRegistration();
+      if (reg) { const abonnement = await reg.pushManager.getSubscription(); if (abonnement) return; }
+      if (ios && !installee) {
+        document.getElementById('bandeauNotifTexte').textContent = "Sur iPhone et iPad, il faut d'abord installer l'application sur l'écran d'accueil pour recevoir des notifications.";
+        document.getElementById('bandeauNotifActiver').href = 'installer_application.html';
+        document.getElementById('bandeauNotifActiver').textContent = 'Voir comment faire';
+      }
+      document.getElementById('bandeauNotif').style.display = 'block';
+    } catch (e) { /* la proposition est un confort */ }
+  }
+  document.getElementById('bandeauNotifPlusTard').addEventListener('click', () => {
+    document.getElementById('bandeauNotif').style.display = 'none';
+    try { localStorage.setItem('cssct_notif_plus_tard', String(Date.now())); } catch (e) { /* idem */ }
   });
 
   document.getElementById('pastedLinkBtn').addEventListener('click', () => {
