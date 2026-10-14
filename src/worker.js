@@ -1060,7 +1060,7 @@ async function diffuserNotification(env, evenement) {
   return bilan;
 }
 
-// Appelée par les pages internes après un changement de statut : prévient les autres personnes abonnées.
+// Appelée par les pages internes après un changement de statut ou la création d'un signalement par un élu.
 async function handleNotifStatut(request, env) {
   if (request.method === 'OPTIONS') return new Response(null, { headers: CORS_HEADERS });
   if (request.method !== 'POST') return reponseJson({ erreur: 'Méthode non autorisée' }, 405);
@@ -1078,7 +1078,10 @@ async function handleNotifStatut(request, env) {
     let corps = {};
     try { corps = await request.json(); } catch (e) { /* corps vide */ }
     const kind = corps.kind === 'besoin' ? 'besoin' : 'signalement';
-    const bilan = await diffuserNotification(env, evenementNotification('statut', kind, email));
+    // Nouveau signalement créé depuis l'application : tout le monde est prévenu, l'auteur compris.
+    // Changement de statut : l'auteur du changement n'est pas prévenu (il vient de le faire).
+    const evenement = corps.evenement === 'signalement' ? evenementNotification('signalement') : evenementNotification('statut', kind, email);
+    const bilan = await diffuserNotification(env, evenement);
     return reponseJson({ ok: true, appareils: bilan.appareils, envoyes: bilan.envoyes });
   } catch (err) {
     return reponseJson({ erreur: expliquerErreurBase(err) }, 503);
