@@ -41,6 +41,12 @@
   .guide ol{margin:0; padding-left:20px; font-size:12.5px; color:var(--ink);}
   .guide li{margin-bottom:4px;}
   .guide p{font-size:12.5px; color:var(--ink-soft); margin:6px 0;}
+  .champ{display:flex; align-items:center; gap:8px; font-size:13px; margin:6px 0;}
+  .champ select{padding:7px 10px; border:1px solid var(--line); border-radius:8px; font-size:13px; background:#fff;}
+  .groupe{font-size:12px; font-weight:600; color:var(--ink-soft); text-transform:uppercase; letter-spacing:.04em; margin:14px 0 4px;}
+  .aide{font-size:12.5px; color:var(--ink-soft); margin:6px 0;}
+  .sujet{font-family:ui-monospace,Menlo,monospace; font-size:11.5px; background:var(--paper); border:1px solid var(--line); border-radius:8px; padding:8px 10px; word-break:break-all; margin:8px 0;}
+  a.btn{text-align:center; text-decoration:none;}
   .version{font-size:11.5px; color:var(--ink-soft); text-align:center; margin-top:18px;}
   #authGate{position:fixed;inset:0;background:#2B2A2E;display:flex;align-items:center;justify-content:center;z-index:200;padding:20px;}
   #authForm{display:none;background:#fff;border-radius:14px;padding:32px;max-width:360px;width:100%;text-align:center;}
@@ -77,6 +83,41 @@
     <div class="msg" id="msg"></div>
   </div>
 
+  <div class="card" id="carteReglages" style="display:none;">
+    <h2>Réglages de cet appareil</h2>
+    <div class="groupe">Tout de suite</div>
+    <label class="champ"><input type="checkbox" id="t_signalement"> Nouveau signalement</label>
+    <label class="champ"><input type="checkbox" id="t_besoin"> Nouvelle expression de besoin</label>
+    <label class="champ"><input type="checkbox" id="t_complement"> Complément ajouté à un dossier</label>
+    <label class="champ"><input type="checkbox" id="t_statut"> Changement de statut</label>
+    <div class="groupe">Rappel quotidien</div>
+    <label class="champ">Heure du rappel <select id="heureRappel"></select></label>
+    <label class="champ"><input type="checkbox" id="t_trousses"> Trousses : péremptions et contrôles</label>
+    <label class="champ"><input type="checkbox" id="t_nonclos"> Signalements non clos depuis plus de 30 jours</label>
+    <p class="aide">Un seul message par jour, et rien n'est envoyé s'il n'y a rien à signaler.</p>
+    <button class="btn primary" id="btnReglages">Enregistrer les réglages</button>
+    <div class="msg" id="msgReglages"></div>
+  </div>
+
+  <div class="card" id="carteNtfy" style="display:none;">
+    <h2>Canal ntfy personnel (facultatif)</h2>
+    <p class="aide">ntfy est une application gratuite, indépendante de ce site, qui peut doubler les notifications si celles de ton téléphone sont capricieuses. Le message y reste volontairement générique, sans numéro ni détail. Le nom du canal est aléatoire et propre à toi : ne le partage pas.</p>
+    <div id="ntfyAucun">
+      <button class="btn dark" id="btnNtfyCreer">Créer mon canal personnel</button>
+    </div>
+    <div id="ntfyActif" style="display:none;">
+      <div class="sujet" id="ntfySujetTexte"></div>
+      <p class="aide"><strong>1.</strong> Installe ntfy : <a id="lienAndroid" href="https://play.google.com/store/apps/details?id=io.heckel.ntfy" target="_blank" rel="noopener">Android</a> · <a id="lienIphone" href="https://apps.apple.com/app/ntfy/id1625396347" target="_blank" rel="noopener">iPhone</a></p>
+      <p class="aide"><strong>2.</strong> Abonne-toi à ton canal :</p>
+      <a class="btn primary" id="btnNtfyOuvrir" href="#">Ouvrir dans ntfy</a>
+      <button class="btn ghost" id="btnNtfyCopier">Copier le nom du canal</button>
+      <p class="aide">Si le bouton ne fait rien, ouvre ntfy, touche « + », puis colle le nom du canal (serveur par défaut).</p>
+      <button class="btn ghost" id="btnNtfyTest">Envoyer un test</button>
+      <button class="btn ghost" id="btnNtfySupprimer">Supprimer mon canal</button>
+    </div>
+    <div class="msg" id="msgNtfy"></div>
+  </div>
+
   <div class="card">
     <h2>Dernier envoi</h2>
     <p class="etat neutre" id="dernierEnvoi">Chargement…</p>
@@ -107,8 +148,9 @@
     <h3>Ce que tu reçois</h3>
     <ul>
       <li>Tout de suite : nouveau signalement, nouvelle expression de besoin, complément, changement de statut (fait par quelqu'un d'autre). Un clic ouvre directement le dossier.</li>
-      <li>Chaque jour à 9 h : un seul message groupé sur les trousses (péremptions, contrôles) et les signalements non clos depuis plus de 30 jours. Rien n'est envoyé s'il n'y a rien à signaler.</li>
+      <li>Chaque jour à l'heure choisie (9 h par défaut) : un seul message groupé sur les trousses (péremptions, contrôles) et les signalements non clos depuis plus de 30 jours. Rien n'est envoyé s'il n'y a rien à signaler.</li>
     </ul>
+    <p>Dans « Réglages de cet appareil », tu choisis l'heure du rappel et les familles de notifications à recevoir ; chaque appareil a ses propres réglages. Le canal ntfy personnel est facultatif.</p>
     <p>Chaque appareil s'active séparément. Si le test échoue, la cause exacte s'affiche sous les boutons.
     Pour arrêter, utilise « Désactiver sur cet appareil ».</p>
   </div>
@@ -129,7 +171,7 @@ const firebaseConfig = {
   messagingSenderId: "277603883255",
   appId: "1:277603883255:web:b3b7a5c3097a60caac1bf2"
 };
-  const VERSION_NOTIFICATIONS = '1.4.0';
+  const VERSION_NOTIFICATIONS = '1.5.0';
   const app = initializeApp(firebaseConfig);
   const auth = getAuth(app);
   const db = getFirestore(app);
@@ -275,7 +317,7 @@ const firebaseConfig = {
       try {
         const id = await identifiantAppareil(abonnementCourant.endpoint);
         const snap = await getDoc(doc(db, 'abonnements_push', id));
-        if (snap.exists()) { etat('Notifications activées sur cet appareil.', 'ok'); boutons('actif'); return; }
+        if (snap.exists()) { etat('Notifications activées sur cet appareil.', 'ok'); boutons('actif'); afficherReglages(snap.data()); return; }
       } catch (e) {
         etat("Impossible de lire l'état de l'abonnement : " + e.message, 'ko');
         boutons('inactif');
@@ -284,7 +326,81 @@ const firebaseConfig = {
     }
     etat("Les notifications ne sont pas activées sur cet appareil.", 'neutre');
     boutons('inactif');
+    masquerReglages();
   }
+
+  // ---- Réglages de l'appareil (heure, familles) et canal ntfy personnel ----
+  const FAMILLES = ['signalement', 'besoin', 'complement', 'statut', 'trousses', 'nonclos'];
+  let idAppareil = '';
+  for (let h = 0; h < 24; h++) { const o = document.createElement('option'); o.value = String(h); o.textContent = String(h).padStart(2, '0') + ' h'; $('heureRappel').appendChild(o); }
+
+  function masquerReglages() { $('carteReglages').style.display = 'none'; $('carteNtfy').style.display = 'none'; }
+  function afficherNtfy(sujet) {
+    const valide = /^cssct-[0-9a-f]{32}$/.test(sujet || '');
+    $('ntfyAucun').style.display = valide ? 'none' : 'block';
+    $('ntfyActif').style.display = valide ? 'block' : 'none';
+    if (valide) {
+      $('ntfySujetTexte').textContent = sujet;
+      $('btnNtfyOuvrir').href = 'ntfy://ntfy.sh/' + sujet;
+    }
+  }
+  async function afficherReglages(donnees) {
+    idAppareil = await identifiantAppareil(abonnementCourant.endpoint);
+    const types = donnees.types || {};
+    FAMILLES.forEach((f) => { $('t_' + f).checked = types[f] !== false; });
+    const h = Number(donnees.heure);
+    $('heureRappel').value = String(Number.isInteger(h) && h >= 0 && h <= 23 ? h : 9);
+    afficherNtfy(donnees.ntfySujet);
+    $('carteReglages').style.display = 'block';
+    $('carteNtfy').style.display = 'block';
+  }
+  function afficherReglagesMsg(id, texte, genre) { const m = $(id); m.textContent = texte || ''; m.className = 'msg' + (genre ? ' ' + genre : ''); }
+
+  $('btnReglages').addEventListener('click', async () => {
+    afficherReglagesMsg('msgReglages', '');
+    try {
+      const types = {};
+      FAMILLES.forEach((f) => { types[f] = $('t_' + f).checked; });
+      await setDoc(doc(db, 'abonnements_push', idAppareil), { email: (utilisateur.email || '').toLowerCase(), heure: Number($('heureRappel').value), types: types, misAJourLe: serverTimestamp() }, { merge: true });
+      afficherReglagesMsg('msgReglages', 'Réglages enregistrés pour cet appareil.', 'ok');
+    } catch (e) { afficherReglagesMsg('msgReglages', 'Enregistrement impossible : ' + e.message, 'ko'); }
+  });
+
+  async function enregistrerSujet(sujet) {
+    await setDoc(doc(db, 'abonnements_push', idAppareil), { email: (utilisateur.email || '').toLowerCase(), ntfySujet: sujet, misAJourLe: serverTimestamp() }, { merge: true });
+  }
+  $('btnNtfyCreer').addEventListener('click', async () => {
+    afficherReglagesMsg('msgNtfy', '');
+    try {
+      const octets = crypto.getRandomValues(new Uint8Array(16));
+      const sujet = 'cssct-' + Array.from(octets).map((b) => b.toString(16).padStart(2, '0')).join('');
+      await enregistrerSujet(sujet);
+      afficherNtfy(sujet);
+      afficherReglagesMsg('msgNtfy', 'Canal créé. Installe ntfy puis touche « Ouvrir dans ntfy ».', 'ok');
+    } catch (e) { afficherReglagesMsg('msgNtfy', 'Création impossible : ' + e.message, 'ko'); }
+  });
+  $('btnNtfyCopier').addEventListener('click', async () => {
+    try { await navigator.clipboard.writeText($('ntfySujetTexte').textContent); afficherReglagesMsg('msgNtfy', 'Nom du canal copié.', 'ok'); }
+    catch (e) { afficherReglagesMsg('msgNtfy', 'Copie impossible : sélectionne le nom ci-dessus et copie-le à la main.', 'ko'); }
+  });
+  $('btnNtfySupprimer').addEventListener('click', async () => {
+    afficherReglagesMsg('msgNtfy', '');
+    try {
+      await enregistrerSujet('');
+      afficherNtfy('');
+      afficherReglagesMsg('msgNtfy', 'Canal supprimé. Tu peux aussi retirer l\u2019abonnement dans l\u2019application ntfy.', 'ok');
+    } catch (e) { afficherReglagesMsg('msgNtfy', 'Suppression impossible : ' + e.message, 'ko'); }
+  });
+  $('btnNtfyTest').addEventListener('click', async () => {
+    afficherReglagesMsg('msgNtfy', 'Envoi du test…');
+    try {
+      const jeton = await utilisateur.getIdToken();
+      const reponse = await fetch('/api/notif-test', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + jeton }, body: JSON.stringify({ endpoint: abonnementCourant ? abonnementCourant.endpoint : '', ntfy: true }) });
+      let d = {}; try { d = (await reponse.json()) || {}; } catch (e) { /* non JSON */ }
+      if (reponse.ok && d.ok) afficherReglagesMsg('msgNtfy', 'Test envoyé sur ton canal ntfy (et sur cet appareil).', 'ok');
+      else afficherReglagesMsg('msgNtfy', d.erreur || ('Échec du test (code ' + reponse.status + ').'), 'ko');
+    } catch (e) { afficherReglagesMsg('msgNtfy', 'Échec du test : ' + e.message, 'ko'); }
+  });
 
   $('btnActiver').addEventListener('click', async () => {
     afficher('');
@@ -366,6 +482,7 @@ const firebaseConfig = {
         await abonnementCourant.unsubscribe();
         abonnementCourant = null;
       }
+      masquerReglages();
       afficher("Notifications désactivées sur cet appareil.", 'ok');
       await rafraichirEtat();
     } catch (e) {
