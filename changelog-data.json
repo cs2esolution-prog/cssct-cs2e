@@ -1,5 +1,17 @@
 [
   {
+    "hash": "02c9881",
+    "date": "19/10/2026",
+    "title": "Implement editable report sections and exchange management",
+    "description": "This file enables editing of report sections for connected elected officials, replacing functions from signalement_liste.html and adding new functionalities for managing exchanges."
+  },
+  {
+    "hash": "57da6a6",
+    "date": "19/10/2026",
+    "title": "chore: mise a jour automatique du changelog [skip ci]",
+    "description": ""
+  },
+  {
     "hash": "b1f3be8",
     "date": "19/10/2026",
     "title": "Update expression_besoin_liste.html",
