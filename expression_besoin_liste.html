@@ -56,7 +56,7 @@
   .drawer-body{padding:20px 24px 100px;}
 
   .dsection{background:#fff; border:1px solid var(--line); border-radius:var(--radius); padding:18px 20px; margin-bottom:14px;}
-  .dsection h3{font-family:'Source Serif 4',serif; font-size:14.5px; margin:0 0 10px;}
+  .dsection h3{font-family:'Source Serif 4',serif; font-size:14.5px; margin:0 0 10px; display:flex; align-items:center; justify-content:space-between; gap:10px;}
   .dfield{margin-bottom:10px;}
   .dfield .dlabel{font-size:10.5px; text-transform:uppercase; letter-spacing:.06em; color:var(--ink-soft); margin-bottom:2px;}
   .dfield .dval{font-size:13.5px; white-space:pre-wrap;}
@@ -65,9 +65,19 @@
   .dfield textarea{min-height:70px;}
   .code-mono{font-family:'IBM Plex Mono',monospace; font-size:13px; color:var(--purple);}
 
+  .edit-link{font-family:'Inter',sans-serif; font-size:11.5px; font-weight:600; color:var(--teal-dark); cursor:pointer; background:none; border:none; padding:2px 0;}
+  .edit-actions{display:flex; gap:8px; margin-top:8px;}
+  .edit-actions button{padding:6px 14px; border-radius:16px; font-size:12px; font-weight:600; border:none; cursor:pointer;}
+  .save-btn{background:var(--ink); color:#fff;}
+  .cancel-btn{background:transparent; border:1px solid var(--line) !important; color:var(--ink-soft);}
+  .entry-edit input, .entry-edit textarea{width:100%; font-family:'Inter',sans-serif; font-size:13px; padding:8px 10px; border:1px solid var(--line); border-radius:7px; margin-bottom:6px;}
+  .entry-edit textarea{min-height:60px;}
+  .entry-actions{margin-top:4px; display:flex; gap:12px;}
+
   .histo-item{border-top:1px solid var(--line); padding:10px 0; font-size:12.5px;}
   .histo-item:first-child{border-top:none;}
   .histo-item .h-date{color:var(--ink-soft); font-size:11px; margin-bottom:2px;}
+  .histo-item .h-text{white-space:pre-wrap;}
   .h-tag{display:inline-block; font-size:10px; font-weight:700; padding:1px 8px; border-radius:10px; margin-left:6px; background:#F3EFF6; color:var(--purple);}
   .h-tag.cssct{background:#F2FBF9; color:var(--teal-dark);}
 
@@ -205,18 +215,9 @@
         unsubscribe = onSnapshot(col, (snap) => {
           window._besoins = snap.docs.map(d => ({ id: d.id, ...d.data() }));
           window.renderList();
-          if(window._openDrawerId && document.getElementById('drawerOverlay').classList.contains('show')){
+          // On ne redessine pas la fiche ouverte pendant une modification en cours (sinon la saisie serait perdue).
+          if(window._openDrawerId && document.getElementById('drawerOverlay').classList.contains('show') && !window._isEditing){
             window.openDrawer(window._openDrawerId);
-          }
-          // Lien profond (clic sur une notification) : expression_besoin_liste.html?besoin=<identifiant>
-          if(!window._lienBesoinTraite){
-            window._lienBesoinTraite = true;
-            let cible = '';
-            try{ cible = new URLSearchParams(location.search).get('besoin') || ''; }catch(e){ cible = ''; }
-            if(cible){
-              if(window._besoins.some(b => b.id === cible)) window.openDrawer(cible);
-              else if(typeof showToast === 'function') showToast('Cette expression de besoin est introuvable (peut-être supprimée).');
-            }
           }
         });
       }
@@ -254,14 +255,7 @@
   window.BESOIN_FIREBASE = {
     async update(id, fields){ await updateDoc(doc(col, id), fields); },
     async addNote(id, entry){ await updateDoc(doc(col, id), { notesInternes: arrayUnion(entry) }); },
-    async addHistorique(id, entry){ await updateDoc(doc(col, id), { historique: arrayUnion(entry) }); },
-    // Prévient les autres personnes abonnées aux notifications (message générique, sans détail). Échec sans conséquence.
-    async notifierStatut(id){
-      try{
-        const jeton = await auth.currentUser.getIdToken();
-        await fetch('/api/notif-statut', { method:'POST', headers:{ 'Content-Type':'application/json', 'Authorization':'Bearer ' + jeton }, body: JSON.stringify({ kind:'besoin', id: id || '' }) });
-      }catch(err){ /* la notification est un confort : on ne gêne jamais l'enregistrement */ }
-    }
+    async addHistorique(id, entry){ await updateDoc(doc(col, id), { historique: arrayUnion(entry) }); }
   };
 
   window._crList = [];
@@ -284,6 +278,7 @@ function toFR(iso){
 }
 
 window._filter = 'Tous';
+window._isEditing = false;
 window.switchFilter = function(statut){
   window._filter = statut;
   document.querySelectorAll('.filter-tab').forEach(function(b){ b.classList.toggle('active', b.dataset.statut === statut); });
@@ -325,27 +320,154 @@ window.renderList = function(){
   }).join('');
 };
 
-function renderNotesInternes(it){
-  const arr = (it.notesInternes||[]).slice().sort(function(a,b){ return (a.date||'').localeCompare(b.date||''); });
-  if(!arr.length) return '<div style="font-size:12px;color:var(--ink-soft);">Aucune note interne pour l\'instant.</div>';
-  return arr.map(function(n){
-    return '<div class="histo-item"><div class="h-date">' + toFR(n.date) + '</div><div>' + esc(n.text) + '</div></div>';
+// ---- Détail de la demande : tous les champs sont modifiables par les élus ----
+const BESOIN_DETAIL_FIELDS = [
+  { id:'entreprise',     label:'Structure',          empty:'Non précisé' },
+  { id:'nomPrenom',      label:'Nom et prénom',      empty:'Anonyme' },
+  { id:'emailContact',   label:'Email de contact',   empty:'Non fourni', type:'email' },
+  { id:'theme',          label:'Thème',              empty:'Non précisé' },
+  { id:'description',    label:'Description',        empty:'Non précisé', long:true },
+  { id:'impact',         label:'Impact ressenti',    empty:'Non précisé', long:true },
+  { id:'ampleur',        label:'Ampleur perçue',     empty:'Non précisé' },
+  { id:'souhaitContact', label:'Souhait de contact', empty:'Non précisé' }
+];
+
+function renderDetailView(it){
+  return BESOIN_DETAIL_FIELDS.map(function(f){
+    const v = it[f.id];
+    const has = v !== undefined && v !== null && v !== '';
+    return '<div class="dfield"><div class="dlabel">' + esc(f.label) + '</div><div class="dval ' + (has ? '' : 'empty') + '">' + (has ? esc(v) : f.empty) + '</div></div>';
   }).join('');
 }
 
-function renderHistorique(it){
-  const arr = (it.historique||[]).slice().sort(function(a,b){ return (a.date||'').localeCompare(b.date||''); });
-  if(!arr.length) return '<div style="font-size:12px;color:var(--ink-soft);">Aucun complément envoyé par le salarié.</div>';
-  return arr.map(function(h){
-    const tag = h.auteur === 'salarie' ? '<span class="h-tag">Salarié</span>' : '<span class="h-tag cssct">CSSCT</span>';
-    return '<div class="histo-item"><div class="h-date">' + toFR(h.date) + tag + '</div><div>' + esc(h.text) + '</div></div>';
+window.toggleEditDetail = function(id){
+  const it = findBesoin(id);
+  if(!it) return;
+  window._isEditing = true;
+  document.getElementById('detailBlock').innerHTML = BESOIN_DETAIL_FIELDS.map(function(f){
+    const v = (it[f.id] === undefined || it[f.id] === null) ? '' : String(it[f.id]);
+    const input = f.long
+      ? '<textarea data-edit="' + f.id + '">' + esc(v) + '</textarea>'
+      : '<input type="' + (f.type || 'text') + '" data-edit="' + f.id + '" value="' + esc(v) + '">';
+    return '<div class="dfield"><div class="dlabel">' + esc(f.label) + '</div>' + input + '</div>';
+  }).join('') +
+  '<div class="edit-actions">' +
+    '<button class="save-btn" onclick="saveDetail(\'' + id + '\')">Enregistrer</button>' +
+    '<button class="cancel-btn" onclick="cancelEdit(\'' + id + '\')">Annuler</button>' +
+  '</div>';
+  document.getElementById('editDetailLink').style.display = 'none';
+};
+
+window.saveDetail = async function(id){
+  const it = findBesoin(id);
+  if(!it) return;
+  const fields = {};
+  document.querySelectorAll('#detailBlock [data-edit]').forEach(function(el){ fields[el.dataset.edit] = el.value.trim(); });
+  if(!fields.theme){ showToast('Le thème ne peut pas être vide.'); return; }
+  if(fields.emailContact && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(fields.emailContact)){ showToast('Email de contact invalide.'); return; }
+  try{
+    await window.BESOIN_FIREBASE.update(id, fields);
+    Object.assign(it, fields);
+    window._isEditing = false;
+    showToast('Demande mise à jour ✓');
+    window.renderList();
+    window.openDrawer(id);
+  }catch(err){ showToast('Erreur : ' + err.message); }
+};
+
+window.cancelEdit = function(id){
+  window._isEditing = false;
+  window.openDrawer(id);
+};
+
+// ---- Échanges (historique) et notes internes : chaque entrée est modifiable / supprimable ----
+// listKey : 'historique' (visible par le salarié) ou 'notesInternes' (CSSCT uniquement)
+function renderEntries(it, listKey){
+  const arr = (it[listKey]||[])
+    .map(function(e, idx){ return { e:e, idx:idx }; })
+    .sort(function(a,b){ return (a.e.date||'').localeCompare(b.e.date||''); });
+  if(!arr.length){
+    return listKey === 'historique'
+      ? '<div style="font-size:12px;color:var(--ink-soft);">Aucun complément envoyé par le salarié.</div>'
+      : '<div style="font-size:12px;color:var(--ink-soft);">Aucune note interne pour l\'instant.</div>';
+  }
+  return arr.map(function(item){
+    const e = item.e;
+    let tag = '';
+    if(listKey === 'historique'){
+      tag = e.auteur === 'salarie' ? '<span class="h-tag">Salarié</span>' : '<span class="h-tag cssct">CSSCT</span>';
+    }
+    return '<div class="histo-item" data-entry="' + listKey + '-' + item.idx + '">' +
+      '<div class="h-date">' + toFR(e.date) + tag + '</div><div class="h-text">' + esc(e.text) + '</div>' +
+      '<div class="entry-actions">' +
+        '<button type="button" class="edit-link" onclick="editEntry(\'' + it.id + '\', \'' + listKey + '\', ' + item.idx + ')">Modifier</button>' +
+        '<button type="button" class="edit-link" style="color:var(--danger);" onclick="deleteEntry(\'' + it.id + '\', \'' + listKey + '\', ' + item.idx + ')">Supprimer</button>' +
+      '</div>' +
+    '</div>';
   }).join('');
 }
+function renderHistorique(it){ return renderEntries(it, 'historique'); }
+function renderNotesInternes(it){ return renderEntries(it, 'notesInternes'); }
+
+window.editEntry = function(id, listKey, idx){
+  const it = findBesoin(id);
+  if(!it || !it[listKey] || !it[listKey][idx]) return;
+  const e = it[listKey][idx];
+  const wrap = document.querySelector('[data-entry="' + listKey + '-' + idx + '"]');
+  if(!wrap) return;
+  window._isEditing = true;
+  wrap.innerHTML =
+    '<div class="entry-edit">' +
+      '<input type="date" id="editEntryDate" value="' + esc(e.date) + '">' +
+      '<textarea id="editEntryText">' + esc(e.text) + '</textarea>' +
+    '</div>' +
+    '<div class="edit-actions">' +
+      '<button class="save-btn" onclick="saveEntry(\'' + id + '\', \'' + listKey + '\', ' + idx + ')">Enregistrer</button>' +
+      '<button class="cancel-btn" onclick="cancelEdit(\'' + id + '\')">Annuler</button>' +
+    '</div>';
+};
+
+window.saveEntry = async function(id, listKey, idx){
+  const it = findBesoin(id);
+  if(!it) return;
+  const text = document.getElementById('editEntryText').value.trim();
+  const date = document.getElementById('editEntryDate').value;
+  if(!text){ showToast('Le texte ne peut pas être vide.'); return; }
+  const newArr = (it[listKey]||[]).slice();
+  newArr[idx] = Object.assign({}, newArr[idx], { date: date, text: text });
+  const fields = {}; fields[listKey] = newArr;
+  try{
+    await window.BESOIN_FIREBASE.update(id, fields);
+    it[listKey] = newArr;
+    window._isEditing = false;
+    showToast(listKey === 'historique' ? 'Échange modifié ✓ (visible par le salarié)' : 'Note modifiée ✓');
+    window.openDrawer(id);
+  }catch(err){ showToast('Erreur : ' + err.message); }
+};
+
+window.deleteEntry = async function(id, listKey, idx){
+  const msg = listKey === 'historique'
+    ? 'Supprimer cet échange ? Il ne sera plus visible par le salarié.'
+    : 'Supprimer cette note interne ?';
+  if(!confirm(msg)) return;
+  const it = findBesoin(id);
+  if(!it) return;
+  const newArr = (it[listKey]||[]).slice();
+  newArr.splice(idx, 1);
+  const fields = {}; fields[listKey] = newArr;
+  try{
+    await window.BESOIN_FIREBASE.update(id, fields);
+    it[listKey] = newArr;
+    showToast('Supprimé ✓');
+    window.openDrawer(id);
+  }catch(err){ showToast('Erreur : ' + err.message); }
+};
 
 window.openDrawer = function(id){
   const it = findBesoin(id);
   if(!it) return;
   window._openDrawerId = id;
+  window._isEditing = false;
 
   const crOptions = '<option value="">Aucune réunion liée</option>' + (window._crList||[]).map(function(cr){
     const sel = (it.reunionLieeId === cr.id) ? 'selected' : '';
@@ -363,32 +485,25 @@ window.openDrawer = function(id){
         '<div class="dfield"><div class="dlabel">Réunion où le sujet a été abordé</div><select id="reunionSelect">' + crOptions + '</select></div>' +
         '<button class="btn" onclick="saveStatutReunion(\'' + id + '\')">Enregistrer</button>' +
       '</div>' +
-      '<div class="dsection"><h3>Détail de la demande</h3>' +
-        '<div class="dfield"><div class="dlabel">Structure</div><div class="dval ' + (it.entreprise?'':'empty') + '">' + (esc(it.entreprise) || 'Non précisé') + '</div></div>' +
-        '<div class="dfield"><div class="dlabel">Nom et prénom</div><div class="dval ' + (it.nomPrenom?'':'empty') + '">' + (esc(it.nomPrenom) || 'Anonyme') + '</div></div>' +
-        '<div class="dfield"><div class="dlabel">Email de contact</div><div class="dval ' + (it.emailContact?'':'empty') + '">' + (esc(it.emailContact) || 'Non fourni') + '</div></div>' +
-        '<div class="dfield"><div class="dlabel">Thème</div><div class="dval">' + esc(it.theme) + '</div></div>' +
-        '<div class="dfield"><div class="dlabel">Description</div><div class="dval">' + esc(it.description) + '</div></div>' +
-        '<div class="dfield"><div class="dlabel">Impact ressenti</div><div class="dval">' + esc(it.impact) + '</div></div>' +
-        '<div class="dfield"><div class="dlabel">Ampleur perçue</div><div class="dval">' + esc(it.ampleur) + '</div></div>' +
-        '<div class="dfield"><div class="dlabel">Souhait de contact</div><div class="dval ' + (it.souhaitContact?'':'empty') + '">' + (esc(it.souhaitContact) || 'Non précisé') + '</div></div>' +
+      '<div class="dsection"><h3>Détail de la demande <button class="edit-link" id="editDetailLink" onclick="toggleEditDetail(\'' + id + '\')">Modifier</button></h3>' +
+        '<div id="detailBlock">' + renderDetailView(it) + '</div>' +
       '</div>' +
       '<div class="dsection"><h3>Échanges avec le salarié (via le code de suivi)</h3><div id="histoBlock">' + renderHistorique(it) + '</div>' +
-        '<textarea id="newSuiviText" placeholder="Ajouter un suivi visible par le salarié (statut, réponse, précision…)…" style="margin-top:10px;"></textarea>' +
+        '<textarea id="newSuiviText" placeholder="Ajouter un suivi visible par le salarié (statut, réponse, précision…)…" style="margin-top:10px;width:100%;min-height:70px;font-family:\'Inter\',sans-serif;font-size:13.5px;padding:8px 10px;border:1px solid var(--line);border-radius:7px;"></textarea>' +
         '<div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;">' +
           '<button class="btn" onclick="addSuiviPublic(\'' + id + '\')">+ Ajouter au suivi</button>' +
           '<button class="btn" style="background:var(--purple);color:#fff;border-color:var(--purple);" onclick="envoyerMail(\'' + id + '\')">✉️ Envoyer un mail</button>' +
         '</div>' +
       '</div>' +
       '<div class="dsection"><h3>Notes internes CSSCT</h3><div id="notesBlock">' + renderNotesInternes(it) + '</div>' +
-        '<textarea id="newNoteText" placeholder="Ajouter une note interne (visible CSSCT uniquement)…" style="margin-top:10px;"></textarea>' +
+        '<textarea id="newNoteText" placeholder="Ajouter une note interne (visible CSSCT uniquement)…" style="margin-top:10px;width:100%;min-height:70px;font-family:\'Inter\',sans-serif;font-size:13.5px;padding:8px 10px;border:1px solid var(--line);border-radius:7px;"></textarea>' +
         '<button class="btn" style="margin-top:8px;" onclick="addInternalNote(\'' + id + '\')">+ Ajouter cette note</button>' +
       '</div>' +
     '</div>';
 
   document.getElementById('drawerOverlay').classList.add('show');
 };
-function closeDrawer(){ document.getElementById('drawerOverlay').classList.remove('show'); window._openDrawerId = null; }
+function closeDrawer(){ document.getElementById('drawerOverlay').classList.remove('show'); window._openDrawerId = null; window._isEditing = false; }
 
 window.saveStatutReunion = async function(id){
   const it = findBesoin(id);
@@ -400,12 +515,10 @@ window.saveStatutReunion = async function(id){
     reunionLieeId: reunionId || '',
     reunionLieeLabel: cr ? (cr.titre + ' — ' + toFR(cr.date)) : ''
   };
-  const statutChange = it.statut !== statut;
   try{
     await window.BESOIN_FIREBASE.update(id, fields);
     Object.assign(it, fields);
     showToast('Enregistré ✓');
-    if(statutChange) window.BESOIN_FIREBASE.notifierStatut(id);
     window.renderList();
   }catch(err){ showToast('Erreur : ' + err.message); }
 };
