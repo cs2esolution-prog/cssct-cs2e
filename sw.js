@@ -1,7 +1,7 @@
 // Service worker de « Mon appli CSSCT » : uniquement les notifications.
 // VERSION : à augmenter à chaque livraison qui modifie ce fichier (le navigateur le remplace alors tout seul).
 // Volontairement aucune mise en cache des pages : l'application reste toujours à jour (voir backlog technique).
-const VERSION = '1.0.0';
+const VERSION = '1.0.1';
 
 self.addEventListener('install', function () { self.skipWaiting(); });
 
