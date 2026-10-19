@@ -1,5 +1,17 @@
 [
   {
+    "hash": "6284f49",
+    "date": "19/10/2026",
+    "title": "Add script tag for signalement_edition.js",
+    "description": ""
+  },
+  {
+    "hash": "b9e7f3d",
+    "date": "19/10/2026",
+    "title": "chore: mise a jour automatique du changelog [skip ci]",
+    "description": ""
+  },
+  {
     "hash": "02c9881",
     "date": "19/10/2026",
     "title": "Implement editable report sections and exchange management",
