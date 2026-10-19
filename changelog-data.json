@@ -1,5 +1,17 @@
 [
   {
+    "hash": "9837c93",
+    "date": "19/10/2026",
+    "title": "Increment version to 1.0.1 in service worker",
+    "description": ""
+  },
+  {
+    "hash": "501790f",
+    "date": "19/10/2026",
+    "title": "chore: mise a jour automatique du changelog [skip ci]",
+    "description": ""
+  },
+  {
     "hash": "6284f49",
     "date": "19/10/2026",
     "title": "Add script tag for signalement_edition.js",
