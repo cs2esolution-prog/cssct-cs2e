@@ -24,16 +24,21 @@
   }
   *{box-sizing:border-box;}
   body{margin:0; background:var(--paper); color:var(--ink); font-family:'Inter',system-ui,sans-serif; line-height:1.5;}
-  .wrap{max-width:1480px; margin:0 auto; padding:32px 24px 90px;}
+  .wrap{max-width:1480px; margin:0 auto; padding:32px 24px 40px;}
   header.top{display:flex; align-items:center; justify-content:space-between; padding-bottom:20px; border-bottom:2px solid var(--ink); margin-bottom:24px; flex-wrap:wrap; gap:10px;}
   .brand{display:flex; align-items:center; gap:12px;}
-  .brand-mark{width:38px; height:38px; border-radius:50%; background:conic-gradient(var(--teal) 0deg 120deg, var(--gold) 120deg 240deg, var(--purple) 240deg 360deg); flex:none;}
+  .brand-mark{width:38px; height:38px; border-radius:50%; background:conic-gradient(var(--teal) 0deg 120deg, var(--gold) 120deg 240deg, var(--purple) 240deg 360deg); flex:none; overflow:hidden;}
   .brand-text{font-family:'Source Serif 4',serif; font-weight:700; font-size:19px;}
   .brand-text span{color:var(--teal);}
+  .top-right{display:flex; align-items:center; gap:10px;}
+  .who{font-size:11.5px; color:var(--ink-soft);}
   .back-link{font-size:12.5px; font-weight:600; color:var(--ink-soft); text-decoration:none; border:1px solid var(--line); padding:6px 14px; border-radius:20px;}
+  #logoutBtn{background:#fff; border:1px solid var(--line); color:var(--danger); width:34px; height:34px; border-radius:50%; font-weight:700; cursor:pointer; font-size:14px;}
   h1{font-family:'Source Serif 4',serif; font-size:22px; margin:0 0 4px; color:var(--teal-dark);}
+  h2{font-family:'Source Serif 4',serif; font-size:16px; margin:26px 0 8px;}
   .subtitle{font-size:12.5px; color:var(--ink-soft); margin:0 0 18px;}
   .privacy{font-size:12px; background:#E4F3EF; color:var(--teal-dark); border-radius:8px; padding:8px 12px; margin:0 0 16px; display:inline-block;}
+  #banniere{display:none; font-size:12.5px; background:#F6DDD3; color:var(--danger); border-radius:8px; padding:10px 14px; margin:0 0 16px; font-weight:600;}
 
   .drop{border:2px dashed var(--line); background:#fff; border-radius:var(--radius); padding:26px 20px; text-align:center; font-size:13.5px; color:var(--ink-soft); transition:border-color .15s, background .15s;}
   .drop.over{border-color:var(--teal); background:#F2FBF9;}
@@ -41,12 +46,14 @@
   .btn{background:var(--ink); color:#fff; border:none; padding:9px 18px; border-radius:20px; font-weight:600; font-size:12.5px; cursor:pointer; font-family:inherit;}
   .btn.ghost{background:#fff; color:var(--ink-soft); border:1px solid var(--line);}
   .btn.ghost:hover{border-color:var(--purple); color:var(--purple);}
+  .btn.danger{background:#fff; color:var(--danger); border:1px solid var(--danger);}
+  .btn.go{background:var(--teal-dark);}
   .btn:disabled{opacity:.45; cursor:default;}
   .drop .btn{margin-top:10px;}
 
   #progress{display:none; margin:14px 0; font-size:12.5px; color:var(--ink-soft);}
-  #progress .bar{height:6px; background:var(--line); border-radius:4px; overflow:hidden; margin-top:6px;}
-  #progress .bar i{display:block; height:100%; width:0; background:var(--teal); transition:width .2s;}
+  .bar{height:6px; background:var(--line); border-radius:4px; overflow:hidden; margin-top:6px;}
+  .bar i{display:block; height:100%; width:0; background:var(--teal); transition:width .2s;}
 
   #summary{display:flex; flex-wrap:wrap; gap:8px; margin:18px 0 10px;}
   .chip{font-size:12px; font-weight:600; background:#fff; border:1px solid var(--line); border-radius:16px; padding:5px 12px; color:var(--ink-soft);}
@@ -61,9 +68,9 @@
 
   .tablewrap{overflow-x:auto; background:#fff; border:1px solid var(--line); border-radius:var(--radius);}
   table{border-collapse:collapse; table-layout:fixed; width:1400px; min-width:100%; font-size:12.5px;}
-  th{position:sticky; top:0; background:#FBFAF7; text-align:left; font-size:10.5px; text-transform:uppercase; letter-spacing:.06em; color:var(--ink-soft); padding:9px 8px; border-bottom:1px solid var(--line); white-space:nowrap;}
+  table.cote{width:100%; min-width:900px;}
+  th{background:#FBFAF7; text-align:left; font-size:10.5px; text-transform:uppercase; letter-spacing:.06em; color:var(--ink-soft); padding:9px 8px; border-bottom:1px solid var(--line); white-space:nowrap;}
   td{padding:8px; border-bottom:1px solid var(--line); vertical-align:top;}
-  tr.r{border-left:4px solid var(--teal);}
   tr.r.lvl-warn td:first-child{box-shadow:inset 4px 0 0 var(--warn);}
   tr.r.lvl-err td:first-child{box-shadow:inset 4px 0 0 var(--danger);}
   tr.r.lvl-ok td:first-child{box-shadow:inset 4px 0 0 var(--teal);}
@@ -84,6 +91,7 @@
   .fin em{font-style:normal; font-weight:700; color:var(--warn);}
   .fin .over{color:var(--danger); font-weight:700;}
   .mini{background:#fff; border:1px solid var(--line); border-radius:14px; padding:3px 10px; font-size:11.5px; cursor:pointer; font-family:inherit; color:var(--ink-soft);}
+  .mini:hover{border-color:var(--purple); color:var(--purple);}
   .mini .nb{font-weight:700; color:var(--warn);}
   tr.detail td{background:#FBFAF7; font-size:12px;}
   .detail-grid{display:grid; grid-template-columns:1fr 1fr; gap:16px;}
@@ -93,21 +101,70 @@
   .al li.err{color:var(--danger);} .al li.warn{color:var(--warn);} .al li.info{color:var(--ink-soft);}
   .snippet{background:#fff; border:1px solid var(--line); border-radius:6px; padding:6px 8px; font-size:11.5px; color:var(--ink-soft); word-break:break-word;}
   .empty-note{padding:30px; text-align:center; color:var(--ink-soft); font-size:13px;}
-  .foot{margin-top:18px; font-size:12px; color:var(--ink-soft);}
-  #toast{position:fixed; left:50%; bottom:24px; transform:translate(-50%,120%); background:var(--ink); color:#fff; padding:12px 20px; border-radius:12px; font-size:13.5px; transition:transform .3s ease; z-index:250; max-width:90vw;}
+  .foot{margin-top:14px; font-size:12px; color:var(--ink-soft);}
+
+  .motif{display:inline-block; font-size:10.5px; font-weight:700; border-radius:9px; padding:2px 8px;}
+  .motif-identique{background:#ECE6F2; color:var(--purple);}
+  .motif-ressemblant{background:#FBF1DC; color:var(--warn);}
+  #coteBox, #lotsBox, #resultatBox{display:none;}
+  .panel{background:#fff; border:1px solid var(--line); border-radius:var(--radius); padding:14px 16px;}
+  .lotline{display:flex; align-items:center; justify-content:space-between; gap:10px; padding:8px 0; border-bottom:1px solid var(--line); font-size:12.5px;}
+  .lotline:last-child{border-bottom:none;}
+  .lotline .meta{color:var(--ink-soft); font-size:11.5px;}
+  #resultatBox .panel{border-color:var(--teal);}
+  #resultatBox ul{margin:6px 0 0; padding-left:18px; font-size:12.5px;}
+  #resultatBox li.err{color:var(--danger);}
+
+  .sendbar{position:sticky; bottom:0; z-index:20; display:none; align-items:center; justify-content:space-between; gap:12px; background:#fff; border:1px solid var(--line); border-radius:12px; padding:10px 16px; margin-top:14px; box-shadow:0 -4px 16px rgba(0,0,0,.06);}
+  .sendbar.show{display:flex;}
+  .sendbar .txt{font-size:12.5px; color:var(--ink-soft);}
+  .sendbar .txt b{color:var(--ink);}
+
+  .overlay{position:fixed; inset:0; background:rgba(30,28,32,.55); display:none; align-items:center; justify-content:center; z-index:300; padding:20px;}
+  .overlay.show{display:flex;}
+  .overlay .box{background:#fff; border-radius:14px; padding:26px; width:min(460px,100%);}
+  .overlay h3{margin:0 0 8px; font-family:'Source Serif 4',serif;}
+  .overlay .note{font-size:11.5px; color:var(--ink-soft); margin:12px 0 0;}
+
+  #authGate{position:fixed;inset:0;background:#2B2A2E;display:flex;align-items:center;justify-content:center;z-index:400;padding:20px;}
+  #authForm{display:none;background:#fff;border-radius:14px;padding:32px;max-width:360px;width:100%;text-align:center;}
+  #toast{position:fixed; left:50%; bottom:24px; transform:translate(-50%,120%); background:var(--ink); color:#fff; padding:12px 20px; border-radius:12px; font-size:13.5px; transition:transform .3s ease; z-index:500; max-width:90vw;}
   #toast.show{transform:translate(-50%,0);}
 </style>
 </head>
 <body>
+
+<div id="authGate">
+  <div id="authChecking" style="color:#ffffffaa;font-size:13.5px;">Vérification de la connexion…</div>
+  <div id="authForm">
+    <div style="font-family:'Source Serif 4',serif;font-weight:700;font-size:18px;margin-bottom:6px;">CS<span style="color:#019682;">2E</span> · CSSCT</div>
+    <p style="font-size:13px;color:#6B6873;margin:0 0 18px;">Connecte-toi avec ton email professionnel.</p>
+    <input type="email" id="authEmail" placeholder="prenom.nom@entreprise.com" style="width:100%;padding:10px 12px;border:1px solid #E4E0D8;border-radius:8px;font-size:13.5px;margin-bottom:10px;">
+    <button id="authSendLink" style="width:100%;background:#2B2A2E;color:#fff;border:none;padding:11px;border-radius:20px;font-weight:600;cursor:pointer;">Recevoir un lien de connexion</button>
+    <div id="authMsg" style="font-size:12px;color:#A85D45;margin-top:10px;min-height:14px;"></div>
+    <div style="margin-top:16px;padding-top:14px;border-top:1px solid #E4E0D8;text-align:left;">
+      <p style="font-size:11px;color:#6B6873;margin:0 0 8px;">Le lien s'ouvre dans un autre navigateur au lieu de cette appli épinglée ? Copie-le depuis ton email et colle-le ici :</p>
+      <input type="text" id="pastedLinkInput" placeholder="Colle le lien reçu par email" style="width:100%;padding:9px 11px;border:1px solid #E4E0D8;border-radius:8px;font-size:12.5px;margin-bottom:8px;">
+      <button id="pastedLinkBtn" style="width:100%;background:#fff;color:#2B2A2E;border:1px solid #E4E0D8;padding:10px;border-radius:20px;font-weight:600;font-size:12.5px;cursor:pointer;">Se connecter avec ce lien</button>
+      <div id="pastedLinkMsg" style="font-size:11.5px;color:#A85D45;margin-top:8px;min-height:14px;"></div>
+    </div>
+  </div>
+</div>
+
 <div class="wrap">
   <header class="top">
     <div class="brand"><div class="brand-mark"></div><div class="brand-text">CS<span>2E</span> · CSSCT</div></div>
-    <a class="back-link" href="index.html">← Accueil</a>
+    <div class="top-right">
+      <span class="who" id="who"></span>
+      <a class="back-link" href="index.html">← Accueil</a>
+      <button id="logoutBtn" title="Se déconnecter">✕</button>
+    </div>
   </header>
 
   <h1>Accords d’entreprise : dépôt en masse</h1>
-  <p class="subtitle">Étape 1 sur 3 : sélection et contrôle des fichiers.</p>
-  <p class="privacy">🔒 Rien n’est enregistré à cette étape : les fichiers sont lus dans ton navigateur et n’en sortent pas.</p>
+  <p class="subtitle">Étape 2a sur 3 : contrôle, doublons et enregistrement des accords.</p>
+  <p class="privacy">🔒 Les fichiers sont lus dans ton navigateur ; rien n’est enregistré avant que tu cliques sur « Envoyer ». Les accords sont enregistrés non accessibles aux collaborateurs.</p>
+  <div id="banniere"></div>
 
   <div class="drop" id="drop">
     <div><strong>Glisse tes accords ici</strong> (PDF ou Word .docx, 25 Mo maximum par fichier)</div>
@@ -116,6 +173,7 @@
   </div>
   <div id="progress"><span id="progressTxt"></span><div class="bar"><i id="progressBar"></i></div></div>
 
+  <div id="resultatBox"></div>
   <div id="summary"></div>
 
   <div class="toolbar" id="toolbar" style="display:none;">
@@ -141,7 +199,38 @@
       <tbody id="tbody"></tbody>
     </table>
   </div>
-  <p class="foot" id="foot" style="display:none;">Vérifie surtout les lignes marquées en orange ou en rouge. L’enregistrement des accords et le lien avec l’accueil arrivent à l’étape 2.</p>
+
+  <div class="sendbar" id="sendbar">
+    <div class="txt" id="sendTxt"></div>
+    <button class="btn go" id="sendBtn">Envoyer</button>
+  </div>
+  <p class="foot" id="foot" style="display:none;">Vérifie surtout les lignes marquées en orange ou en rouge. Titre et date de signature sont obligatoires pour envoyer.</p>
+
+  <div id="coteBox">
+    <h2>Mis de côté <span id="coteCount" style="font-family:Inter,sans-serif;font-size:12px;color:var(--ink-soft);"></span></h2>
+    <p class="subtitle" style="margin-bottom:8px;">Ces fichiers ne seront pas envoyés : ils sont déjà dans la base, ou ressemblent à un accord déjà présent.</p>
+    <div class="tablewrap">
+      <table class="cote">
+        <colgroup><col style="width:24%"><col style="width:22%"><col style="width:32%"><col style="width:22%"></colgroup>
+        <thead><tr><th>Fichier</th><th>Raison</th><th>Accord déjà présent</th><th>Action</th></tr></thead>
+        <tbody id="coteBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div id="lotsBox">
+    <h2>Envois précédents</h2>
+    <div class="panel" id="lotsList"></div>
+  </div>
+</div>
+
+<div class="overlay" id="envoiOverlay">
+  <div class="box">
+    <h3 id="envoiTitre">Envoi en cours…</h3>
+    <div id="envoiTxt" style="font-size:12.5px;color:var(--ink-soft);"></div>
+    <div class="bar"><i id="envoiBar"></i></div>
+    <p class="note">Ne ferme pas cette page pendant l’opération.</p>
+  </div>
 </div>
 <div id="toast"></div>
 
@@ -315,19 +404,29 @@ function detecterTheme(titre, texte){
 const STATUTS = ['À qualifier','En vigueur','Échu','Dénoncé','Remplacé'];
 const TYPES = ['Accord','Avenant','Autre'];
 const THEME_NOMS = THEMES.map(t => t.nom).concat(['Autre']);
-let items = [], nextId = 1, seulementAVerifier = false, tri = 'date';
+let items = [], misDeCote = [], existants = [], existantsOk = false, erreurAcces = '';
+let nextId = 1, seulementAVerifier = false, tri = 'date', enCours = false, session = { email: '' };
+let _existantsResolve; const existantsPret = new Promise(r => { _existantsResolve = r; });
 
 const $ = id => document.getElementById(id);
 const esc = s => (s == null ? '' : String(s)).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-function toast(msg){ const t = $('toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(toast._t); toast._t = setTimeout(() => t.classList.remove('show'), 3200); }
+function toast(msg){ const t = $('toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(toast._t); toast._t = setTimeout(() => t.classList.remove('show'), 3600); }
 function fmtFR(iso){ return iso ? iso.split('-').reverse().join('/') : ''; }
 function fmtTaille(n){ return n > 1048576 ? (n/1048576).toFixed(1) + ' Mo' : Math.max(1, Math.round(n/1024)) + ' Ko'; }
 function aujourdhui(){ const d = new Date(); return d.getFullYear() + '-' + pad(d.getMonth()+1) + '-' + pad(d.getDate()); }
 function opts(liste, val, vide){ return (vide ? '<option value="">' + esc(vide) + '</option>' : '') + liste.map(o => '<option value="' + esc(o) + '"' + (o === val ? ' selected' : '') + '>' + esc(o) + '</option>').join(''); }
+function pluriel(n, mot){ return n + ' ' + mot + (n > 1 ? 's' : ''); }
+function horodatage(){ const d = new Date(); return d.getFullYear() + pad(d.getMonth()+1) + pad(d.getDate()) + '-' + pad(d.getHours()) + pad(d.getMinutes()) + pad(d.getSeconds()); }
+function banniere(msg){ const b = $('banniere'); b.style.display = msg ? 'block' : 'none'; b.textContent = msg || ''; }
 
+/* ---------- Lecture des fichiers ---------- */
+async function empreinteSha256(buf){
+  const h = await crypto.subtle.digest('SHA-256', buf);
+  return Array.from(new Uint8Array(h)).map(b => b.toString(16).padStart(2, '0')).join('');
+}
 async function extrairePdf(buf){
   if(!window.pdfjsLib) throw new Error('bibliothèque PDF non chargée (vérifie la connexion)');
-  const pdf = await pdfjsLib.getDocument({ data: buf }).promise;
+  const pdf = await pdfjsLib.getDocument({ data: buf.slice(0) }).promise;
   const pages = [];
   for(let i = 1; i <= pdf.numPages; i++){
     const page = await pdf.getPage(i);
@@ -352,7 +451,7 @@ async function extrairePdf(buf){
 }
 async function extraireDocx(buf){
   if(!window.mammoth) throw new Error('bibliothèque Word non chargée (vérifie la connexion)');
-  const r = await window.mammoth.extractRawText({ arrayBuffer: buf });
+  const r = await window.mammoth.extractRawText({ arrayBuffer: buf.slice(0) });
   return (r.value || '').split('\n').map(l => l.trim()).filter(Boolean).join('\n');
 }
 
@@ -382,26 +481,52 @@ function detecter(it){
 async function analyserFichier(f, cle){
   const ext = (f.name.split('.').pop() || '').toLowerCase();
   const dm = new Date(f.lastModified);
-  const it = { id: nextId++, cle: cle, name: f.name, size: f.size, ext: ext, nbPages: 0, pages: null, texte: '', erreur: '',
+  const it = { id: nextId++, cle: cle, file: f, name: f.name, size: f.size, ext: ext, nbPages: 0, pages: null, texte: '', erreur: '', empreinte: '',
     modifISO: isNaN(dm) ? '' : dm.getFullYear() + '-' + pad(dm.getMonth()+1) + '-' + pad(dm.getDate()),
     titre: '', titreIncertain: false, type: 'Accord', dureeExtrait: '', theme: '', dateISO: '', dateSource: '', dateSnippet: '', datesAlt: [], anneesNom: [],
-    dureeType: '', dureeMois: '', finISO: '', finConnue: false, statut: 'À qualifier', lien: '', ouvert: false, sel: false, doublon: '' };
+    dureeType: '', dureeMois: '', finISO: '', finConnue: false, statut: 'À qualifier', lien: '', ouvert: false, sel: false, doublon: '',
+    forcer: false, coteInfo: '', echec: '' };
   if(['pdf','docx','doc'].indexOf(ext) === -1) it.erreur = 'Format non pris en charge (PDF, DOCX ou DOC).';
   else if(f.size > 25*1024*1024) it.erreur = 'Fichier trop volumineux (25 Mo maximum).';
-  else if(ext === 'doc') it.erreur = 'Ancien format .doc : texte non lisible automatiquement, enregistre-le en .docx ou saisis à la main.';
   else {
     try{
       const buf = await f.arrayBuffer();
-      if(ext === 'pdf'){ const r = await extrairePdf(buf); it.pages = r.pages; it.texte = r.texte; it.nbPages = r.pages.length; }
-      else it.texte = await extraireDocx(buf);
-      if(it.texte.replace(/\s/g,'').length < 100) it.erreur = 'Aucun texte lisible (PDF scanné ?) : une reconnaissance de texte (OCR) serait nécessaire.';
+      it.empreinte = await empreinteSha256(buf);
+      if(ext === 'doc') it.erreur = 'Ancien format .doc : texte non lisible automatiquement, enregistre-le en .docx ou saisis à la main.';
+      else {
+        if(ext === 'pdf'){ const r = await extrairePdf(buf); it.pages = r.pages; it.texte = r.texte; it.nbPages = r.pages.length; }
+        else it.texte = await extraireDocx(buf);
+        if(it.texte.replace(/\s/g,'').length < 100) it.erreur = 'Aucun texte lisible (PDF scanné ?) : une reconnaissance de texte (OCR) serait nécessaire.';
+      }
     }catch(e){ it.erreur = 'Lecture impossible : ' + (e && e.message ? e.message : e); }
   }
   detecter(it);
   return it;
 }
 
+/* ---------- Doublons ---------- */
 function cleDoublon(s){ return norm(s).toLowerCase().replace(/[^a-z0-9]/g,''); }
+function evaluerExistant(it){
+  let semblable = null;
+  const kt = cleDoublon(it.titre);
+  const dateFiable = it.dateISO && it.dateSource !== 'modification';
+  for(const ex of existants){
+    if(it.empreinte && ex.fichier && ex.fichier.empreinte === it.empreinte) return { type:'identique', ex:ex, motif:'Fichier identique (même contenu)' };
+    if(!semblable){
+      if(kt && cleDoublon(ex.titre) === kt) semblable = { type:'ressemblant', ex:ex, motif:'Même titre' };
+      else if(dateFiable && ex.dateSignature && ex.dateSignature === it.dateISO) semblable = { type:'ressemblant', ex:ex, motif:'Même date de signature' };
+    }
+  }
+  return semblable;
+}
+function classerNouveau(it){
+  /* retourne true si la ligne reste dans le tableau, false si elle est mise de côté */
+  const ev = evaluerExistant(it);
+  if(ev){ it.cote = ev; misDeCote.push(it); return false; }
+  const autre = items.concat(misDeCote).find(x => x !== it && it.empreinte && x.empreinte === it.empreinte);
+  if(autre){ it.cote = { type:'identique', ex:null, motif:'Copie identique dans ce lot', avec: autre.name }; misDeCote.push(it); return false; }
+  items.push(it); return true;
+}
 function recalcDoublons(){
   const groupes = {};
   items.forEach(it => { it.doublon = ''; const k = cleDoublon(it.titre); if(k){ (groupes[k] = groupes[k] || []).push(it); } });
@@ -409,9 +534,12 @@ function recalcDoublons(){
 }
 function alertes(it){
   const a = [];
+  if(it.echec) a.push({n:'err', t:'Échec de l’envoi : ' + it.echec});
   if(it.erreur) a.push({n:'err', t:it.erreur});
+  if(it.forcer && it.coteInfo) a.push({n:'info', t:'Ajouté malgré un accord semblable déjà présent : ' + it.coteInfo});
   if(it.titreIncertain && !it.erreur) a.push({n:'warn', t:'Titre non détecté dans le texte : repris du nom du fichier.'});
-  if(!it.dateISO) a.push({n:'err', t:'Date de signature introuvable : à saisir.'});
+  if(!it.titre.trim()) a.push({n:'err', t:'Titre obligatoire pour l’envoi.'});
+  if(!it.dateISO) a.push({n:'err', t:'Date de signature introuvable : à saisir (obligatoire pour l’envoi).'});
   else if(it.dateSource === 'nom') a.push({n:'warn', t:'Date tirée du nom du fichier : à vérifier.'});
   else if(it.dateSource === 'modification') a.push({n:'warn', t:'Date tirée de la dernière modification du fichier (peu fiable) : à vérifier.'});
   if(it.datesAlt.length) a.push({n:'warn', t:'Plusieurs « Fait à » avec des dates différentes (autre date : ' + it.datesAlt.map(fmtFR).join(', ') + ').'});
@@ -420,15 +548,16 @@ function alertes(it){
   if(!it.dureeType) a.push({n:'warn', t:'Durée non détectée : à renseigner.'});
   if(it.dureeType === 'determinee' && !it.finISO) a.push({n:'warn', t:'Durée déterminée sans échéance calculable : renseigne la durée en mois ou l’échéance.'});
   if(it.finISO && it.finISO < aujourdhui()) a.push({n:'info', t: (it.finConnue ? 'Échéance dépassée' : 'Échéance estimée dépassée') + ' : à qualifier (échu, renouvelé ou remplacé ?).'});
-  if(it.doublon) a.push({n:'warn', t:'Doublon possible dans ce lot : ' + it.doublon});
+  if(it.doublon) a.push({n:'warn', t:'Titre identique à une autre ligne de ce lot : ' + it.doublon});
   return a;
 }
 function niveau(it){ const a = alertes(it); return a.some(x => x.n === 'err') ? 'err' : (a.some(x => x.n === 'warn') ? 'warn' : 'ok'); }
+function nbAlertes(it){ return alertes(it).filter(x => x.n !== 'info').length; }
+function pret(it){ return !!(it.titre.trim() && it.dateISO); }
 
 function srcBadge(it){
   const lib = {texte:'texte du document', nom:'nom du fichier', modification:'dernière modification', manuel:'saisie manuelle', '':'aucune'};
-  const cls = it.dateSource || 'aucune';
-  return '<span class="src src-' + cls + '">' + lib[it.dateSource] + '</span>';
+  return '<span class="src src-' + (it.dateSource || 'aucune') + '">' + lib[it.dateSource] + '</span>';
 }
 function finHtml(it){
   if(it.dureeType === 'indeterminee') return 'Pas d’échéance';
@@ -440,7 +569,6 @@ function detailAlertes(it){
   const a = alertes(it);
   return a.length ? '<ul class="al">' + a.map(x => '<li class="' + x.n + '">' + esc(x.t) + '</li>').join('') + '</ul>' : '<div class="fmeta">Aucune alerte.</div>';
 }
-function nbAlertes(it){ return alertes(it).filter(x => x.n !== 'info').length; }
 
 function ligneHtml(it){
   const lvl = niveau(it);
@@ -482,26 +610,33 @@ function visibles(){
 function render(){
   const has = items.length > 0;
   $('tableWrap').style.display = has ? 'block' : 'none';
-  $('toolbar').style.display = has ? 'flex' : 'none';
+  $('toolbar').style.display = (has || misDeCote.length) ? 'flex' : 'none';
   $('foot').style.display = has ? 'block' : 'none';
   const l = visibles();
   $('tbody').innerHTML = l.length ? l.map(ligneHtml).join('') : '<tr><td colspan="9"><div class="empty-note">Rien à afficher avec ce filtre.</div></td></tr>';
-  majResume(); majBarre();
+  majResume(); majBarre(); majBarreEnvoi(); renderCote(); renderLots();
 }
 function majResume(){
-  const n = items.length;
+  const n = items.length + misDeCote.length;
   if(!n){ $('summary').innerHTML = ''; return; }
   const sans = items.filter(i => !i.dateISO).length;
   const aV = items.filter(i => nbAlertes(i) > 0).length;
   const ech = items.filter(i => i.finISO && i.finISO < aujourdhui()).length;
-  const dbl = items.filter(i => i.doublon).length;
-  $('summary').innerHTML = '<span class="chip"><b>' + n + '</b> fichier' + (n > 1 ? 's' : '') + '</span>' +
+  $('summary').innerHTML = '<span class="chip"><b>' + items.length + '</b> à envoyer</span>' +
+    '<span class="chip"><b>' + misDeCote.length + '</b> mis de côté</span>' +
     '<span class="chip warn"><b>' + aV + '</b> à vérifier</span>' +
     '<span class="chip err"><b>' + sans + '</b> sans date</span>' +
-    '<span class="chip"><b>' + ech + '</b> échéance dépassée</span>' +
-    '<span class="chip"><b>' + dbl + '</b> doublon' + (dbl > 1 ? 's' : '') + ' possible' + (dbl > 1 ? 's' : '') + '</span>';
+    '<span class="chip"><b>' + ech + '</b> échéance dépassée</span>';
 }
 function majBarre(){ $('bulk').classList.toggle('show', items.some(i => i.sel)); }
+function majBarreEnvoi(){
+  const prets = items.filter(pret).length, inc = items.length - prets;
+  $('sendbar').classList.toggle('show', items.length > 0);
+  $('sendTxt').innerHTML = '<b>' + pluriel(prets, 'accord') + '</b> prêt' + (prets > 1 ? 's' : '') + ' à envoyer' + (inc ? ' · <b>' + inc + '</b> à compléter (titre ou date)' : '') +
+    (existantsOk ? '' : ' · <b style="color:var(--danger)">contrôle des doublons indisponible</b>');
+  $('sendBtn').disabled = enCours || !existantsOk || prets === 0;
+  $('sendBtn').textContent = prets ? 'Envoyer ' + pluriel(prets, 'accord') : 'Envoyer';
+}
 function majDerives(){
   recalcDoublons();
   items.forEach(it => {
@@ -514,7 +649,7 @@ function majDerives(){
     rows[0].querySelector('[data-f="dureeMois"]').style.display = it.dureeType === 'determinee' ? '' : 'none';
     rows[1].querySelector('[data-k="al"]').innerHTML = detailAlertes(it);
   });
-  majResume();
+  majResume(); majBarreEnvoi();
 }
 function appliquerChamp(it, f, v){
   switch(f){
@@ -527,6 +662,176 @@ function appliquerChamp(it, f, v){
   }
 }
 
+/* ---------- Mis de côté ---------- */
+function renderCote(){
+  $('coteBox').style.display = misDeCote.length ? 'block' : 'none';
+  $('coteCount').textContent = misDeCote.length ? '(' + misDeCote.length + ')' : '';
+  $('coteBody').innerHTML = misDeCote.map(it => {
+    const c = it.cote;
+    const existant = c.ex
+      ? '<strong>' + esc(c.ex.titre) + '</strong><div class="fmeta">Signé le ' + esc(fmtFR(c.ex.dateSignature)) + ' · statut : ' + esc(c.ex.statut || '—') + ' · ' + esc((c.ex.fichier && c.ex.fichier.nomFichier) || '') + '</div>'
+      : '<div class="fmeta">Même contenu que « ' + esc(c.avec || '') + ' » dans ce lot</div>';
+    const actions = (c.type === 'ressemblant' ? '<button class="mini" data-cote="forcer" data-id="' + it.id + '">Ajouter quand même</button> ' : '') +
+      '<button class="mini" data-cote="retirer" data-id="' + it.id + '">Retirer de la liste</button>';
+    return '<tr><td><div class="fname" title="' + esc(it.name) + '">' + esc(it.name) + '</div><div class="fmeta">' + fmtTaille(it.size) + '</div></td>' +
+      '<td><span class="motif motif-' + c.type + '">' + (c.type === 'identique' ? 'Identique' : 'Ressemblant') + '</span><div class="fmeta">' + esc(c.motif) + '</div></td>' +
+      '<td>' + existant + '</td><td>' + actions + '</td></tr>';
+  }).join('');
+}
+$('coteBody').addEventListener('click', e => {
+  const b = e.target.closest('[data-cote]'); if(!b) return;
+  const it = misDeCote.find(x => x.id === +b.dataset.id); if(!it) return;
+  if(b.dataset.cote === 'forcer'){
+    misDeCote = misDeCote.filter(x => x !== it);
+    it.forcer = true; it.coteInfo = (it.cote.ex ? it.cote.ex.titre : '') + ' (' + it.cote.motif.toLowerCase() + ')';
+    items.push(it); recalcDoublons(); toast('Ajouté à la liste d’envoi.');
+  } else { misDeCote = misDeCote.filter(x => x !== it); }
+  render();
+});
+
+/* ---------- Lots déjà envoyés ---------- */
+function lots(){
+  const g = {};
+  existants.forEach(a => { if(a.lotId){ (g[a.lotId] = g[a.lotId] || { lotId: a.lotId, creeLe: a.creeLe || '', creePar: a.creePar || '', accords: [] }).accords.push(a); } });
+  return Object.keys(g).map(k => g[k]).sort((a, b) => String(b.creeLe).localeCompare(String(a.creeLe)));
+}
+function renderLots(){
+  const l = lots().slice(0, 12);
+  $('lotsBox').style.display = l.length ? 'block' : 'none';
+  $('lotsList').innerHTML = l.map(x => '<div class="lotline"><div><strong>' + esc(x.lotId) + '</strong> · ' + pluriel(x.accords.length, 'accord') +
+    '<div class="meta">Envoyé le ' + esc((x.creeLe || '').slice(0, 10).split('-').reverse().join('/')) + ' par ' + esc(x.creePar || '—') + '</div></div>' +
+    '<button class="btn danger" data-lot="' + esc(x.lotId) + '">Annuler cet envoi</button></div>').join('');
+}
+$('lotsList').addEventListener('click', e => { const b = e.target.closest('[data-lot]'); if(b) annulerLot(b.dataset.lot); });
+
+/* ---------- Appels Worker (mêmes points d’accès que les CR) ---------- */
+async function jeton(){ const t = await window.ACC_FB.idToken(); if(!t) throw new Error('Session expirée, reconnecte-toi.'); return t; }
+async function televerser(file){
+  const t = await jeton();
+  const resp = await fetch('/api/cr-file-upload', { method: 'POST', headers: { 'Authorization': 'Bearer ' + t, 'Content-Type': 'application/octet-stream' }, body: file });
+  const data = await resp.json().catch(() => ({}));
+  if(!resp.ok) throw new Error(data.error || 'Erreur de téléversement');
+  return data;
+}
+async function supprimerFichierKV(fileId){
+  if(!fileId) return;
+  const t = await jeton();
+  const resp = await fetch('/api/cr-file?fileId=' + encodeURIComponent(fileId), { method: 'DELETE', headers: { 'Authorization': 'Bearer ' + t } });
+  if(!resp.ok){ const d = await resp.json().catch(() => ({})); throw new Error(d.error || 'Suppression du fichier impossible'); }
+}
+
+/* ---------- Envoi ---------- */
+function decouperTexte(it){
+  let pages = [];
+  if(it.pages) pages = it.pages;
+  else if(it.texte) pages = [{ page: null, lignes: it.texte.split('\n') }];
+  const parts = []; let cur = [], taille = 0;
+  pages.forEach(p => {
+    const t = p.lignes.reduce((s, l) => s + l.length + 4, 0) + 30;
+    if(cur.length && taille + t > 500000){ parts.push(cur); cur = []; taille = 0; }
+    cur.push(p); taille += t;
+  });
+  if(cur.length) parts.push(cur);
+  return parts;
+}
+async function envoyerUn(it, lotId){
+  let fileId = null, id = null, parts = [];
+  try{
+    const up = await televerser(it.file); fileId = up.fileId;
+    id = await window.ACC_FB.nouvelId();
+    parts = decouperTexte(it);
+    await window.ACC_FB.ecrireTexte(id, parts);
+    await window.ACC_FB.ecrireAccord(id, {
+      titre: it.titre.trim(), type: it.type, theme: it.theme || '', dateSignature: it.dateISO, dateSource: it.dateSource || '',
+      dureeType: it.dureeType || '', dureeMois: it.dureeMois ? +it.dureeMois : null,
+      echeance: it.finISO || '', echeanceEstimee: !!(it.finISO && !it.finConnue),
+      statut: it.statut || 'À qualifier', lien: it.lien || '',
+      fichier: { fileId: fileId, nomFichier: it.name, type: it.ext, taille: it.size, nbPages: it.nbPages || 0, empreinte: it.empreinte || '' },
+      texteParts: parts.length, accessible: false,
+      lotId: lotId, creeLe: new Date().toISOString(), creePar: session.email || '', forceMalgreSemblable: !!it.forcer
+    });
+    return id;
+  }catch(e){
+    if(id){ try{ await window.ACC_FB.supprimerTexte(id, parts.length); }catch(_){} }
+    if(fileId){ try{ await supprimerFichierKV(fileId); }catch(_){} }
+    throw e;
+  }
+}
+function overlay(show, titre){ $('envoiOverlay').classList.toggle('show', !!show); if(titre) $('envoiTitre').textContent = titre; }
+window.addEventListener('beforeunload', e => { if(enCours){ e.preventDefault(); e.returnValue = ''; } });
+
+async function envoyer(){
+  if(enCours) return;
+  const aEnvoyer = items.filter(pret);
+  if(!aEnvoyer.length){ toast('Aucune ligne prête : titre et date de signature obligatoires.'); return; }
+  const inc = items.length - aEnvoyer.length;
+  if(!confirm('Envoyer ' + pluriel(aEnvoyer.length, 'accord') + ' ?\n\nIls seront enregistrés non accessibles aux collaborateurs.' + (inc ? '\n\n' + pluriel(inc, 'ligne') + ' sans titre ou sans date reste dans la liste.' : ''))) return;
+  enCours = true; majBarreEnvoi();
+  const lotId = 'lot-' + horodatage();
+  overlay(true, 'Envoi en cours…');
+  const ok = [], ko = [];
+  for(let k = 0; k < aEnvoyer.length; k++){
+    const it = aEnvoyer[k];
+    $('envoiTxt').textContent = (k + 1) + ' / ' + aEnvoyer.length + ' : ' + it.name;
+    $('envoiBar').style.width = Math.round(k / aEnvoyer.length * 100) + '%';
+    try{ await envoyerUn(it, lotId); it.echec = ''; ok.push(it); }
+    catch(e){ it.echec = (e && e.message) ? e.message : String(e); ko.push(it); }
+  }
+  $('envoiBar').style.width = '100%';
+  items = items.filter(it => ok.indexOf(it) === -1);
+  ok.forEach(it => { it.pages = null; it.texte = ''; it.file = null; });
+  await rechargerExistants();
+  enCours = false; overlay(false);
+  afficherResultat(lotId, ok, ko);
+  render();
+}
+function afficherResultat(lotId, ok, ko){
+  const box = $('resultatBox');
+  box.style.display = 'block';
+  box.innerHTML = '<div class="panel" style="margin-top:14px;"><strong>' + (ok.length ? pluriel(ok.length, 'accord') + ' enregistré' + (ok.length > 1 ? 's' : '') + ' (' + esc(lotId) + ')' : 'Aucun accord enregistré') + '</strong>' +
+    ' · non accessibles aux collaborateurs.' +
+    (ko.length ? '<ul>' + ko.map(it => '<li class="err">' + esc(it.name) + ' : ' + esc(it.echec) + '</li>').join('') + '</ul><div class="fmeta" style="margin-top:6px;">Les lignes en échec sont restées dans la liste : corrige puis clique de nouveau sur « Envoyer ».</div>' : '') +
+    '<div style="margin-top:8px;"><button class="mini" id="resultatFermer">Fermer</button></div></div>';
+  $('resultatFermer').addEventListener('click', () => { box.style.display = 'none'; });
+}
+async function annulerLot(lotId){
+  const lot = lots().find(x => x.lotId === lotId); if(!lot || enCours) return;
+  if(!confirm('Annuler l’envoi « ' + lotId + ' » ?\n\n' + pluriel(lot.accords.length, 'accord') + ' seront supprimés définitivement, avec leurs fichiers et leur texte. Il n’y a pas de corbeille.')) return;
+  enCours = true; majBarreEnvoi(); overlay(true, 'Annulation en cours…');
+  const echecs = [];
+  for(let k = 0; k < lot.accords.length; k++){
+    const a = lot.accords[k];
+    $('envoiTxt').textContent = (k + 1) + ' / ' + lot.accords.length + ' : ' + a.titre;
+    $('envoiBar').style.width = Math.round(k / lot.accords.length * 100) + '%';
+    try{
+      await window.ACC_FB.supprimerTexte(a.id, a.texteParts || 0);
+      if(a.fichier && a.fichier.fileId) await supprimerFichierKV(a.fichier.fileId);
+      await window.ACC_FB.supprimerAccord(a.id);
+    }catch(e){ echecs.push(a.titre + ' : ' + (e && e.message ? e.message : e)); }
+  }
+  await rechargerExistants();
+  enCours = false; overlay(false); render();
+  toast(echecs.length ? echecs.length + ' accord(s) n’ont pas pu être supprimés : ' + echecs[0] : 'Envoi annulé.');
+}
+
+/* ---------- Connexion et base ---------- */
+async function rechargerExistants(){
+  try{ existants = await window.ACC_FB.chargerExistants(); existantsOk = true; erreurAcces = ''; banniere(''); }
+  catch(e){
+    existantsOk = false;
+    erreurAcces = (e && e.code === 'permission-denied') ? 'Ton compte n’est pas autorisé à consulter les accords : demande à un administrateur de l’ajouter aux comptes autorisés (et vérifie que la règle Firestore « accords » est publiée).' : 'Impossible de lire les accords déjà enregistrés (' + (e && e.message ? e.message : e) + ').';
+    banniere(erreurAcces);
+  }
+}
+window.onAccAuth = async function(user){
+  session.email = (user && user.email) || '';
+  $('who').textContent = session.email;
+  await rechargerExistants();
+  _existantsResolve();
+  render();
+};
+
+/* ---------- Événements du tableau ---------- */
 $('tbody').addEventListener('change', e => {
   const el = e.target, f = el.dataset.f, tr = el.closest('tr[data-id]');
   if(!f || !tr) return;
@@ -562,31 +867,126 @@ $('bulkApply').addEventListener('click', () => {
   if(!cibles.length || (!th && !st)){ toast('Choisis un thème ou un statut à appliquer.'); return; }
   cibles.forEach(i => { if(th) i.theme = th; if(st) i.statut = st; i.sel = false; });
   $('selAll').checked = false; render();
-  toast('Appliqué à ' + cibles.length + ' ligne' + (cibles.length > 1 ? 's' : '') + '.');
+  toast('Appliqué à ' + pluriel(cibles.length, 'ligne') + '.');
 });
+$('sendBtn').addEventListener('click', envoyer);
 
 async function ajouterFichiers(liste){
   const fichiers = Array.from(liste);
-  const connues = new Set(items.map(i => i.cle));
+  const connues = new Set(items.concat(misDeCote).map(i => i.cle));
   const aTraiter = [];
   fichiers.forEach(f => { const c = f.name + '|' + f.size + '|' + f.lastModified; if(!connues.has(c)){ connues.add(c); aTraiter.push({f:f, c:c}); } });
   if(!aTraiter.length){ toast('Ces fichiers sont déjà dans la liste.'); return; }
   $('progress').style.display = 'block';
+  await existantsPret;
+  let gardes = 0, cote = 0;
   for(let k = 0; k < aTraiter.length; k++){
     $('progressTxt').textContent = 'Lecture ' + (k+1) + ' / ' + aTraiter.length + ' : ' + aTraiter[k].f.name;
     $('progressBar').style.width = Math.round(k / aTraiter.length * 100) + '%';
-    items.push(await analyserFichier(aTraiter[k].f, aTraiter[k].c));
+    const it = await analyserFichier(aTraiter[k].f, aTraiter[k].c);
+    if(classerNouveau(it)) gardes++; else cote++;
   }
   $('progressBar').style.width = '100%';
   setTimeout(() => { $('progress').style.display = 'none'; }, 600);
   recalcDoublons(); render();
-  toast(aTraiter.length + ' fichier' + (aTraiter.length > 1 ? 's' : '') + ' analysé' + (aTraiter.length > 1 ? 's' : '') + '.');
+  toast(pluriel(aTraiter.length, 'fichier') + ' analysé' + (aTraiter.length > 1 ? 's' : '') + (cote ? ' · ' + cote + ' mis de côté' : '') + '.');
 }
 $('pick').addEventListener('click', () => $('file').click());
 $('file').addEventListener('change', e => { ajouterFichiers(e.target.files); e.target.value = ''; });
 ['dragenter','dragover'].forEach(ev => $('drop').addEventListener(ev, e => { e.preventDefault(); $('drop').classList.add('over'); }));
 ['dragleave','drop'].forEach(ev => $('drop').addEventListener(ev, e => { e.preventDefault(); $('drop').classList.remove('over'); }));
 $('drop').addEventListener('drop', e => { if(e.dataTransfer && e.dataTransfer.files.length) ajouterFichiers(e.dataTransfer.files); });
+</script>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js";
+  import { getAuth, sendSignInLinkToEmail, isSignInWithEmailLink, signInWithEmailLink, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js";
+  import { getFirestore, collection, getDocs, getDoc, setDoc, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+  apiKey: "AIzaSyACY8fyy8Rd9NyLJ855xsDyknuUMV-pAag",
+  authDomain: "cssct-cs2e-c655b.firebaseapp.com",
+  projectId: "cssct-cs2e-c655b",
+  storageBucket: "cssct-cs2e-c655b.firebasestorage.app",
+  messagingSenderId: "277603883255",
+  appId: "1:277603883255:web:b3b7a5c3097a60caac1bf2"
+};
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+  const colAccords = collection(db, "accords");
+
+  const actionCodeSettings = { url: window.location.origin + window.location.pathname, handleCodeInApp: true };
+
+  if (isSignInWithEmailLink(auth, window.location.href)) {
+    let email = window.prompt("Confirme ton adresse email pour terminer la connexion :");
+    signInWithEmailLink(auth, email, window.location.href)
+      .then(() => window.history.replaceState({}, document.title, window.location.pathname))
+      .catch(err => alert("Connexion impossible : " + err.message));
+  }
+
+  function applyBrandingLogo(){
+    getDoc(doc(db, 'config', 'branding')).then((snap) => {
+      const data = snap.exists() ? snap.data() : {};
+      if(!data.logoBase64) return;
+      document.querySelectorAll('.brand-mark').forEach(function(el){
+        el.style.background = 'none';
+        el.innerHTML = '<img src="data:image/png;base64,' + data.logoBase64 + '" alt="Logo" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">';
+      });
+    }).catch(() => {});
+  }
+
+  window.ACC_FB = {
+    async idToken(){ return auth.currentUser ? await auth.currentUser.getIdToken() : null; },
+    async chargerExistants(){ const snap = await getDocs(colAccords); return snap.docs.map(d => ({ id: d.id, ...d.data() })); },
+    async nouvelId(){ return doc(colAccords).id; },
+    async ecrireTexte(id, parts){
+      for(let n = 0; n < parts.length; n++){
+        await setDoc(doc(db, 'accords_texte', id + '_' + n), { accordId: id, part: n, pages: parts[n] });
+      }
+    },
+    async ecrireAccord(id, data){ await setDoc(doc(db, 'accords', id), data); },
+    async supprimerTexte(id, nbParts){
+      for(let n = 0; n < nbParts; n++){ await deleteDoc(doc(db, 'accords_texte', id + '_' + n)); }
+    },
+    async supprimerAccord(id){ await deleteDoc(doc(db, 'accords', id)); }
+  };
+
+  let appele = false;
+  onAuthStateChanged(auth, (user) => {
+    document.getElementById('authChecking').style.display = 'none';
+    if (user) {
+      document.getElementById('authGate').style.display = 'none';
+      applyBrandingLogo();
+      if(!appele){ appele = true; window.onAccAuth(user); }
+    } else {
+      document.getElementById('authGate').style.display = 'flex';
+      document.getElementById('authForm').style.display = 'block';
+    }
+  });
+
+  document.getElementById('authSendLink').addEventListener('click', () => {
+    const email = document.getElementById('authEmail').value.trim();
+    const msg = document.getElementById('authMsg');
+    if (!email) { msg.textContent = "Merci de saisir ton email."; return; }
+    sendSignInLinkToEmail(auth, email, actionCodeSettings)
+      .then(() => { msg.style.color = '#019682'; msg.textContent = "Lien envoyé, vérifie ta boîte mail."; })
+      .catch(err => { msg.textContent = "Erreur : " + err.message; });
+  });
+  document.getElementById('pastedLinkBtn').addEventListener('click', () => {
+    const link = document.getElementById('pastedLinkInput').value.trim();
+    const msg = document.getElementById('pastedLinkMsg');
+    if (!link) { msg.textContent = "Colle d'abord le lien reçu par email."; return; }
+    if (!isSignInWithEmailLink(auth, link)) { msg.textContent = "Ce lien ne semble pas valide."; return; }
+    let email = window.prompt("Confirme ton adresse email pour terminer la connexion :");
+    if (!email) return;
+    signInWithEmailLink(auth, email, link)
+      .then(() => { msg.style.color = '#019682'; msg.textContent = "Connexion réussie !"; })
+      .catch(err => { msg.textContent = "Erreur : " + err.message; });
+  });
+  document.getElementById('logoutBtn').addEventListener('click', () => {
+    if(confirm('Se déconnecter ?')){ signOut(auth).then(() => { window.location.href = 'index.html'; }); }
+  });
 </script>
 </body>
 </html>
