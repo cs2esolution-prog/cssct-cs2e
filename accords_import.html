@@ -24,7 +24,7 @@
   }
   *{box-sizing:border-box;}
   body{margin:0; background:var(--paper); color:var(--ink); font-family:'Inter',system-ui,sans-serif; line-height:1.5;}
-  .wrap{max-width:1280px; margin:0 auto; padding:32px 24px 90px;}
+  .wrap{max-width:1480px; margin:0 auto; padding:32px 24px 90px;}
   header.top{display:flex; align-items:center; justify-content:space-between; padding-bottom:20px; border-bottom:2px solid var(--ink); margin-bottom:24px; flex-wrap:wrap; gap:10px;}
   .brand{display:flex; align-items:center; gap:12px;}
   .brand-mark{width:38px; height:38px; border-radius:50%; background:conic-gradient(var(--teal) 0deg 120deg, var(--gold) 120deg 240deg, var(--purple) 240deg 360deg); flex:none;}
@@ -60,7 +60,7 @@
   #bulk.show{display:flex;}
 
   .tablewrap{overflow-x:auto; background:#fff; border:1px solid var(--line); border-radius:var(--radius);}
-  table{border-collapse:collapse; width:100%; min-width:1120px; font-size:12.5px;}
+  table{border-collapse:collapse; table-layout:fixed; width:1400px; min-width:100%; font-size:12.5px;}
   th{position:sticky; top:0; background:#FBFAF7; text-align:left; font-size:10.5px; text-transform:uppercase; letter-spacing:.06em; color:var(--ink-soft); padding:9px 8px; border-bottom:1px solid var(--line); white-space:nowrap;}
   td{padding:8px; border-bottom:1px solid var(--line); vertical-align:top;}
   tr.r{border-left:4px solid var(--teal);}
@@ -70,7 +70,7 @@
   td input[type=text], td input[type=date], td input[type=number], td select, .detail input[type=text], .detail input[type=date]{
     width:100%; font-family:inherit; font-size:12.5px; padding:6px 7px; border:1px solid var(--line); border-radius:6px; background:#fff;}
   td input:focus, td select:focus{outline:2px solid var(--teal); outline-offset:-1px;}
-  .fname{font-weight:600; max-width:230px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .fname{font-weight:600; max-width:190px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
   .fmeta{font-size:11px; color:var(--ink-soft);}
   .src{display:inline-block; font-size:10px; font-weight:700; border-radius:9px; padding:2px 8px; margin-top:4px;}
   .src-texte{background:#E4F3EF; color:var(--teal-dark);}
@@ -133,11 +133,10 @@
 
   <div class="tablewrap" id="tableWrap" style="display:none;">
     <table>
+      <colgroup><col style="width:34px"><col style="width:210px"><col style="width:270px"><col style="width:110px"><col style="width:190px"><col style="width:150px"><col style="width:230px"><col style="width:130px"><col style="width:76px"></colgroup>
       <thead><tr>
-        <th style="width:30px"><input type="checkbox" id="selAll" title="Tout sélectionner"></th>
-        <th>Fichier</th><th style="min-width:260px">Titre</th><th style="width:110px">Type</th>
-        <th style="min-width:170px">Thème</th><th style="width:150px">Signature</th>
-        <th style="min-width:190px">Durée / échéance</th><th style="width:120px">Statut</th><th style="width:70px">Détails</th>
+        <th><input type="checkbox" id="selAll" title="Tout sélectionner"></th>
+        <th>Fichier</th><th>Titre</th><th>Type</th><th>Thème</th><th>Signature</th><th>Durée / échéance</th><th>Statut</th><th>Détails</th>
       </tr></thead>
       <tbody id="tbody"></tbody>
     </table>
