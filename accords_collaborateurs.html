@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex">
+<title>Accords d'entreprise . CSSCT</title>
+<link rel="icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,500;8..60,600;8..60,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --teal:#019682; --teal-dark:#017162; --purple:#5A4570; --gold:#C6AB76;
+    --paper:#F7F5F1; --ink:#2B2A2E; --ink-soft:#6B6873; --line:#E4E0D8; --danger:#A85D45; --warn:#B7822B; --radius:12px;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0; background:var(--paper); color:var(--ink); font-family:'Inter',system-ui,sans-serif; line-height:1.5;}
+  .wrap{max-width:760px; margin:0 auto; padding:32px 20px 80px;}
+  .brand{display:flex; align-items:center; gap:12px; padding-bottom:20px; border-bottom:2px solid var(--ink); margin-bottom:24px;}
+  .brand-mark{width:38px; height:38px; border-radius:50%; background:conic-gradient(var(--teal) 0deg 120deg, var(--gold) 120deg 240deg, var(--purple) 240deg 360deg); flex:none; overflow:hidden;}
+  .brand-text{font-family:'Source Serif 4', serif; font-weight:700; font-size:19px;}
+  .brand-text span{color:var(--teal);}
+  .back-link{margin-left:auto; font-size:12px; font-weight:600; color:var(--ink-soft); text-decoration:none; border:1px solid var(--line); padding:6px 12px; border-radius:20px;}
+  .back-link:hover{border-color:var(--teal); color:var(--teal-dark);}
+  h1{font-family:'Source Serif 4',serif; font-size:20px; margin:0 0 4px;}
+  .subtitle{font-size:12.5px; color:var(--ink-soft); margin:0 0 20px;}
+
+  #gate{display:flex; align-items:center; justify-content:center; min-height:60vh; padding:20px;}
+  #gateBox{background:#fff; border:1px solid var(--line); border-radius:16px; padding:32px; max-width:360px; width:100%; text-align:center;}
+  #gateBox input{width:100%; padding:11px 14px; border:1px solid var(--line); border-radius:20px; font-size:14px; margin:14px 0 10px; text-align:center;}
+  #gateBox button{width:100%; background:var(--ink); color:#fff; border:none; padding:11px; border-radius:20px; font-weight:600; cursor:pointer; font-size:13.5px;}
+  #gateMsg{font-size:12px; color:var(--danger); min-height:16px; margin-top:8px;}
+  #app{display:none;}
+
+  #searchInput{width:100%; padding:11px 16px; border:1px solid var(--line); border-radius:22px; font-size:13.5px; font-family:inherit;}
+  #searchInput:focus{outline:2px solid var(--teal); outline-offset:-1px;}
+  #searchHint{font-size:11.5px; color:var(--ink-soft); margin:6px 6px 14px; min-height:16px;}
+  .filters{display:flex; flex-wrap:wrap; gap:8px; margin:0 0 14px;}
+  .filters select{font-family:inherit; font-size:12.5px; padding:7px 10px; border:1px solid var(--line); border-radius:18px; background:#fff; max-width:100%;}
+  .filters .reset{background:none; border:none; color:var(--teal-dark); font-weight:600; font-size:12px; cursor:pointer; font-family:inherit;}
+
+  .card{background:#fff; border:1px solid var(--line); border-left:4px solid var(--teal); border-radius:var(--radius); padding:16px 18px; margin-bottom:12px;}
+  .card .titre{font-weight:700; font-size:14.5px;}
+  .card .meta{font-size:11.5px; color:var(--ink-soft); margin-top:2px; margin-bottom:10px;}
+  .card .top{display:flex; justify-content:space-between; align-items:flex-start; gap:10px;}
+  .badges{display:flex; flex-wrap:wrap; gap:6px; justify-content:flex-end; flex-shrink:0; max-width:48%;}
+  .badge{display:inline-block; padding:4px 10px; border-radius:12px; font-size:10.5px; font-weight:700; white-space:nowrap;}
+  .b-type{background:#ECE6F2; color:var(--purple);}
+  .b-vigueur{background:#E4F3EF; color:var(--teal-dark);} .b-echu{background:#ECEAE4; color:#6B6873;}
+  .b-denonce{background:#F6DDD3; color:var(--danger);} .b-remplace{background:#ECE6F2; color:var(--purple);}
+  .b-over{background:#F6DDD3; color:var(--danger);} .b-neutre{background:#F0EDE4; color:var(--ink-soft);}
+  .b-new{background:#FDECEA; color:#B23B3B;}
+  .lien{font-size:11.5px; color:var(--ink-soft); margin:-4px 0 10px;}
+  .file-row{display:flex; align-items:center; justify-content:space-between; gap:10px; background:var(--paper); border:1px solid var(--line); border-radius:8px; padding:8px 12px;}
+  .file-row .fname{font-size:12.5px; font-weight:600; word-break:break-word;}
+  .file-row .ftype{font-size:10.5px; color:var(--ink-soft); text-transform:uppercase; letter-spacing:.04em;}
+  .file-row button, .btn-mini{background:none; border:1px solid var(--line); color:var(--ink); font-size:12px; font-weight:600; padding:6px 12px; border-radius:16px; cursor:pointer; font-family:inherit; white-space:nowrap;}
+  .file-row button:hover, .btn-mini:hover{border-color:var(--teal); color:var(--teal-dark);}
+  .empty-note{font-size:13px; color:var(--ink-soft); text-align:center; padding:30px 10px;}
+  @media (max-width:560px){ .card .top{flex-direction:column;} .badges{max-width:100%; justify-content:flex-start;} }
+
+  #results{display:none; flex-direction:column; gap:8px; margin-bottom:20px;}
+  .sr-group{background:#fff; border:1px solid var(--line); border-radius:10px; overflow:hidden;}
+  .sr-head{display:flex; align-items:center; justify-content:space-between; gap:10px; padding:12px 14px; cursor:pointer;}
+  .sr-head:hover{background:var(--paper);}
+  .sr-count{font-size:11px; color:var(--ink-soft); background:var(--paper); border-radius:10px; padding:3px 9px; white-space:nowrap;}
+  .sr-body{display:none; flex-direction:column; gap:8px; padding:0 14px 12px;}
+  .sr-body.open{display:flex;}
+  .sr-card{background:#fff; border:1px solid var(--line); border-radius:10px; padding:12px 14px;}
+  .sr-top{display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap; align-items:flex-start; font-size:11px; color:var(--ink-soft);}
+  .sr-ctx{font-size:12px; background:#FBFAF7; border:1px solid var(--line); border-radius:6px; padding:8px 10px; margin-top:8px; line-height:1.5; word-break:break-word;}
+  mark{background:#FCEFC7; border-radius:2px;}
+</style>
+</head>
+<body>
+
+<div id="gate">
+  <div id="gateBox">
+    <div class="brand" style="border:none; padding:0; margin:0 0 6px; justify-content:center;">
+      <div class="brand-mark"></div>
+      <div class="brand-text">CS<span>2E</span> · CSSCT</div>
+    </div>
+    <p style="font-size:13px;color:var(--ink-soft);margin:10px 0 0;">Accords d'entreprise mis à disposition par vos représentants du personnel. Le mot de passe est le même que celui des comptes-rendus du CSE.</p>
+    <input type="password" id="gatePassword" placeholder="Mot de passe" autocomplete="current-password">
+    <button id="gateBtn">Accéder</button>
+    <div id="gateMsg"></div>
+  </div>
+</div>
+
+<div id="app">
+  <div class="wrap">
+    <div class="brand">
+      <div class="brand-mark"></div>
+      <div class="brand-text">CS<span>2E</span> · CSSCT</div>
+      <a class="back-link" href="portail.html">← Portail</a>
+    </div>
+    <h1>Accords d’entreprise</h1>
+    <p class="subtitle">Accords et avenants mis à disposition par vos représentants du personnel — du plus récent au plus ancien.</p>
+
+    <input type="text" id="searchInput" placeholder="🔎 Rechercher un mot dans le texte des accords…" autocomplete="off">
+    <div id="searchHint"></div>
+    <div id="results"></div>
+
+    <div class="filters" id="filters" style="display:none;">
+      <select id="fTheme" aria-label="Thème"></select>
+      <select id="fType" aria-label="Type"></select>
+      <select id="fStatut" aria-label="Statut"></select>
+      <select id="fAnnee" aria-label="Année de signature"></select>
+      <button class="reset" id="fReset">Réinitialiser</button>
+    </div>
+    <div id="liste"><p class="empty-note">Chargement…</p></div>
+  </div>
+</div>
+
+<script>
+  // Même jeton de session que la page des comptes-rendus (cr_reunion_collaborateurs.html) :
+  // un seul mot de passe, saisi une seule fois, ouvre les deux pages.
+  const TOKEN_KEY = 'cr_collab_token';
+  const SEEN_KEY = 'accords_collab_vus';
+  let ACCORDS = [];
+  const TEXTES = new Map();     // id -> [{page, lignes}]
+  let rechercheSeq = 0, debounce = null;
+
+  const $ = id => document.getElementById(id);
+  function esc(s){ return (s == null ? '' : String(s)).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+  function norm(s){ return String(s == null ? '' : s).normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[\u2018\u2019\u00b4`]/g,"'"); }
+  function fmtFR(iso){ return iso ? iso.split('-').reverse().join('/') : ''; }
+  function pluriel(n, mot){ return n + ' ' + mot + (n > 1 ? 's' : ''); }
+  function aujourdhui(){ const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0'); }
+
+  /* Suivi « nouveau » local au navigateur (pas de compte individuel), comme pour les CR. */
+  function getSeen(){ try{ return new Set(JSON.parse(localStorage.getItem(SEEN_KEY) || '[]')); }catch(e){ return new Set(); } }
+  function saveSeen(set){ try{ localStorage.setItem(SEEN_KEY, JSON.stringify(Array.from(set))); }catch(e){} }
+  let SEEN = getSeen();
+  function marquerVu(fileId){ if(!fileId || SEEN.has(fileId)) return; SEEN.add(fileId); saveSeen(SEEN); renderListe(); }
+
+  function decodeTokenExp(token){
+    try{
+      const part = token.split('.')[0].replace(/-/g,'+').replace(/_/g,'/');
+      const pad = part + '='.repeat((4 - part.length % 4) % 4);
+      return JSON.parse(atob(pad)).exp || 0;
+    }catch(e){ return 0; }
+  }
+  function getStoredToken(){
+    const t = localStorage.getItem(TOKEN_KEY);
+    if(!t) return null;
+    if(decodeTokenExp(t) < Math.floor(Date.now()/1000)){ localStorage.removeItem(TOKEN_KEY); return null; }
+    return t;
+  }
+  function retourPorte(msg){
+    localStorage.removeItem(TOKEN_KEY);
+    $('app').style.display = 'none';
+    $('gate').style.display = 'flex';
+    $('gateMsg').textContent = msg || '';
+  }
+
+  async function checkPassword(){
+    const pwd = $('gatePassword').value, msg = $('gateMsg');
+    msg.textContent = '';
+    if(!pwd){ msg.textContent = 'Merci de saisir le mot de passe.'; return; }
+    try{
+      const resp = await fetch('/api/cr-password-check', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ password: pwd }) });
+      const data = await resp.json();
+      if(!resp.ok){ msg.textContent = data.error || 'Erreur de connexion.'; return; }
+      localStorage.setItem(TOKEN_KEY, data.token);
+      unlockApp();
+    }catch(err){ msg.textContent = 'Erreur : ' + err.message; }
+  }
+  $('gateBtn').addEventListener('click', checkPassword);
+  $('gatePassword').addEventListener('keydown', e => { if(e.key === 'Enter') checkPassword(); });
+
+  async function unlockApp(){
+    $('gate').style.display = 'none';
+    $('app').style.display = 'block';
+    await chargerListe();
+  }
+  async function chargerListe(){
+    const token = getStoredToken();
+    if(!token){ retourPorte('Session expirée, merci de ressaisir le mot de passe.'); return; }
+    try{
+      const resp = await fetch('/api/accords-liste-publique?session=' + encodeURIComponent(token));
+      const data = await resp.json();
+      if(!resp.ok){ retourPorte('Session expirée, merci de ressaisir le mot de passe.'); return; }
+      ACCORDS = data.accords || [];
+      construireFiltres();
+      renderListe();
+    }catch(err){
+      $('liste').innerHTML = '<p class="empty-note">Erreur de chargement : ' + esc(err.message) + '</p>';
+    }
+  }
+
+  /* ---------- Affichage ---------- */
+  const STATUT_CLS = { 'En vigueur':'vigueur', 'Échu':'echu', 'Dénoncé':'denonce', 'Remplacé':'remplace' };
+  function badgesHtml(a){
+    const b = ['<span class="badge b-type">' + esc(a.type || 'Accord') + '</span>'];
+    // « À qualifier » est un statut de travail des élus : il n'est pas montré aux collaborateurs.
+    if(a.statut && a.statut !== 'À qualifier') b.push('<span class="badge b-' + (STATUT_CLS[a.statut] || 'neutre') + '">' + esc(a.statut) + '</span>');
+    if(a.echeance){
+      const est = a.echeanceEstimee ? ' (estimée)' : '';
+      b.push(a.echeance < aujourdhui() ? '<span class="badge b-over">Échéance dépassée le ' + esc(fmtFR(a.echeance)) + esc(est) + '</span>' : '<span class="badge b-neutre">Échéance le ' + esc(fmtFR(a.echeance)) + esc(est) + '</span>');
+    } else if(a.dureeType === 'indeterminee') b.push('<span class="badge b-neutre">Durée indéterminée</span>');
+    return b.join('');
+  }
+  function construireFiltres(){
+    const uniques = (cle) => Array.from(new Set(ACCORDS.map(a => a[cle]).filter(Boolean))).sort((x, y) => String(x).localeCompare(String(y), 'fr'));
+    const valeurs = { fTheme: $('fTheme').value, fType: $('fType').value, fStatut: $('fStatut').value, fAnnee: $('fAnnee').value };
+    const opts = (liste, vide) => '<option value="">' + vide + '</option>' + liste.map(o => '<option value="' + esc(o) + '">' + esc(o) + '</option>').join('');
+    const statuts = uniques('statut').filter(s => s !== 'À qualifier');
+    const annees = Array.from(new Set(ACCORDS.map(a => String(a.dateSignature || '').slice(0, 4)).filter(Boolean))).sort().reverse();
+    $('fTheme').innerHTML = opts(uniques('theme'), 'Tous les thèmes');
+    $('fType').innerHTML = opts(uniques('type'), 'Tous les types');
+    $('fStatut').innerHTML = opts(statuts, 'Tous les statuts');
+    $('fAnnee').innerHTML = opts(annees, 'Toutes les années');
+    Object.keys(valeurs).forEach(k => { $(k).value = valeurs[k]; });
+    $('filters').style.display = ACCORDS.length > 1 ? 'flex' : 'none';
+  }
+  function filtrer(){
+    const th = $('fTheme').value, ty = $('fType').value, st = $('fStatut').value, an = $('fAnnee').value;
+    return ACCORDS.filter(a => (!th || a.theme === th) && (!ty || a.type === ty) && (!st || a.statut === st) && (!an || String(a.dateSignature || '').slice(0, 4) === an));
+  }
+  function renderListe(){
+    const el = $('liste');
+    if(!ACCORDS.length){ el.innerHTML = '<p class="empty-note">Aucun accord n’est pour le moment mis à disposition.</p>'; return; }
+    const items = filtrer();
+    if(!items.length){ el.innerHTML = '<p class="empty-note">Aucun accord ne correspond à ces filtres.</p>'; return; }
+    el.innerHTML = items.map(a => {
+      const f = a.fichier || {};
+      const nouveau = f.fileId && !SEEN.has(f.fileId);
+      const meta = [a.dateSignature ? 'Signé le ' + fmtFR(a.dateSignature) : '', a.theme].filter(Boolean).map(esc).join(' · ');
+      const fichier = f.fileId
+        ? '<div class="file-row"><div><div class="fname">📄 ' + esc(f.nomFichier || 'Accord') + '</div><div class="ftype">' + esc(f.type || '') + (f.nbPages ? ' · ' + f.nbPages + ' p.' : '') + '</div></div><button data-ouvrir="' + esc(f.fileId) + '" data-nom="' + esc(f.nomFichier || 'accord') + '">Ouvrir</button></div>'
+        : '';
+      return '<div class="card"><div class="top"><div><div class="titre">' + esc(a.titre || 'Sans titre') + '</div><div class="meta">' + meta + '</div></div>' +
+        '<div class="badges">' + (nouveau ? '<span class="badge b-new">🆕 Nouveau</span>' : '') + badgesHtml(a) + '</div></div>' +
+        (a.lien ? '<div class="lien">↪ ' + esc(a.lien) + '</div>' : '') + fichier + '</div>';
+    }).join('');
+  }
+  ['fTheme','fType','fStatut','fAnnee'].forEach(id => $(id).addEventListener('change', () => { renderListe(); lancerRecherche(); }));
+  $('fReset').addEventListener('click', () => { ['fTheme','fType','fStatut','fAnnee'].forEach(id => { $(id).value = ''; }); renderListe(); lancerRecherche(); });
+  $('liste').addEventListener('click', e => { const b = e.target.closest('[data-ouvrir]'); if(b) ouvrirFichier(b.dataset.ouvrir, b.dataset.nom); });
+
+  async function ouvrirFichier(fileId, nom, page){
+    try{
+      const token = getStoredToken();
+      if(!token){ retourPorte('Session expirée, merci de ressaisir le mot de passe.'); return; }
+      const resp = await fetch('/api/cr-file?fileId=' + encodeURIComponent(fileId) + '&nom=' + encodeURIComponent(nom || 'accord') + '&session=' + encodeURIComponent(token));
+      if(!resp.ok){ alert("Impossible d'ouvrir ce fichier."); return; }
+      const blob = await resp.blob();
+      window.open(URL.createObjectURL(blob) + (page ? '#page=' + page : ''), '_blank');
+      marquerVu(fileId);
+    }catch(err){ alert('Erreur : ' + err.message); }
+  }
+
+  /* ---------- Recherche plein texte (textes chargés au fil de l'eau, une requête par accord) ---------- */
+  async function chargerTextes(liste){
+    const manquants = liste.filter(a => a.avecTexte && !TEXTES.has(a.id));
+    const token = getStoredToken();
+    let fait = 0;
+    for(let i = 0; i < manquants.length; i += 4){
+      await Promise.all(manquants.slice(i, i + 4).map(async a => {
+        try{
+          const resp = await fetch('/api/accord-texte?id=' + encodeURIComponent(a.id) + '&session=' + encodeURIComponent(token));
+          if(resp.status === 401){ retourPorte('Session expirée, merci de ressaisir le mot de passe.'); throw new Error('session'); }
+          const data = await resp.json().catch(() => ({}));
+          TEXTES.set(a.id, resp.ok ? (data.pages || []) : []);
+        }catch(e){ if(e.message === 'session') throw e; TEXTES.set(a.id, []); }
+        fait++; $('searchHint').textContent = 'Chargement du texte des accords… ' + fait + ' / ' + manquants.length;
+      }));
+    }
+  }
+  function surligner(ligne, q){
+    const nl = norm(ligne).toLowerCase(), nq = norm(q).toLowerCase();
+    if(!nq) return esc(ligne);
+    if(nl.length !== ligne.length) return '<mark>' + esc(ligne) + '</mark>';
+    let out = '', i = 0, k;
+    while((k = nl.indexOf(nq, i)) !== -1){ out += esc(ligne.slice(i, k)) + '<mark>' + esc(ligne.slice(k, k + nq.length)) + '</mark>'; i = k + nq.length; }
+    return out + esc(ligne.slice(i));
+  }
+  function chercher(q, liste){
+    const nq = norm(q).toLowerCase(), res = [];
+    const pousser = (a, lignes, extra) => lignes.forEach((l, idx) => {
+      if(norm(l).toLowerCase().indexOf(nq) !== -1) res.push(Object.assign({ a: a, avant: lignes.slice(Math.max(0, idx - 3), idx), ligne: l, apres: lignes.slice(idx + 1, idx + 4) }, extra));
+    });
+    liste.slice().sort((x, y) => String(y.dateSignature || '').localeCompare(String(x.dateSignature || ''))).forEach(a => {
+      pousser(a, [a.titre || ''], { source: 'titre' });
+      if(a.lien) pousser(a, [a.lien], { source: 'lien' });
+      (TEXTES.get(a.id) || []).forEach(pg => pousser(a, pg.lignes || [], { source: 'fichier', page: pg.page }));
+    });
+    return res;
+  }
+  function lancerRecherche(){ clearTimeout(debounce); debounce = setTimeout(rechercher, 200); }
+  async function rechercher(){
+    const q = $('searchInput').value.trim(), seq = ++rechercheSeq, box = $('results');
+    if(q.length < 2){ box.style.display = 'none'; box.innerHTML = ''; $('searchHint').textContent = q ? 'Saisis au moins 2 caractères.' : ''; return; }
+    const cibles = filtrer();
+    try{ await chargerTextes(cibles); }catch(e){ return; }
+    if(seq !== rechercheSeq) return;
+    const res = chercher(q, cibles);
+    const filtre = ['fTheme','fType','fStatut','fAnnee'].some(id => $(id).value);
+    $('searchHint').textContent = res.length ? pluriel(res.length, 'résultat') + ' dans ' + pluriel(new Set(res.map(r => r.a.id)).size, 'accord') + (filtre ? ' (filtres actifs : la recherche ne porte que sur les accords affichés)' : '') + (res.length > 200 ? ' · affichage limité aux 200 premiers' : '') : (filtre ? 'Aucun résultat parmi les accords affichés (filtres actifs).' : '');
+    box.style.display = 'flex';
+    if(!res.length){ box.innerHTML = '<p class="empty-note">Aucun résultat.</p>'; return; }
+    const groupes = [], parId = {};
+    res.slice(0, 200).forEach(r => { if(!parId[r.a.id]){ parId[r.a.id] = { a: r.a, items: [] }; groupes.push(parId[r.a.id]); } parId[r.a.id].items.push(r); });
+    box.innerHTML = groupes.map((g, gi) => {
+      const f = g.a.fichier || {};
+      const items = g.items.map(r => {
+        const ctx = r.avant.map(esc).join('<br>') + (r.avant.length ? '<br>' : '') + surligner(r.ligne, q) + (r.apres.length ? '<br>' : '') + r.apres.map(esc).join('<br>');
+        const lib = r.source === 'fichier' ? ((r.page ? 'page ' + r.page + ' · ' : '') + esc(f.nomFichier || '')) : (r.source === 'titre' ? 'Titre' : 'Lien avec un autre accord');
+        const ouvrir = r.source === 'fichier' && f.fileId ? '<button class="btn-mini" data-ouvrir="' + esc(f.fileId) + '" data-nom="' + esc(f.nomFichier || 'accord') + '" data-page="' + (r.page || '') + '">📄 Ouvrir' + (r.page ? ' (p.' + r.page + ')' : '') + '</button>' : '';
+        return '<div class="sr-card"><div class="sr-top"><div>' + lib + '</div>' + ouvrir + '</div><div class="sr-ctx">' + ctx + '</div></div>';
+      }).join('');
+      return '<div class="sr-group"><div class="sr-head" data-groupe="g' + gi + '"><div><strong style="font-size:13px;">' + esc(g.a.titre) + '</strong><div style="font-size:11px;color:var(--ink-soft);">' + esc(fmtFR(g.a.dateSignature)) + '</div></div><span class="sr-count">' + pluriel(g.items.length, 'résultat') + '</span></div><div class="sr-body' + (gi === 0 ? ' open' : '') + '" id="g' + gi + '">' + items + '</div></div>';
+    }).join('');
+  }
+  $('searchInput').addEventListener('input', lancerRecherche);
+  $('results').addEventListener('click', e => {
+    const o = e.target.closest('[data-ouvrir]'), h = e.target.closest('[data-groupe]');
+    if(o){ ouvrirFichier(o.dataset.ouvrir, o.dataset.nom, o.dataset.page); return; }
+    if(h){ const b = $(h.dataset.groupe); if(b) b.classList.toggle('open'); }
+  });
+
+  // Logo (facultatif, identique aux autres pages publiques ; à adapter à l'identifiant de projet
+  // Firebase lors de la duplication d'une instance, comme cr_reunion_collaborateurs.html)
+  (async function applyBranding(){
+    try{
+      const resp = await fetch('https://firestore.googleapis.com/v1/projects/cssct-cs2e-c655b/databases/(default)/documents/config/branding');
+      if(!resp.ok) return;
+      const data = await resp.json();
+      const b64 = data.fields && data.fields.logoBase64 && data.fields.logoBase64.stringValue;
+      if(!b64) return;
+      document.querySelectorAll('.brand-mark').forEach(function(el){
+        el.style.background = 'none';
+        el.innerHTML = '<img src="data:image/png;base64,' + b64 + '" alt="Logo" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">';
+      });
+    }catch(e){}
+  })();
+
+  if(getStoredToken()){ unlockApp(); }
+</script>
+</body>
+</html>

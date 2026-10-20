@@ -3,11 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Portail CSE</title>
+<title>Portail CSSCT</title>
 <link rel="icon" href="icon-192.png">
 <link rel="manifest" href="manifest-portail.json">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
-<meta name="apple-mobile-web-app-title" content="Portail CSE">
+<meta name="apple-mobile-web-app-title" content="Portail CSSCT">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#2B2A2E">
@@ -40,6 +40,7 @@
   .tile.besoin{border-left:4px solid var(--teal);}
   .tile.annuaire{border-left:4px solid var(--gold);}
   .tile.cr{border-left:4px solid var(--purple);}
+  .tile.accords{border-left:4px solid #017162;}
 
   .install-banner{display:flex; align-items:center; gap:14px; background:linear-gradient(135deg, var(--teal) 0%, var(--teal-dark) 100%); border-radius:var(--radius); padding:18px 20px; margin-bottom:24px; text-decoration:none; color:#fff; transition:box-shadow .15s;}
   .install-banner:hover{box-shadow:0 6px 20px rgba(1,150,130,.35);}
@@ -90,6 +91,11 @@
   <a class="tile cr" href="cr_reunion_collaborateurs.html">
     <div class="t-icon">📋</div>
     <div><div class="t-title">Comptes-rendus CSE</div><div class="t-desc">Comptes-rendus de réunion mis à disposition par le CSE (accès protégé par mot de passe).</div></div>
+  </a>
+
+  <a class="tile accords" href="accords_collaborateurs.html">
+    <div class="t-icon">📑</div>
+    <div><div class="t-title">Accords d'entreprise</div><div class="t-desc">Accords et avenants mis à disposition par le CSE, avec recherche dans le texte (même mot de passe que les comptes-rendus).</div></div>
   </a>
 
   <p class="footer-note">Tes démarches sont étudiées par la commission santé, sécurité et conditions de travail (CSSCT).</p>

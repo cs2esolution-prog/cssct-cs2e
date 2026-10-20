@@ -60,6 +60,14 @@
   .b-vigueur{background:#E4F3EF; color:var(--teal-dark);} .b-qualifier{background:#FBF1DC; color:var(--warn);} .b-echu{background:#ECEAE4; color:#6B6873;}
   .b-denonce{background:#F6DDD3; color:var(--danger);} .b-remplace{background:#ECE6F2; color:var(--purple);}
   .b-over{background:#F6DDD3; color:var(--danger);} .b-soon{background:#FBF1DC; color:var(--warn);} .b-neutre{background:#F0EDE4; color:var(--ink-soft);}
+  .chk{width:17px; height:17px; flex:none; accent-color:var(--teal-dark); cursor:pointer;}
+  .b-acc{background:#E4F3EF; color:var(--teal-dark);}
+  #selBar{display:none; align-items:center; gap:10px; flex-wrap:wrap; background:#fff; border:1px solid var(--purple); border-radius:12px; padding:8px 14px; margin:0 0 10px; font-size:12.5px; position:sticky; top:8px; z-index:30;}
+  #selBar.show{display:flex;}
+  #selBar .n{font-weight:700;}
+  .countline{display:flex; align-items:center; gap:12px; margin:0 0 8px;}
+  .countline #count{margin:0;}
+  .linkbtn{background:none; border:none; color:var(--teal-dark); font-weight:600; font-size:12px; cursor:pointer; font-family:inherit; padding:0;}
   .empty{background:#fff; border:1px dashed var(--line); border-radius:var(--radius); padding:34px; text-align:center; color:var(--ink-soft); font-size:13px;}
   @media (max-width:700px){ .row{flex-direction:column; align-items:flex-start;} .r-badges{max-width:100%; justify-content:flex-start;} }
 
@@ -166,6 +174,7 @@
     <select id="fType" aria-label="Type"></select>
     <select id="fAnnee" aria-label="Année de signature"></select>
     <select id="fEcheance" aria-label="Échéance"></select>
+    <select id="fAcces" aria-label="Accès collaborateurs"></select>
     <select id="fTri" aria-label="Tri">
       <option value="date-desc">Signature : récente d’abord</option>
       <option value="date-asc">Signature : ancienne d’abord</option>
@@ -174,7 +183,13 @@
     </select>
     <button class="reset" id="fReset">Réinitialiser</button>
   </div>
-  <p id="count"></p>
+  <div class="countline"><p id="count"></p><button class="linkbtn" id="selToutes">Tout sélectionner</button></div>
+  <div id="selBar">
+    <span class="n" id="selN"></span>
+    <button class="btn" id="selOuvrir">Ouvrir aux collaborateurs</button>
+    <button class="btn ghost" id="selFermer">Fermer l’accès</button>
+    <button class="linkbtn" id="selAucune">Désélectionner</button>
+  </div>
   <div class="list" id="list"></div>
 </div>
 
@@ -201,6 +216,10 @@
       </div>
       <div class="hint" id="fiEcheanceHint" style="margin:-4px 0 12px;"></div>
       <div class="field"><label for="fiLien">Lien avec un autre accord (modifie / remplace)</label><input type="text" id="fiLien" placeholder="ex. accord du 2 décembre 2022"></div>
+      <div class="field" style="background:#fff;border:1px solid var(--line);border-radius:8px;padding:10px 12px;">
+        <label style="display:flex;align-items:center;gap:8px;text-transform:none;font-size:13px;letter-spacing:0;color:var(--ink);cursor:pointer;margin:0;"><input type="checkbox" id="fiAcces" class="chk"> Accessible aux collaborateurs</label>
+        <div class="hint">Visible par toute personne qui a le mot de passe des comptes-rendus du CSE (page « Accords » du portail salariés).</div>
+      </div>
       <div class="infobox" id="ficheInfos"></div>
       <button class="btn ghost" id="fiOuvrir">📄 Ouvrir le fichier</button>
     </div>
@@ -257,8 +276,9 @@ function attente(show, txt){ $('overlayWait').classList.toggle('show', !!show); 
 /* ===== État ===== */
 let accords = [];
 const texteCache = new Map();            // id -> [{page, lignes}]
-let filtres = { theme:'', statut:'', type:'', annee:'', echeance:'' };
-let ficheId = null, rechercheSeq = 0;
+let filtres = { theme:'', statut:'', type:'', annee:'', echeance:'', acces:'' };
+let ficheId = null, rechercheSeq = 0, sessionEmail = '';
+const sel = new Set();
 
 /* ===== Échéances et badges ===== */
 function limite12Mois(){ return ajouterMois(aujourdhui(), 12); }
@@ -280,6 +300,8 @@ function passeFiltres(a){
   if(filtres.type && a.type !== filtres.type) return false;
   if(filtres.annee && String(a.dateSignature || '').slice(0, 4) !== filtres.annee) return false;
   if(filtres.echeance && etatEcheance(a).cle !== filtres.echeance) return false;
+  if(filtres.acces === 'oui' && !a.accessible) return false;
+  if(filtres.acces === 'non' && a.accessible) return false;
   return true;
 }
 function triees(liste){
@@ -299,10 +321,11 @@ function construireFiltres(){
   $('fType').innerHTML = opts(TYPES, '', 'Tous les types');
   $('fAnnee').innerHTML = opts(annees, '', 'Toutes les années');
   $('fEcheance').innerHTML = '<option value="">Toutes les échéances</option><option value="depassee">Échéance dépassée</option><option value="bientot">Dans les 12 prochains mois</option><option value="plus-tard">Plus tard</option><option value="aucune">Sans échéance</option>';
-  $('fTheme').value = filtres.theme; $('fStatut').value = filtres.statut; $('fType').value = filtres.type; $('fAnnee').value = filtres.annee; $('fEcheance').value = filtres.echeance;
+  $('fAcces').innerHTML = '<option value="">Accès : tous</option><option value="oui">Accessibles aux collaborateurs</option><option value="non">Non accessibles</option>';
+  $('fTheme').value = filtres.theme; $('fStatut').value = filtres.statut; $('fType').value = filtres.type; $('fAnnee').value = filtres.annee; $('fEcheance').value = filtres.echeance; $('fAcces').value = filtres.acces;
 }
 function lireFiltres(){
-  filtres = { theme:$('fTheme').value, statut:$('fStatut').value, type:$('fType').value, annee:$('fAnnee').value, echeance:$('fEcheance').value };
+  filtres = { theme:$('fTheme').value, statut:$('fStatut').value, type:$('fType').value, annee:$('fAnnee').value, echeance:$('fEcheance').value, acces:$('fAcces').value };
   render(); lancerRecherche();
 }
 
@@ -315,12 +338,15 @@ function renderBandeau(){
   $('bandeau').innerHTML =
     chip('alerte', 'depassee', '⚠️', dep, 'échéance' + (dep > 1 ? 's' : '') + ' dépassée' + (dep > 1 ? 's' : ''), filtres.echeance === 'depassee') +
     chip('bientot', 'bientot', '⏳', bien, 'dans les 12 mois', filtres.echeance === 'bientot') +
-    chip('', 'qualifier', '❓', qual, 'à qualifier', filtres.statut === 'À qualifier');
+    chip('', 'qualifier', '❓', qual, 'à qualifier', filtres.statut === 'À qualifier') +
+    chip('', 'acces', '👁', accords.filter(a => a.accessible).length, 'accessible' + (accords.filter(a => a.accessible).length > 1 ? 's' : '') + ' aux collaborateurs', filtres.acces === 'oui');
 }
 function render(){
   construireFiltres();
   renderBandeau();
   const vis = triees(accords.filter(passeFiltres));
+  majSelBar();
+  $('selToutes').style.display = accords.length ? '' : 'none';
   $('count').textContent = accords.length ? (vis.length === accords.length ? pluriel(accords.length, 'accord') : vis.length + ' accord' + (vis.length > 1 ? 's' : '') + ' sur ' + accords.length) : '';
   if(!accords.length){
     $('list').innerHTML = '<div class="empty">Aucun accord enregistré pour le moment.<br><br><a class="new-btn" href="accords_import.html">+ Déposer des accords</a></div>';
@@ -330,21 +356,54 @@ function render(){
   $('list').innerHTML = vis.map(a => {
     const cls = { 'Échu':'s-echu', 'Dénoncé':'s-denonce', 'Remplacé':'s-remplace', 'À qualifier':'s-qualifier' }[a.statut] || '';
     const meta = [a.dateSignature ? 'Signé le ' + fmtFR(a.dateSignature) : '', a.theme || 'Sans thème', a.fichier && a.fichier.nomFichier ? a.fichier.nomFichier : '', a.lien ? '↪ ' + a.lien : ''].filter(Boolean).map(esc).join(' · ');
-    return '<div class="row ' + cls + '" data-id="' + esc(a.id) + '"><div style="min-width:0;"><div class="r-title">' + esc(a.titre) + '</div><div class="r-meta">' + meta + '</div></div>' +
-      '<div class="r-badges"><span class="badge b-type">' + esc(a.type || 'Accord') + '</span>' + statutBadge(a.statut) + etatEcheance(a).badge + '</div></div>';
+    return '<div class="row ' + cls + '" data-id="' + esc(a.id) + '"><input type="checkbox" class="chk" data-sel="' + esc(a.id) + '"' + (sel.has(a.id) ? ' checked' : '') + ' aria-label="Sélectionner"><div style="min-width:0;flex:1;"><div class="r-title">' + esc(a.titre) + '</div><div class="r-meta">' + meta + '</div></div>' +
+      '<div class="r-badges">' + (a.accessible ? '<span class="badge b-acc">👁 Accessible</span>' : '') + '<span class="badge b-type">' + esc(a.type || 'Accord') + '</span>' + statutBadge(a.statut) + etatEcheance(a).badge + '</div></div>';
   }).join('');
 }
-$('list').addEventListener('click', e => { const r = e.target.closest('.row[data-id]'); if(r) ouvrirFiche(r.dataset.id); });
+$('list').addEventListener('click', e => { if(e.target.closest('.chk')) return; const r = e.target.closest('.row[data-id]'); if(r) ouvrirFiche(r.dataset.id); });
+$('list').addEventListener('change', e => {
+  const c = e.target.closest('[data-sel]'); if(!c) return;
+  if(c.checked) sel.add(c.dataset.sel); else sel.delete(c.dataset.sel);
+  majSelBar();
+});
+
+/* ===== Sélection et ouverture groupée aux collaborateurs ===== */
+function majSelBar(){
+  $('selBar').classList.toggle('show', sel.size > 0);
+  $('selN').textContent = pluriel(sel.size, 'accord') + ' sélectionné' + (sel.size > 1 ? 's' : '');
+}
+$('selToutes').addEventListener('click', () => { accords.filter(passeFiltres).forEach(a => sel.add(a.id)); render(); });
+$('selAucune').addEventListener('click', () => { sel.clear(); render(); });
+async function changerAcces(ouvrir){
+  const cibles = accords.filter(a => sel.has(a.id) && !!a.accessible !== ouvrir);
+  if(!cibles.length){ toast(ouvrir ? 'Les accords sélectionnés sont déjà accessibles.' : 'Les accords sélectionnés ne sont pas accessibles.'); return; }
+  const liste = cibles.slice(0, 6).map(a => '• ' + a.titre).join('\n') + (cibles.length > 6 ? '\n• … et ' + (cibles.length - 6) + ' autre(s)' : '');
+  const msg = ouvrir
+    ? 'Ouvrir ' + pluriel(cibles.length, 'accord') + ' aux collaborateurs ?\n\n' + liste + '\n\nIls seront visibles par toute personne qui a le mot de passe des comptes-rendus du CSE.'
+    : 'Fermer l’accès de ' + pluriel(cibles.length, 'accord') + ' ?\n\n' + liste + '\n\nIls ne seront plus visibles des collaborateurs.';
+  if(!confirm(msg)) return;
+  attente(true, (ouvrir ? 'Ouverture' : 'Fermeture') + ' en cours…');
+  let ko = 0;
+  for(const a of cibles){
+    try{ await window.ACC_FB.majAccord(a.id, ouvrir ? { accessible: true, accessibleLe: new Date().toISOString(), accessiblePar: sessionEmail } : { accessible: false }); }
+    catch(e){ ko++; }
+  }
+  attente(false); sel.clear(); render();
+  toast(ko ? ko + ' accord(s) n’ont pas pu être modifiés.' : (ouvrir ? pluriel(cibles.length, 'accord') + ' ouvert' + (cibles.length > 1 ? 's' : '') + ' aux collaborateurs.' : 'Accès fermé pour ' + pluriel(cibles.length, 'accord') + '.'));
+}
+$('selOuvrir').addEventListener('click', () => changerAcces(true));
+$('selFermer').addEventListener('click', () => changerAcces(false));
 $('bandeau').addEventListener('click', e => {
   const b = e.target.closest('[data-bchip]'); if(!b || b.disabled) return;
   const k = b.dataset.bchip;
   if(k === 'qualifier') filtres.statut = filtres.statut === 'À qualifier' ? '' : 'À qualifier';
+  else if(k === 'acces') filtres.acces = filtres.acces === 'oui' ? '' : 'oui';
   else filtres.echeance = filtres.echeance === k ? '' : k;
   render(); lancerRecherche();
 });
-['fTheme','fStatut','fType','fAnnee','fEcheance'].forEach(id => $(id).addEventListener('change', lireFiltres));
+['fTheme','fStatut','fType','fAnnee','fEcheance','fAcces'].forEach(id => $(id).addEventListener('change', lireFiltres));
 $('fTri').addEventListener('change', render);
-$('fReset').addEventListener('click', () => { filtres = { theme:'', statut:'', type:'', annee:'', echeance:'' }; render(); lancerRecherche(); });
+$('fReset').addEventListener('click', () => { filtres = { theme:'', statut:'', type:'', annee:'', echeance:'', acces:'' }; render(); lancerRecherche(); });
 
 /* ===== Fichier et Worker ===== */
 async function jeton(){ const t = await window.ACC_FB.idToken(); if(!t) throw new Error('Session expirée, reconnecte-toi.'); return t; }
@@ -390,11 +449,12 @@ function ouvrirFiche(id){
   $('fiMois').value = a.dureeMois || '';
   $('fiFin').value = (a.echeance && !a.echeanceEstimee) ? a.echeance : '';
   $('fiLien').value = a.lien || '';
+  $('fiAcces').checked = !!a.accessible;
   const f = a.fichier || {};
   $('ficheInfos').innerHTML =
     '<b>Fichier :</b> ' + esc(f.nomFichier || '—') + ' · ' + esc((f.type || '').toUpperCase()) + (f.nbPages ? ' · ' + f.nbPages + ' p.' : '') + ' · ' + esc(fmtTaille(f.taille)) + '<br>' +
     '<b>Enregistré :</b> ' + esc((a.creeLe || '').slice(0, 10).split('-').reverse().join('/')) + ' par ' + esc(a.creePar || '—') + (a.lotId ? ' · envoi ' + esc(a.lotId) : '') + (a.forceMalgreSemblable ? ' · ajouté malgré un accord semblable' : '') + '<br>' +
-    '<b>Accès collaborateurs :</b> non accessible' + (a.accessible ? ' (⚠️ marqué accessible)' : '') + ' — l’ouverture aux collaborateurs viendra à l’étape suivante.';
+    '<b>Accès collaborateurs :</b> ' + (a.accessible ? 'accessible' + (a.accessibleLe ? ' depuis le ' + esc(a.accessibleLe.slice(0, 10).split('-').reverse().join('/')) + (a.accessiblePar ? ' (ouvert par ' + esc(a.accessiblePar) + ')' : '') : '') : 'non accessible');
   apercuEcheance();
   $('ficheOverlay').classList.add('show');
 }
@@ -418,6 +478,11 @@ $('fiEnregistrer').addEventListener('click', async () => {
   const champs = { titre: titre, type: $('fiType').value, theme: $('fiTheme').value, dateSignature: date, statut: $('fiStatut').value,
     dureeType: dureeType, dureeMois: dureeType === 'determinee' ? mois : null, echeance: echeance, echeanceEstimee: estimee, lien: $('fiLien').value.trim() };
   if(date !== a.dateSignature) champs.dateSource = 'manuel';
+  const acces = $('fiAcces').checked;
+  if(acces !== !!a.accessible){
+    champs.accessible = acces;
+    if(acces){ champs.accessibleLe = new Date().toISOString(); champs.accessiblePar = sessionEmail; }
+  }
   try{ await window.ACC_FB.majAccord(ficheId, champs); toast('Accord enregistré.'); fermerFiche(); }
   catch(e){ toast('Enregistrement impossible : ' + (e && e.message ? e.message : e)); }
 });
@@ -429,7 +494,7 @@ $('fiSupprimer').addEventListener('click', async () => {
     await window.ACC_FB.supprimerTexte(a.id, a.texteParts || 0);
     if(a.fichier && a.fichier.fileId) await supprimerFichierKV(a.fichier.fileId);
     await window.ACC_FB.supprimerAccord(a.id);
-    texteCache.delete(a.id);
+    texteCache.delete(a.id); sel.delete(a.id);
     attente(false); fermerFiche(); toast('Accord supprimé.');
   }catch(e){ attente(false); toast('Suppression incomplète : ' + (e && e.message ? e.message : e) + ' (l’accord est conservé, tu peux réessayer).'); }
 });
@@ -501,7 +566,8 @@ $('results').addEventListener('click', e => {
 
 /* ===== Démarrage (après connexion) ===== */
 window.onAccAuth = function(user){
-  $('who').textContent = (user && user.email) || '';
+  sessionEmail = (user && user.email) || '';
+  $('who').textContent = sessionEmail;
   window.ACC_FB.ecouterAccords(function(liste, erreur){
     if(erreur){
       banniere(erreur.code === 'permission-denied' ? 'Ton compte n’est pas autorisé à consulter les accords : demande à un administrateur de l’ajouter aux comptes autorisés (et vérifie que la règle Firestore « accords » est publiée).' : 'Lecture des accords impossible (' + (erreur.message || erreur) + ').');
@@ -509,6 +575,7 @@ window.onAccAuth = function(user){
     }
     banniere('');
     accords = liste;
+    Array.from(sel).forEach(id => { if(!accords.some(a => a.id === id)) sel.delete(id); });
     render();
     if($('searchInput').value.trim().length >= 2) lancerRecherche();
   });
