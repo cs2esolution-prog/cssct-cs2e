@@ -154,10 +154,11 @@ const NOMBRES = {un:1,une:1,deux:2,trois:3,quatre:4,cinq:5,six:6,sept:7,huit:8,n
 const THEMES = [
   {nom:'Santé & prévoyance', re:/prevoyance|mutuelle|complementaire sante|frais de sante|couverture sociale/},
   {nom:'Égalité & diversité', re:/egalite professionnelle|diversite|handicap|mixite/},
+  {nom:'Mobilité & transports', re:/mobilite durable|forfait mobilite|plan de mobilite|covoiturage|deplacements? domicile|titre.mobilite/},
   {nom:'Organisation & temps de travail', re:/teletravail|organisations? du travail|temps de travail|horaires|astreinte|deconnexion|forfait jours/},
-  {nom:'Rémunération & épargne', re:/remuneration|salaire|interessement|participation|epargne|perco|\bpee\b|\bnao\b|negociation annuelle/},
+  {nom:'Rémunération & épargne', re:/remuneration|salaire|interessement|participation aux (?:benefices|resultats)|epargne|perco|\bpee\b|\bnao\b|negociation annuelle/},
   {nom:'Dialogue social', re:/dialogue social|droit syndical|elections professionnelles|\bcse\b|representants du personnel|moyens syndicaux/},
-  {nom:'Emploi & formation', re:/gpec|formation professionnelle|emploi des seniors|recrutement|mobilite/}
+  {nom:'Emploi & formation', re:/gpec|formation professionnelle|emploi des seniors|recrutement|mobilite (?:professionnelle|geographique|interne)/}
 ];
 const ACCENTS = {egalite:'égalité', privee:'privée', regime:'régime', prevoyance:'prévoyance', diversite:'diversité', remuneration:'rémunération',
   sante:'santé', securite:'sécurité', teletravail:'télétravail', evolution:'évolution', generale:'générale', complementaire:'complémentaire',
@@ -222,9 +223,9 @@ function detecterDuree(texte){
   const mois = (n, u) => String(u).indexOf('an') === 0 ? n * 12 : n;
   const dernier = (re, s) => { let m, last = null; while((m = re.exec(s)) !== null) last = m; return last; };
   const extrait = m => flat.slice(Math.max(0, m.index - 10), m.index + m[0].length + 20).trim();
-  const reA = /present(?:e)? (?:accord|avenant|protocole|convention) est conclue? pour (?:une )?duree (indeterminee|determinee)(?: de (\w+) (ans?|mois))?/g;
-  const reB = /present(?:e)? (?:accord|avenant|protocole|convention) est conclue? pour (?:une )?(?:duree|periode) de (\w+) (ans?|mois)/g;
-  const reC = new RegExp("present(?:e)? (?:accord|avenant|protocole|convention) est conclue?[^.]{0,80}?jusqu'?au (" + DATE_TOKEN + ")", 'g');
+  const reA = /present(?:e)? (?:accord|avenant|protocole|convention)(?: [a-z']+){0,3} est conclue? pour (?:une )?duree (indeterminee|determinee)(?: de (\w+) (ans?|mois))?/g;
+  const reB = /present(?:e)? (?:accord|avenant|protocole|convention)(?: [a-z']+){0,3} est conclue? pour (?:une )?(?:duree|periode) de (\w+) (ans?|mois)/g;
+  const reC = new RegExp("present(?:e)? (?:accord|avenant|protocole|convention)(?: [a-z']+){0,3} est conclue?[^.]{0,80}?jusqu'?au (" + DATE_TOKEN + ")", 'g');
   const a = dernier(reA, flat);
   if(a){
     if(a[1] === 'indeterminee') return {type:'indeterminee', mois:0, finISO:'', extrait:extrait(a)};
@@ -237,7 +238,7 @@ function detecterDuree(texte){
   if(c){ const iso = parseDateFr(c[1]); if(iso) return {type:'determinee', mois:0, finISO:iso, extrait:extrait(c)}; }
   /* repli : texte compacté, insensible aux espaces parasites de l'extraction */
   const sq = flat.replace(/[^a-z0-9]/g, '');
-  const sA = dernier(/present(?:e)?(?:accord|avenant|protocole|convention)estconclue?pouruneduree(indeterminee|determinee)(?:de([a-z0-9]+?)(ans|an|mois))?/g, sq);
+  const sA = dernier(/present(?:e)?(?:accord|avenant|protocole|convention)(?:dentreprise|degroupe|collectif|detablissement|cadre)?estconclue?pouruneduree(indeterminee|determinee)(?:de([a-z0-9]+?)(ans|an|mois))?/g, sq);
   if(sA){
     if(sA[1] === 'indeterminee') return {type:'indeterminee', mois:0, finISO:'', extrait:'(repérée dans le texte compacté)'};
     const n = sA[2] ? nb(sA[2]) : 0;
@@ -259,19 +260,25 @@ function lettresEspacees(l){
 function detecterTitre(texte){
   const lignes = String(texte || '').split('\n').map(l => l.trim()).filter(Boolean).slice(0, 80);
   const ignorer = l => /^docusign envelope id/i.test(l) || /^\d+(\s*\/\s*\d+)?$/.test(l) || /^page\s*\|?\s*\d+/i.test(l)
-    || lettresEspacees(l) || /^[0-9A-F]{8}-[0-9A-F]{4}-/i.test(l);
-  const arret = l => /^(entre\b.*soussign|entre\s*:?\s*$|et\s*:?\s*$|la societe|le groupe|union invivo,|l'organisation|preambule)/i.test(norm(l));
-  const titre = [];
-  for(const l of lignes){
-    if(ignorer(l)) continue;
-    if(arret(l)) { if(titre.length) break; else continue; }
-    if(ratioMajuscules(l) >= 0.8){ titre.push(l); if(titre.length >= 5) break; }
-    else if(titre.length) break;
+    || /^p\s?a\s?g\s?e\s?\|?\s*\d*$/i.test(l) || lettresEspacees(l) || /^[0-9A-F]{8}-[0-9A-F]{4}-/i.test(l);
+  const arret = l => /^(entre\b.*soussign|entre\s*:?\s*$|et\s*:?\s*$|d'?une part|d'?autre part|la societe|le groupe|union invivo,|l'organisation|preambule|sommaire)/i.test(norm(l));
+  /* lignes de tête, jusqu'à la formule « ENTRE LES SOUSSIGNÉES » */
+  const tete = [];
+  for(const l of lignes){ if(ignorer(l)) continue; if(arret(l)) break; tete.push(l); }
+  /* 1) bloc de lignes en majuscules */
+  const maj = [];
+  for(const l of tete){
+    if(ratioMajuscules(l) >= 0.8){ maj.push(l); if(maj.length >= 5) break; }
+    else if(maj.length) break;
   }
-  return titre.join(' ');
+  if(maj.length) return maj.join(' ');
+  /* 2) titre en casse mixte : première ligne débutant par un type de document, puis les lignes suivantes */
+  const i = tete.findIndex(l => /^(accord|avenant|protocole|charte|convention|plan|decision|note|reglement|dispositif|procedure)\b/i.test(norm(l)));
+  return i === -1 ? '' : tete.slice(i, i + 3).join(' ');
 }
 function prettifierTitre(brut){
   if(!brut) return '';
+  if(ratioMajuscules(brut) < 0.8) return brut.replace(/\s+/g,' ').trim();
   const mots = norm(brut).toLowerCase().replace(/\s+/g,' ').trim().split(' ').map(w => {
     const nu = w.replace(/[^a-z]/g,'');
     if(SIGLES.indexOf(nu) !== -1) return w.replace(nu, nu.toUpperCase());
