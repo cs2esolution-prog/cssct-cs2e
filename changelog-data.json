@@ -1,5 +1,17 @@
 [
   {
+    "hash": "1000426",
+    "date": "20/10/2026",
+    "title": "Add files via upload",
+    "description": ""
+  },
+  {
+    "hash": "3c3febb",
+    "date": "20/10/2026",
+    "title": "chore: mise a jour automatique du changelog [skip ci]",
+    "description": ""
+  },
+  {
     "hash": "8e66561",
     "date": "20/10/2026",
     "title": "Update accords_import.html",
