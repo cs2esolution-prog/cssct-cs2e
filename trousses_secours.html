@@ -54,8 +54,6 @@
   .search-input-wrap .search-icon{position:absolute; left:11px; top:50%; transform:translateY(-50%); color:var(--ink-soft); font-size:14px; pointer-events:none;}
   .control-toggle-btn{background:var(--ink); color:#fff; border:none; padding:10px 18px; border-radius:20px; font-weight:600; font-size:12.5px; cursor:pointer; white-space:nowrap;}
   .control-toggle-btn.active{background:var(--danger);}
-  .export-list-btn{background:var(--teal); color:#fff; border:none; padding:10px 18px; border-radius:20px; font-weight:600; font-size:12.5px; cursor:pointer; white-space:nowrap;}
-  .export-list-btn:hover{background:var(--teal-dark);}
   .category-chips{display:flex; gap:8px; flex-wrap:wrap; margin-bottom:16px;}
   .cat-chip{background:#fff; border:1px solid var(--line); color:var(--ink); font-size:12px; font-weight:600; padding:7px 14px; border-radius:18px; cursor:pointer; user-select:none;}
   .cat-chip:hover{border-color:var(--purple);}
@@ -149,18 +147,6 @@
   button.ghost{background:none; border:1px solid var(--line); padding:10px 18px; border-radius:20px; font-weight:600; font-size:13px; cursor:pointer; color:var(--ink-soft);}
   button.danger-link{background:none; border:none; color:var(--danger); font-size:12.5px; font-weight:600; cursor:pointer;}
 
-  /* ---- Liste à envoyer au responsable de site ---- */
-  .export-criteria{display:flex; flex-wrap:wrap; gap:6px 18px;}
-  .export-criteria label{display:flex; align-items:center; gap:6px; font-size:12.5px; font-weight:400; cursor:pointer;}
-  .export-criteria input{width:auto; margin:0;}
-  .export-count{font-size:12px; color:var(--ink-soft); margin:2px 0 8px;}
-  .export-preview{border:1px solid var(--line); border-radius:8px; padding:16px; max-height:52vh; overflow:auto; background:#fff;}
-  .export-actions{flex-wrap:wrap; gap:8px;}
-  .export-preview table{min-width:560px;}
-  @media (max-width:600px){
-    .export-grid{grid-template-columns:1fr !important;}
-  }
-
   #toast{position:fixed; left:50%; bottom:24px; transform:translate(-50%,120%); background:var(--ink); color:#fff; padding:12px 20px; border-radius:12px; font-size:13.5px; transition:transform .3s ease; z-index:250; max-width:90vw;}
   #toast.show{transform:translate(-50%,0);}
 
@@ -170,12 +156,12 @@
   .tabbar{
     position:fixed; left:0; right:0; bottom:0; z-index:140;
     display:flex; background:#fff; border-top:1px solid var(--line);
-    padding:6px 4px calc(6px + env(safe-area-inset-bottom));
+    padding:6px 2px calc(6px + env(safe-area-inset-bottom));
     box-shadow:0 -2px 10px rgba(0,0,0,.05);
   }
   .tab-item{
     flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px;
-    text-decoration:none; color:var(--ink-soft); font-size:9.5px; font-weight:600; padding:5px 2px; border-radius:10px;
+    text-decoration:none; color:var(--ink-soft); font-size:8.5px; font-weight:600; padding:5px 0; border-radius:10px;
     min-width:0;
   }
   .tab-item .tab-icon{font-size:18px; line-height:1;}
@@ -224,7 +210,6 @@
       <span class="search-icon">🔍</span>
       <input type="text" id="articleSearchInput" placeholder="Est-ce qu'on a... ? Cherche un article par nom">
     </div>
-    <button class="export-list-btn" id="exportListBtn">📧 Liste à envoyer</button>
     <button class="control-toggle-btn" id="controlModeBtn">🛠️ Faire le contrôle</button>
   </div>
   <div class="category-chips" id="categoryChipsRow"></div>
@@ -241,6 +226,7 @@
   <a href="exercices_evacuation.html" class="tab-item"><span class="tab-icon">🚪</span><span class="tab-lbl">Évacuation</span></a>
   <a href="comptes_rendus_reunion.html" class="tab-item"><span class="tab-icon">📋</span><span class="tab-lbl">CR réunion</span></a>
   <a href="trousses_secours.html" class="tab-item active"><span class="tab-icon">🩹</span><span class="tab-lbl">Trousses</span></a>
+  <a href="accords.html" class="tab-item"><span class="tab-icon">📑</span><span class="tab-lbl">Accords</span></a>
   <a href="administration.html" class="tab-item"><span class="tab-icon">⚙️</span><span class="tab-lbl">Admin</span></a>
 </nav>
 
@@ -250,40 +236,6 @@
   <div class="modal" style="max-width:640px;background:transparent;box-shadow:none;">
     <div style="text-align:right;"><button class="modal-close" id="closePhotoZoom" style="color:#fff;background:rgba(30,28,32,.6);border-radius:50%;width:32px;height:32px;">×</button></div>
     <img id="photoZoomImg" src="" alt="Photo article" style="width:100%;border-radius:10px;">
-  </div>
-</div>
-
-<div class="modal-overlay" id="exportModal">
-  <div class="modal" style="max-width:880px;">
-    <div class="modal-head">
-      <h3>📧 Liste à envoyer au responsable de site</h3>
-      <button class="modal-close" id="closeExportModal">×</button>
-    </div>
-    <div class="modal-body">
-      <div class="grid2 export-grid">
-        <div class="field">
-          <label>Site</label>
-          <select id="exportSite"></select>
-        </div>
-        <div class="field">
-          <label>Destinataire(s) <span style="font-weight:400;color:var(--ink-soft);">(plusieurs : séparer par ;)</span></label>
-          <input type="text" id="exportTo" placeholder="responsable.site@entreprise.com" autocomplete="off">
-        </div>
-      </div>
-      <div class="field">
-        <label>Articles à inclure</label>
-        <div class="export-criteria" id="exportCriteria"></div>
-      </div>
-      <div class="export-count" id="exportCount"></div>
-      <div class="export-preview" id="exportPreview"></div>
-    </div>
-    <div class="modal-actions export-actions">
-      <button class="ghost" id="exportPrintBtn">🖨️ Imprimer</button>
-      <div style="margin-left:auto;display:flex;gap:8px;flex-wrap:wrap;">
-        <button class="ghost" id="exportCopyBtn">📋 Copier le tableau</button>
-        <button class="primary" id="exportMailBtn">✉️ Copier et ouvrir le mail</button>
-      </div>
-    </div>
   </div>
 </div>
 
@@ -785,252 +737,6 @@ document.getElementById('photoZoomModal').addEventListener('click', function(e){
 
 document.getElementById('controlModeBtn').addEventListener('click', function(){ window.toggleControlMode(); });
 
-// ---- Liste à envoyer au responsable de site ----
-// Un envoi = un site. Critères cumulables (un article est retenu s'il répond à au moins un critère coché).
-// Le tableau est copié en HTML mis en forme (styles en ligne, pour rester lisible une fois collé dans Outlook),
-// puis le client mail s'ouvre avec destinataire + objet pré-remplis : il ne reste qu'à coller (Ctrl+V) et envoyer.
-const EXPORT_CRITERIA = [
-  { key:'traiter',    label:'Périmés',                            motif:'Périmé' },
-  { key:'surveiller', label:'Péremption dans moins de 30 jours',  motif:'Périme sous 30 jours' },
-  { key:'reappro',    label:'À réapprovisionner',                 motif:'À réapprovisionner' }
-];
-window._exportCriteria = new Set(['traiter']);
-
-const MAIL_STYLE = {
-  font: "font-family:Aptos,Calibri,Arial,sans-serif;",
-  body: "color:#555555;",
-  soft: "color:#777777;",
-  title: "color:#009682;font-family:'Aptos Black',Aptos,Calibri,Arial,sans-serif;font-size:17px;font-weight:900;margin:18px 0 2px;",
-  subtitle: "color:#c6ab76;font-family:'Aptos ExtraBold',Aptos,Calibri,Arial,sans-serif;font-size:14px;font-weight:800;margin:16px 0 6px;",
-  th: "background:#009682;color:#ffffff;text-align:left;padding:6px 8px;border:1px solid #009682;font-size:12px;font-weight:700;text-transform:none;letter-spacing:normal;",
-  td: "padding:6px 8px;border:1px solid #E4E0D8;font-size:12.5px;color:#555555;vertical-align:top;",
-  motif: "color:#5a4571;"
-};
-
-function frDate(iso){ return iso ? iso.split('-').reverse().join('/') : '—'; }
-function typologieOf(it){
-  const cat = catalogueFor(it.contenu);
-  return (cat && Array.isArray(cat.categories) && cat.categories.length) ? cat.categories.join(', ') : '—';
-}
-function exportMotifs(it){
-  return EXPORT_CRITERIA
-    .filter(function(c){ return window._exportCriteria.has(c.key) && tileMatch(it, c.key); })
-    .map(function(c){ return c.motif; });
-}
-function siteOf(it){ return it.site || 'Non renseigné'; }
-function exportItemsForSite(site){
-  return (window._items||[]).filter(function(it){ return siteOf(it) === site && exportMotifs(it).length > 0; });
-}
-function groupByEmplacement(list){
-  const groups = {};
-  list.forEach(function(it){
-    const emp = emplacementOf(it);
-    if(!groups[emp]) groups[emp] = [];
-    groups[emp].push(it);
-  });
-  const keys = Object.keys(groups).sort(function(a,b){
-    if(a === SANS_EMPLACEMENT) return 1;
-    if(b === SANS_EMPLACEMENT) return -1;
-    return a.localeCompare(b,'fr');
-  });
-  return keys.map(function(k){
-    const items = groups[k].slice().sort(function(a,b){
-      const av = a.datePeremption || '', bv = b.datePeremption || '';
-      if(av && bv && av !== bv) return av < bv ? -1 : 1;
-      if(av && !bv) return -1;
-      if(!av && bv) return 1;
-      return (a.contenu||'').localeCompare(b.contenu||'','fr');
-    });
-    return { emplacement:k, items:items };
-  });
-}
-function exportCriteriaLabel(){
-  return EXPORT_CRITERIA.filter(function(c){ return window._exportCriteria.has(c.key); }).map(function(c){ return c.label.toLowerCase(); }).join(', ');
-}
-
-function buildExportHtml(site, list){
-  const today = frDate(new Date().toISOString().slice(0,10));
-  let html = '<div style="' + MAIL_STYLE.font + MAIL_STYLE.body + 'font-size:13px;">';
-  html += '<p style="margin:0 0 8px;">Bonjour,</p>';
-  html += '<p style="margin:0 0 8px;">Voici la liste des articles des trousses de secours du site de <b>' + esc(site) + '</b> à remettre à jour (' + esc(exportCriteriaLabel()) + '), arrêtée au ' + today + '.</p>';
-  html += '<p style="margin:0 0 8px;">Merci de procéder au remplacement ou au réassort, puis de nous transmettre les nouvelles dates de péremption et quantités pour mise à jour du suivi.</p>';
-  html += '<div style="' + MAIL_STYLE.title + '">Trousses de secours — ' + esc(site) + '</div>';
-  html += '<div style="' + MAIL_STYLE.soft + 'font-size:12px;margin:0 0 4px;">' + list.length + ' article(s) concerné(s)</div>';
-  groupByEmplacement(list).forEach(function(g){
-    html += '<div style="' + MAIL_STYLE.subtitle + '">' + esc(g.emplacement) + '</div>';
-    html += '<table cellpadding="0" cellspacing="0" style="border-collapse:collapse;width:100%;table-layout:fixed;' + MAIL_STYLE.font + '">';
-    html += '<thead><tr>' +
-      '<th style="' + MAIL_STYLE.th + 'width:28%;">Article</th>' +
-      '<th style="' + MAIL_STYLE.th + 'width:22%;">Typologie</th>' +
-      '<th style="' + MAIL_STYLE.th + 'text-align:center;width:16%;">Qté restante / théorique</th>' +
-      '<th style="' + MAIL_STYLE.th + 'text-align:center;width:14%;">Date de péremption</th>' +
-      '<th style="' + MAIL_STYLE.th + 'width:20%;">Motif</th>' +
-    '</tr></thead><tbody>';
-    g.items.forEach(function(it){
-      html += '<tr>' +
-        '<td style="' + MAIL_STYLE.td + '">' + esc(it.contenu) + '</td>' +
-        '<td style="' + MAIL_STYLE.td + '">' + esc(typologieOf(it)) + '</td>' +
-        '<td style="' + MAIL_STYLE.td + 'text-align:center;">' + esc(it.quantiteReelle ?? '—') + ' / ' + esc(it.quantiteTheorique ?? '—') + '</td>' +
-        '<td style="' + MAIL_STYLE.td + 'text-align:center;">' + frDate(it.datePeremption) + '</td>' +
-        '<td style="' + MAIL_STYLE.td + MAIL_STYLE.motif + '">' + esc(exportMotifs(it).join(' + ')) + '</td>' +
-      '</tr>';
-    });
-    html += '</tbody></table>';
-  });
-  html += '<p style="margin:16px 0 0;">Cordialement,</p>';
-  html += '</div>';
-  return html;
-}
-
-function buildExportText(site, list){
-  const lines = ['Bonjour,', '', 'Voici la liste des articles des trousses de secours du site de ' + site + ' à remettre à jour (' + exportCriteriaLabel() + ').', ''];
-  groupByEmplacement(list).forEach(function(g){
-    lines.push('== ' + g.emplacement + ' ==');
-    lines.push(['Article','Typologie','Qté restante / théorique','Date de péremption','Motif'].join('\t'));
-    g.items.forEach(function(it){
-      lines.push([it.contenu || '', typologieOf(it), (it.quantiteReelle ?? '—') + ' / ' + (it.quantiteTheorique ?? '—'), frDate(it.datePeremption), exportMotifs(it).join(' + ')].join('\t'));
-    });
-    lines.push('');
-  });
-  lines.push('Cordialement,');
-  return lines.join('\n');
-}
-
-async function copyHtmlToClipboard(html, text){
-  try{
-    if(navigator.clipboard && window.ClipboardItem){
-      await navigator.clipboard.write([new ClipboardItem({
-        'text/html': new Blob([html], { type:'text/html' }),
-        'text/plain': new Blob([text], { type:'text/plain' })
-      })]);
-      return true;
-    }
-  }catch(e){ /* repli ci-dessous */ }
-  const tmp = document.createElement('div');
-  tmp.contentEditable = 'true';
-  tmp.style.position = 'fixed'; tmp.style.left = '-9999px'; tmp.style.top = '0';
-  tmp.innerHTML = html;
-  document.body.appendChild(tmp);
-  const range = document.createRange();
-  range.selectNodeContents(tmp);
-  const sel = window.getSelection();
-  sel.removeAllRanges(); sel.addRange(range);
-  let ok = false;
-  try{ ok = document.execCommand('copy'); }catch(e){ ok = false; }
-  sel.removeAllRanges();
-  tmp.remove();
-  return ok;
-}
-
-function exportSitesWithItems(){
-  const set = new Set();
-  (window._items||[]).forEach(function(it){ set.add(siteOf(it)); });
-  return Array.from(set).sort(function(a,b){ return a.localeCompare(b,'fr'); });
-}
-
-function populateExportSites(preferredSite){
-  const sel = document.getElementById('exportSite');
-  const sites = exportSitesWithItems();
-  const current = preferredSite || sel.value;
-  sel.innerHTML = sites.map(function(s){
-    const n = exportItemsForSite(s).length;
-    return '<option value="' + esc(s) + '">' + esc(s) + ' (' + n + ')</option>';
-  }).join('');
-  if(current && sites.indexOf(current) !== -1){ sel.value = current; }
-  else {
-    const firstWithItems = sites.find(function(s){ return exportItemsForSite(s).length > 0; });
-    if(firstWithItems) sel.value = firstWithItems;
-  }
-}
-
-function renderExportPreview(){
-  const site = document.getElementById('exportSite').value;
-  const preview = document.getElementById('exportPreview');
-  const count = document.getElementById('exportCount');
-  if(!window._exportCriteria.size){
-    count.textContent = '';
-    preview.innerHTML = '<div style="font-size:13px;color:var(--ink-soft);">Coche au moins un critère.</div>';
-    return;
-  }
-  if(!site){
-    count.textContent = '';
-    preview.innerHTML = '<div style="font-size:13px;color:var(--ink-soft);">Aucun site avec des articles enregistrés.</div>';
-    return;
-  }
-  const list = exportItemsForSite(site);
-  count.textContent = list.length + ' article(s) à envoyer pour ' + site + '.';
-  preview.innerHTML = list.length
-    ? buildExportHtml(site, list)
-    : '<div style="font-size:13px;color:var(--ink-soft);">Rien à signaler pour ce site avec ces critères.</div>';
-}
-
-(function initExportCriteria(){
-  const wrap = document.getElementById('exportCriteria');
-  wrap.innerHTML = EXPORT_CRITERIA.map(function(c){
-    return '<label><input type="checkbox" class="export-crit" value="' + c.key + '"' + (window._exportCriteria.has(c.key) ? ' checked' : '') + '> ' + esc(c.label) + '</label>';
-  }).join('');
-  wrap.querySelectorAll('.export-crit').forEach(function(cb){
-    cb.addEventListener('change', function(){
-      if(cb.checked) window._exportCriteria.add(cb.value); else window._exportCriteria.delete(cb.value);
-      populateExportSites();
-      renderExportPreview();
-    });
-  });
-})();
-
-window.openExportModal = function(){
-  // Garde le dernier site choisi, sinon le premier site ayant des articles concernés.
-  populateExportSites();
-  renderExportPreview();
-  document.getElementById('exportModal').classList.add('show');
-};
-
-function currentExport(){
-  const site = document.getElementById('exportSite').value;
-  const list = site ? exportItemsForSite(site) : [];
-  return { site: site, list: list };
-}
-
-function parseRecipients(raw){
-  return (raw || '').split(/[;,\s]+/).map(function(e){ return e.trim(); }).filter(Boolean);
-}
-
-document.getElementById('exportListBtn').addEventListener('click', function(){ window.openExportModal(); });
-document.getElementById('closeExportModal').addEventListener('click', function(){ document.getElementById('exportModal').classList.remove('show'); });
-document.getElementById('exportModal').addEventListener('click', function(e){ if(e.target.id==='exportModal') e.currentTarget.classList.remove('show'); });
-document.getElementById('exportSite').addEventListener('change', renderExportPreview);
-
-document.getElementById('exportCopyBtn').addEventListener('click', async function(){
-  const ex = currentExport();
-  if(!ex.list.length){ showToast('Aucun article à copier pour ce site.'); return; }
-  const ok = await copyHtmlToClipboard(buildExportHtml(ex.site, ex.list), buildExportText(ex.site, ex.list));
-  showToast(ok ? 'Tableau copié — colle-le où tu veux (Ctrl+V).' : 'Copie impossible sur cet appareil : utilise Imprimer.');
-});
-
-document.getElementById('exportMailBtn').addEventListener('click', async function(){
-  const ex = currentExport();
-  if(!ex.list.length){ showToast('Aucun article à envoyer pour ce site.'); return; }
-  const recipients = parseRecipients(document.getElementById('exportTo').value);
-  const invalid = recipients.filter(function(e){ return !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(e); });
-  if(invalid.length){ showToast('Adresse invalide : ' + invalid.join(', ')); return; }
-  const ok = await copyHtmlToClipboard(buildExportHtml(ex.site, ex.list), buildExportText(ex.site, ex.list));
-  const subject = 'Trousses de secours ' + ex.site + ' — articles à remettre à jour';
-  const mailto = 'mailto:' + recipients.join(',') + '?subject=' + encodeURIComponent(subject);
-  showToast(ok ? 'Tableau copié — colle-le dans le mail (Ctrl+V).' : 'Copie impossible : le mail s\'ouvre vide, utilise Imprimer pour le tableau.');
-  setTimeout(function(){ window.location.href = mailto; }, 300);
-});
-
-document.getElementById('exportPrintBtn').addEventListener('click', function(){
-  const ex = currentExport();
-  if(!ex.list.length){ showToast('Aucun article à imprimer pour ce site.'); return; }
-  const w = window.open('', '_blank');
-  if(!w){ showToast('Fenêtre bloquée par le navigateur : autorise les fenêtres pour imprimer.'); return; }
-  w.document.write('<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"><title>Trousses de secours — ' + esc(ex.site) + '</title></head><body style="margin:24px;">' + buildExportHtml(ex.site, ex.list) + '</body></html>');
-  w.document.close();
-  w.focus();
-  setTimeout(function(){ w.print(); }, 250);
-});
-
 renderCategoryChips();
 
 window.renderTrousses = function(){
@@ -1040,7 +746,6 @@ window.renderTrousses = function(){
   const controlBtn = document.getElementById('controlModeBtn');
   controlBtn.textContent = window._controlMode ? '✕ Quitter le mode contrôle' : '🛠️ Faire le contrôle';
   controlBtn.classList.toggle('active', window._controlMode);
-  if(document.getElementById('exportModal').classList.contains('show')){ populateExportSites(); renderExportPreview(); }
   const items = allItems.filter(passesFilters);
   const bySite = {};
   items.forEach(function(it){

@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex">
+<title>Accords d'entreprise . CSSCT</title>
+<link rel="icon" href="icon-192.png">
+<meta name="theme-color" content="#2B2A2E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,500;8..60,600;8..60,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --teal:#019682; --teal-dark:#017162; --purple:#5A4570; --gold:#C6AB76;
+    --paper:#F7F5F1; --ink:#2B2A2E; --ink-soft:#6B6873; --line:#E4E0D8;
+    --danger:#A85D45; --warn:#B7822B; --radius:10px;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0; background:var(--paper); color:var(--ink); font-family:'Inter',system-ui,sans-serif; line-height:1.5;}
+  .wrap{max-width:1040px; margin:0 auto; padding:32px 24px 106px;}
+  header.top{display:flex; align-items:center; justify-content:space-between; padding-bottom:20px; border-bottom:2px solid var(--ink); margin-bottom:24px; flex-wrap:wrap; gap:10px;}
+  .brand{display:flex; align-items:center; gap:12px; cursor:pointer;}
+  .brand-mark{width:38px; height:38px; border-radius:50%; background:conic-gradient(var(--teal) 0deg 120deg, var(--gold) 120deg 240deg, var(--purple) 240deg 360deg); flex:none; overflow:hidden;}
+  .brand-text{font-family:'Source Serif 4',serif; font-weight:700; font-size:19px;}
+  .brand-text span{color:var(--teal);}
+  .top-right{display:flex; align-items:center; gap:10px; flex-wrap:wrap;}
+  .who{font-size:11.5px; color:var(--ink-soft);}
+  @media (max-width:700px){ .who{display:none;} }
+  .new-btn{background:var(--ink); color:#fff; border:none; padding:10px 18px; border-radius:22px; font-weight:600; font-size:13px; cursor:pointer; text-decoration:none;}
+  #logoutBtn{background:#fff; border:1px solid var(--line); color:var(--danger); width:34px; height:34px; border-radius:50%; font-weight:700; cursor:pointer; font-size:14px;}
+  h1{font-family:'Source Serif 4',serif; font-size:20px; margin:0 0 4px;}
+  .subtitle{font-size:12.5px; color:var(--ink-soft); margin:0 0 18px;}
+  #banniere{display:none; font-size:12.5px; background:#F6DDD3; color:var(--danger); border-radius:8px; padding:10px 14px; margin:0 0 16px; font-weight:600;}
+
+  #searchInput{width:100%; padding:10px 14px; border:1px solid var(--line); border-radius:20px; font-size:13.5px; font-family:inherit;}
+  #searchInput:focus{outline:2px solid var(--teal); outline-offset:-1px;}
+  #searchHint{font-size:11.5px; color:var(--ink-soft); margin:6px 4px 0;}
+
+  #bandeau{display:flex; flex-wrap:wrap; gap:8px; margin:14px 0 10px;}
+  .bchip{font-size:12px; font-weight:600; background:#fff; border:1px solid var(--line); border-radius:16px; padding:6px 13px; cursor:pointer; color:var(--ink-soft); font-family:inherit;}
+  .bchip b{color:var(--ink);}
+  .bchip.alerte b{color:var(--danger);} .bchip.bientot b{color:var(--warn);}
+  .bchip.actif{border-color:var(--ink); background:#F0EDE4;}
+  .bchip:disabled{opacity:.5; cursor:default;}
+
+  .filters{display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin:8px 0 12px;}
+  .filters select{font-family:inherit; font-size:12.5px; padding:7px 10px; border:1px solid var(--line); border-radius:18px; background:#fff; max-width:100%;}
+  .filters .reset{background:none; border:none; color:var(--teal-dark); font-weight:600; font-size:12px; cursor:pointer; font-family:inherit;}
+  #count{font-size:12px; color:var(--ink-soft); margin:0 0 8px;}
+
+  .list{display:flex; flex-direction:column; gap:8px;}
+  .row{display:flex; justify-content:space-between; align-items:center; gap:14px; background:#fff; border:1px solid var(--line); border-left:4px solid var(--teal); border-radius:var(--radius); padding:12px 16px; cursor:pointer;}
+  .row:hover{box-shadow:0 4px 14px rgba(0,0,0,.06);}
+  .row.s-echu{border-left-color:#9A968E;} .row.s-denonce{border-left-color:var(--danger);} .row.s-remplace{border-left-color:var(--purple);} .row.s-qualifier{border-left-color:var(--warn);}
+  .r-title{font-weight:600; font-size:14px;}
+  .r-meta{font-size:11.5px; color:var(--ink-soft); margin-top:2px;}
+  .r-badges{display:flex; align-items:center; gap:6px; flex-shrink:0; flex-wrap:wrap; justify-content:flex-end; max-width:46%;}
+  .badge{display:inline-block; padding:4px 10px; border-radius:12px; font-size:10.5px; font-weight:700; white-space:nowrap;}
+  .b-type{background:#ECE6F2; color:var(--purple);}
+  .b-vigueur{background:#E4F3EF; color:var(--teal-dark);} .b-qualifier{background:#FBF1DC; color:var(--warn);} .b-echu{background:#ECEAE4; color:#6B6873;}
+  .b-denonce{background:#F6DDD3; color:var(--danger);} .b-remplace{background:#ECE6F2; color:var(--purple);}
+  .b-over{background:#F6DDD3; color:var(--danger);} .b-soon{background:#FBF1DC; color:var(--warn);} .b-neutre{background:#F0EDE4; color:var(--ink-soft);}
+  .empty{background:#fff; border:1px dashed var(--line); border-radius:var(--radius); padding:34px; text-align:center; color:var(--ink-soft); font-size:13px;}
+  @media (max-width:700px){ .row{flex-direction:column; align-items:flex-start;} .r-badges{max-width:100%; justify-content:flex-start;} }
+
+  #results{display:none; flex-direction:column; gap:8px; margin-top:12px;}
+  .sr-group{background:#fff; border:1px solid var(--line); border-radius:var(--radius); overflow:hidden;}
+  .sr-head{display:flex; align-items:center; justify-content:space-between; gap:10px; padding:12px 16px; cursor:pointer;}
+  .sr-head:hover{background:#FBFAF7;}
+  .sr-count{font-size:11px; color:var(--ink-soft); background:#F0EDE4; border-radius:10px; padding:3px 9px; white-space:nowrap;}
+  .sr-body{display:none; flex-direction:column; gap:8px; padding:0 16px 14px;}
+  .sr-body.open{display:flex;}
+  .sr-item{font-size:12px; background:#FBFAF7; border:1px solid var(--line); border-radius:6px; padding:8px 10px;}
+  .sr-item-head{display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-bottom:6px;}
+  .sr-ctx{line-height:1.5; word-break:break-word;}
+  mark{background:#FFE9A8; padding:0 1px; border-radius:2px;}
+  .mini{background:#fff; border:1px solid var(--line); border-radius:14px; padding:3px 10px; font-size:11.5px; cursor:pointer; font-family:inherit; color:var(--ink-soft);}
+  .mini:hover{border-color:var(--purple); color:var(--purple);}
+
+  .overlay{position:fixed; inset:0; background:rgba(30,28,32,.5); display:none; align-items:flex-start; justify-content:center; z-index:250; overflow-y:auto; padding:40px 16px;}
+  .overlay.show{display:flex;}
+  .modal{background:var(--paper); border-radius:16px; width:min(760px,100%); box-shadow:0 20px 60px rgba(0,0,0,.3);}
+  .modal-head{display:flex; justify-content:space-between; align-items:flex-start; gap:12px; padding:18px 24px; border-bottom:1px solid var(--line); background:#fff; border-radius:16px 16px 0 0;}
+  .modal-head h2{font-family:'Source Serif 4',serif; font-size:16px; margin:0; line-height:1.3;}
+  .modal-close{background:none; border:none; font-size:24px; cursor:pointer; color:var(--ink-soft);}
+  .modal-body{padding:18px 24px;}
+  .modal-actions{display:flex; justify-content:space-between; align-items:center; gap:8px; padding:14px 24px; border-top:1px solid var(--line); background:#fff; border-radius:0 0 16px 16px; flex-wrap:wrap;}
+  .field{margin-bottom:12px;}
+  .field label{display:block; font-size:10.5px; text-transform:uppercase; letter-spacing:.06em; color:var(--ink-soft); margin-bottom:3px;}
+  .field input, .field select{width:100%; font-family:inherit; font-size:13.5px; padding:8px 10px; border:1px solid var(--line); border-radius:7px; background:#fff;}
+  .grid2{display:grid; grid-template-columns:1fr 1fr; gap:12px;}
+  @media (max-width:640px){ .grid2{grid-template-columns:1fr;} }
+  .hint{font-size:11.5px; color:var(--ink-soft); margin-top:3px;}
+  .hint em{font-style:normal; font-weight:700; color:var(--warn);}
+  .infobox{background:#fff; border:1px solid var(--line); border-radius:8px; padding:10px 12px; font-size:12px; color:var(--ink-soft); margin:6px 0 12px; line-height:1.7;}
+  .infobox b{color:var(--ink);}
+  .btn{background:var(--ink); color:#fff; border:none; padding:10px 18px; border-radius:20px; font-weight:600; font-size:13px; cursor:pointer; font-family:inherit;}
+  .btn.ghost{background:none; border:1px solid var(--line); color:var(--ink-soft);}
+  .btn.danger{background:#fff; color:var(--danger); border:1px solid var(--danger);}
+  .btn:disabled{opacity:.45; cursor:default;}
+
+  .tabbar{
+    position:fixed; left:0; right:0; bottom:0; z-index:140;
+    display:flex; background:#fff; border-top:1px solid var(--line);
+    padding:6px 2px calc(6px + env(safe-area-inset-bottom));
+    box-shadow:0 -2px 10px rgba(0,0,0,.05);
+  }
+  .tab-item{
+    flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px;
+    text-decoration:none; color:var(--ink-soft); font-size:8.5px; font-weight:600; padding:5px 0; border-radius:10px;
+    min-width:0;
+  }
+  .tab-item .tab-icon{font-size:18px; line-height:1;}
+  .tab-item .tab-lbl{white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:100%;}
+  .tab-item.active{color:var(--teal-dark);}
+  .tab-item:active{background:#F2FBF9;}
+
+  #authGate{position:fixed;inset:0;background:#2B2A2E;display:flex;align-items:center;justify-content:center;z-index:400;padding:20px;}
+  #authForm{display:none;background:#fff;border-radius:14px;padding:32px;max-width:360px;width:100%;text-align:center;}
+  #overlayWait{z-index:350; align-items:center;}
+  #toast{position:fixed; left:50%; bottom:80px; transform:translate(-50%,160%); background:var(--ink); color:#fff; padding:12px 20px; border-radius:12px; font-size:13.5px; transition:transform .3s ease, opacity .3s ease; z-index:500; max-width:90vw; opacity:0; pointer-events:none;}
+  #toast.show{transform:translate(-50%,0); opacity:1;}
+</style>
+</head>
+<body>
+
+<div id="authGate">
+  <div id="authChecking" style="color:#ffffffaa;font-size:13.5px;">Vérification de la connexion…</div>
+  <div id="authForm">
+    <div style="font-family:'Source Serif 4',serif;font-weight:700;font-size:18px;margin-bottom:6px;">CS<span style="color:#019682;">2E</span> · CSSCT</div>
+    <p style="font-size:13px;color:#6B6873;margin:0 0 18px;">Connecte-toi avec ton email professionnel.</p>
+    <input type="email" id="authEmail" placeholder="prenom.nom@entreprise.com" style="width:100%;padding:10px 12px;border:1px solid #E4E0D8;border-radius:8px;font-size:13.5px;margin-bottom:10px;">
+    <button id="authSendLink" style="width:100%;background:#2B2A2E;color:#fff;border:none;padding:11px;border-radius:20px;font-weight:600;cursor:pointer;">Recevoir un lien de connexion</button>
+    <div id="authMsg" style="font-size:12px;color:#A85D45;margin-top:10px;min-height:14px;"></div>
+    <div style="margin-top:16px;padding-top:14px;border-top:1px solid #E4E0D8;text-align:left;">
+      <p style="font-size:11px;color:#6B6873;margin:0 0 8px;">Le lien s'ouvre dans un autre navigateur au lieu de cette appli épinglée ? Copie-le depuis ton email et colle-le ici :</p>
+      <input type="text" id="pastedLinkInput" placeholder="Colle le lien reçu par email" style="width:100%;padding:9px 11px;border:1px solid #E4E0D8;border-radius:8px;font-size:12.5px;margin-bottom:8px;">
+      <button id="pastedLinkBtn" style="width:100%;background:#fff;color:#2B2A2E;border:1px solid #E4E0D8;padding:10px;border-radius:20px;font-weight:600;font-size:12.5px;cursor:pointer;">Se connecter avec ce lien</button>
+      <div id="pastedLinkMsg" style="font-size:11.5px;color:#A85D45;margin-top:8px;min-height:14px;"></div>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+  <header class="top">
+    <div class="brand" onclick="window.location.href='index.html'"><div class="brand-mark"></div><div class="brand-text">CS<span>2E</span> · CSSCT</div></div>
+    <div class="top-right">
+      <span class="who" id="who"></span>
+      <a class="new-btn" href="accords_import.html">+ Déposer des accords</a>
+      <button id="logoutBtn" title="Se déconnecter">✕</button>
+    </div>
+  </header>
+
+  <h1>Accords d’entreprise</h1>
+  <p class="subtitle">Texte intégral, thèmes, statuts et échéances des accords et avenants.</p>
+  <div id="banniere"></div>
+
+  <input type="text" id="searchInput" placeholder="🔎 Rechercher un mot dans le texte de tous les accords (accents ignorés)…" autocomplete="off">
+  <div id="searchHint"></div>
+  <div id="results"></div>
+
+  <div id="bandeau"></div>
+  <div class="filters" id="filters">
+    <select id="fTheme" aria-label="Thème"></select>
+    <select id="fStatut" aria-label="Statut"></select>
+    <select id="fType" aria-label="Type"></select>
+    <select id="fAnnee" aria-label="Année de signature"></select>
+    <select id="fEcheance" aria-label="Échéance"></select>
+    <select id="fTri" aria-label="Tri">
+      <option value="date-desc">Signature : récente d’abord</option>
+      <option value="date-asc">Signature : ancienne d’abord</option>
+      <option value="titre">Titre (A → Z)</option>
+      <option value="echeance">Échéance la plus proche</option>
+    </select>
+    <button class="reset" id="fReset">Réinitialiser</button>
+  </div>
+  <p id="count"></p>
+  <div class="list" id="list"></div>
+</div>
+
+<div class="overlay" id="ficheOverlay">
+  <div class="modal">
+    <div class="modal-head"><h2 id="ficheTitreHead">Fiche</h2><button class="modal-close" id="ficheClose" aria-label="Fermer">×</button></div>
+    <div class="modal-body">
+      <div class="field"><label for="fTitre">Titre</label><input type="text" id="fTitre"></div>
+      <div class="grid2">
+        <div class="field"><label for="fiType">Type</label><select id="fiType"></select></div>
+        <div class="field"><label for="fiTheme">Thème</label><select id="fiTheme"></select></div>
+      </div>
+      <div class="grid2">
+        <div class="field"><label for="fiDate">Date de signature</label><input type="date" id="fiDate"></div>
+        <div class="field"><label for="fiStatut">Statut</label><select id="fiStatut"></select></div>
+      </div>
+      <div class="grid2">
+        <div class="field"><label for="fiDuree">Durée</label>
+          <div style="display:flex;gap:8px;"><select id="fiDuree">
+            <option value="">— à choisir —</option><option value="indeterminee">Indéterminée</option><option value="determinee">Déterminée</option></select>
+            <input type="number" id="fiMois" min="1" max="240" placeholder="mois" style="width:90px;flex:none;display:none;"></div>
+        </div>
+        <div class="field"><label for="fiFin">Échéance connue (si elle diffère du calcul)</label><input type="date" id="fiFin"></div>
+      </div>
+      <div class="hint" id="fiEcheanceHint" style="margin:-4px 0 12px;"></div>
+      <div class="field"><label for="fiLien">Lien avec un autre accord (modifie / remplace)</label><input type="text" id="fiLien" placeholder="ex. accord du 2 décembre 2022"></div>
+      <div class="infobox" id="ficheInfos"></div>
+      <button class="btn ghost" id="fiOuvrir">📄 Ouvrir le fichier</button>
+    </div>
+    <div class="modal-actions">
+      <button class="btn danger" id="fiSupprimer">Supprimer cet accord</button>
+      <div style="display:flex;gap:8px;"><button class="btn ghost" id="fiAnnuler">Fermer</button><button class="btn" id="fiEnregistrer">Enregistrer</button></div>
+    </div>
+  </div>
+</div>
+<div class="overlay" id="overlayWait"><div class="modal" style="padding:24px;width:min(380px,100%);"><div id="waitTxt" style="font-size:13px;">Opération en cours…</div></div></div>
+<div id="toast"></div>
+
+<nav class="tabbar">
+  <a href="signalement_liste.html" class="tab-item"><span class="tab-icon">🗃️</span><span class="tab-lbl">Dossiers</span></a>
+  <a href="inspections.html" class="tab-item"><span class="tab-icon">🔍</span><span class="tab-lbl">Inspections</span></a>
+  <a href="exercices_evacuation.html" class="tab-item"><span class="tab-icon">🚪</span><span class="tab-lbl">Évacuation</span></a>
+  <a href="comptes_rendus_reunion.html" class="tab-item"><span class="tab-icon">📋</span><span class="tab-lbl">CR réunion</span></a>
+  <a href="trousses_secours.html" class="tab-item"><span class="tab-icon">🩹</span><span class="tab-lbl">Trousses</span></a>
+  <a href="expression_besoin_liste.html" class="tab-item"><span class="tab-icon">💬</span><span class="tab-lbl">Besoins</span></a>
+  <a href="accords.html" class="tab-item active"><span class="tab-icon">📑</span><span class="tab-lbl">Accords</span></a>
+  <a href="administration.html" class="tab-item"><span class="tab-icon">⚙️</span><span class="tab-lbl">Admin</span></a>
+</nav>
+
+<script>
+/* ===== Outils (repris de la page de dépôt) ===== */
+function norm(s){ return String(s == null ? '' : s).normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[\u2018\u2019\u00b4`]/g,"'"); }
+function pad(n){ return String(n).padStart(2,'0'); }
+function toISO(y,m,d){
+  const dt = new Date(Date.UTC(y,m-1,d));
+  if(dt.getUTCFullYear() !== y || dt.getUTCMonth() !== m-1 || dt.getUTCDate() !== d) return '';
+  return y + '-' + pad(m) + '-' + pad(d);
+}
+function ajouterMois(iso, n){
+  const p = iso.split('-').map(Number);
+  const premier = new Date(Date.UTC(p[0], p[1]-1+n, 1));
+  const dernier = new Date(Date.UTC(premier.getUTCFullYear(), premier.getUTCMonth()+1, 0)).getUTCDate();
+  return toISO(premier.getUTCFullYear(), premier.getUTCMonth()+1, Math.min(p[2], dernier));
+}
+const THEME_NOMS = ["Santé & prévoyance","Égalité & diversité","Mobilité & transports","Organisation & temps de travail","Rémunération & épargne","Dialogue social","Emploi & formation","Autre"];
+const STATUTS = ['À qualifier','En vigueur','Échu','Dénoncé','Remplacé'];
+const TYPES = ['Accord','Avenant','Autre'];
+
+const $ = id => document.getElementById(id);
+const esc = s => (s == null ? '' : String(s)).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function toast(msg){ const t = $('toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(toast._t); toast._t = setTimeout(() => t.classList.remove('show'), 3600); }
+function fmtFR(iso){ return iso ? iso.split('-').reverse().join('/') : ''; }
+function fmtTaille(n){ return n > 1048576 ? (n/1048576).toFixed(1) + ' Mo' : Math.max(1, Math.round((n||0)/1024)) + ' Ko'; }
+function aujourdhui(){ const d = new Date(); return d.getFullYear() + '-' + pad(d.getMonth()+1) + '-' + pad(d.getDate()); }
+function opts(liste, val, vide){ return (vide ? '<option value="">' + esc(vide) + '</option>' : '') + liste.map(o => '<option value="' + esc(o) + '"' + (o === val ? ' selected' : '') + '>' + esc(o) + '</option>').join(''); }
+function pluriel(n, mot){ return n + ' ' + mot + (n > 1 ? 's' : ''); }
+function banniere(msg){ const b = $('banniere'); b.style.display = msg ? 'block' : 'none'; b.textContent = msg || ''; }
+function attente(show, txt){ $('overlayWait').classList.toggle('show', !!show); if(txt) $('waitTxt').textContent = txt; }
+
+/* ===== État ===== */
+let accords = [];
+const texteCache = new Map();            // id -> [{page, lignes}]
+let filtres = { theme:'', statut:'', type:'', annee:'', echeance:'' };
+let ficheId = null, rechercheSeq = 0;
+
+/* ===== Échéances et badges ===== */
+function limite12Mois(){ return ajouterMois(aujourdhui(), 12); }
+function etatEcheance(a){
+  if(a.dureeType === 'indeterminee' && !a.echeance) return { cle:'aucune', badge:'<span class="badge b-neutre">Durée indéterminée</span>' };
+  if(!a.echeance) return { cle:'aucune', badge:'' };
+  const est = a.echeanceEstimee ? ' (estimée)' : '';
+  if(a.echeance < aujourdhui()) return { cle:'depassee', badge:'<span class="badge b-over">Échéance dépassée le ' + esc(fmtFR(a.echeance)) + esc(est) + '</span>' };
+  if(a.echeance <= limite12Mois()) return { cle:'bientot', badge:'<span class="badge b-soon">Échéance le ' + esc(fmtFR(a.echeance)) + esc(est) + '</span>' };
+  return { cle:'plus-tard', badge:'<span class="badge b-neutre">Échéance le ' + esc(fmtFR(a.echeance)) + esc(est) + '</span>' };
+}
+const STATUT_CLS = { 'En vigueur':'vigueur', 'À qualifier':'qualifier', 'Échu':'echu', 'Dénoncé':'denonce', 'Remplacé':'remplace' };
+function statutBadge(s){ return '<span class="badge b-' + (STATUT_CLS[s] || 'neutre') + '">' + esc(s || '—') + '</span>'; }
+
+/* ===== Filtres ===== */
+function passeFiltres(a){
+  if(filtres.theme === '__aucun__' ? !!a.theme : (filtres.theme && a.theme !== filtres.theme)) return false;
+  if(filtres.statut && a.statut !== filtres.statut) return false;
+  if(filtres.type && a.type !== filtres.type) return false;
+  if(filtres.annee && String(a.dateSignature || '').slice(0, 4) !== filtres.annee) return false;
+  if(filtres.echeance && etatEcheance(a).cle !== filtres.echeance) return false;
+  return true;
+}
+function triees(liste){
+  const t = $('fTri').value, l = liste.slice();
+  if(t === 'titre') l.sort((a, b) => String(a.titre).localeCompare(String(b.titre), 'fr'));
+  else if(t === 'date-asc') l.sort((a, b) => String(a.dateSignature || '').localeCompare(String(b.dateSignature || '')));
+  else if(t === 'echeance') l.sort((a, b) => String(a.echeance || '9999').localeCompare(String(b.echeance || '9999')));
+  else l.sort((a, b) => String(b.dateSignature || '').localeCompare(String(a.dateSignature || '')));
+  return l;
+}
+function construireFiltres(){
+  const themes = THEME_NOMS.slice();
+  accords.forEach(a => { if(a.theme && themes.indexOf(a.theme) === -1) themes.push(a.theme); });
+  const annees = Array.from(new Set(accords.map(a => String(a.dateSignature || '').slice(0, 4)).filter(Boolean))).sort().reverse();
+  $('fTheme').innerHTML = '<option value="">Tous les thèmes</option><option value="__aucun__">Sans thème</option>' + themes.map(t => '<option value="' + esc(t) + '">' + esc(t) + '</option>').join('');
+  $('fStatut').innerHTML = opts(STATUTS, '', 'Tous les statuts');
+  $('fType').innerHTML = opts(TYPES, '', 'Tous les types');
+  $('fAnnee').innerHTML = opts(annees, '', 'Toutes les années');
+  $('fEcheance').innerHTML = '<option value="">Toutes les échéances</option><option value="depassee">Échéance dépassée</option><option value="bientot">Dans les 12 prochains mois</option><option value="plus-tard">Plus tard</option><option value="aucune">Sans échéance</option>';
+  $('fTheme').value = filtres.theme; $('fStatut').value = filtres.statut; $('fType').value = filtres.type; $('fAnnee').value = filtres.annee; $('fEcheance').value = filtres.echeance;
+}
+function lireFiltres(){
+  filtres = { theme:$('fTheme').value, statut:$('fStatut').value, type:$('fType').value, annee:$('fAnnee').value, echeance:$('fEcheance').value };
+  render(); lancerRecherche();
+}
+
+/* ===== Affichage ===== */
+function renderBandeau(){
+  const dep = accords.filter(a => etatEcheance(a).cle === 'depassee').length;
+  const bien = accords.filter(a => etatEcheance(a).cle === 'bientot').length;
+  const qual = accords.filter(a => a.statut === 'À qualifier').length;
+  const chip = (cls, cle, icone, n, lib, actif) => '<button class="bchip ' + cls + (actif ? ' actif' : '') + '" data-bchip="' + cle + '"' + (n ? '' : ' disabled') + '>' + icone + ' <b>' + n + '</b> ' + lib + '</button>';
+  $('bandeau').innerHTML =
+    chip('alerte', 'depassee', '⚠️', dep, 'échéance' + (dep > 1 ? 's' : '') + ' dépassée' + (dep > 1 ? 's' : ''), filtres.echeance === 'depassee') +
+    chip('bientot', 'bientot', '⏳', bien, 'dans les 12 mois', filtres.echeance === 'bientot') +
+    chip('', 'qualifier', '❓', qual, 'à qualifier', filtres.statut === 'À qualifier');
+}
+function render(){
+  construireFiltres();
+  renderBandeau();
+  const vis = triees(accords.filter(passeFiltres));
+  $('count').textContent = accords.length ? (vis.length === accords.length ? pluriel(accords.length, 'accord') : vis.length + ' accord' + (vis.length > 1 ? 's' : '') + ' sur ' + accords.length) : '';
+  if(!accords.length){
+    $('list').innerHTML = '<div class="empty">Aucun accord enregistré pour le moment.<br><br><a class="new-btn" href="accords_import.html">+ Déposer des accords</a></div>';
+    return;
+  }
+  if(!vis.length){ $('list').innerHTML = '<div class="empty">Aucun accord ne correspond à ces filtres.</div>'; return; }
+  $('list').innerHTML = vis.map(a => {
+    const cls = { 'Échu':'s-echu', 'Dénoncé':'s-denonce', 'Remplacé':'s-remplace', 'À qualifier':'s-qualifier' }[a.statut] || '';
+    const meta = [a.dateSignature ? 'Signé le ' + fmtFR(a.dateSignature) : '', a.theme || 'Sans thème', a.fichier && a.fichier.nomFichier ? a.fichier.nomFichier : '', a.lien ? '↪ ' + a.lien : ''].filter(Boolean).map(esc).join(' · ');
+    return '<div class="row ' + cls + '" data-id="' + esc(a.id) + '"><div style="min-width:0;"><div class="r-title">' + esc(a.titre) + '</div><div class="r-meta">' + meta + '</div></div>' +
+      '<div class="r-badges"><span class="badge b-type">' + esc(a.type || 'Accord') + '</span>' + statutBadge(a.statut) + etatEcheance(a).badge + '</div></div>';
+  }).join('');
+}
+$('list').addEventListener('click', e => { const r = e.target.closest('.row[data-id]'); if(r) ouvrirFiche(r.dataset.id); });
+$('bandeau').addEventListener('click', e => {
+  const b = e.target.closest('[data-bchip]'); if(!b || b.disabled) return;
+  const k = b.dataset.bchip;
+  if(k === 'qualifier') filtres.statut = filtres.statut === 'À qualifier' ? '' : 'À qualifier';
+  else filtres.echeance = filtres.echeance === k ? '' : k;
+  render(); lancerRecherche();
+});
+['fTheme','fStatut','fType','fAnnee','fEcheance'].forEach(id => $(id).addEventListener('change', lireFiltres));
+$('fTri').addEventListener('change', render);
+$('fReset').addEventListener('click', () => { filtres = { theme:'', statut:'', type:'', annee:'', echeance:'' }; render(); lancerRecherche(); });
+
+/* ===== Fichier et Worker ===== */
+async function jeton(){ const t = await window.ACC_FB.idToken(); if(!t) throw new Error('Session expirée, reconnecte-toi.'); return t; }
+async function ouvrirFichier(fileId, nom, page){
+  try{
+    const t = await jeton();
+    const resp = await fetch('/api/cr-file?fileId=' + encodeURIComponent(fileId) + '&nom=' + encodeURIComponent(nom || 'fichier'), { headers: { 'Authorization': 'Bearer ' + t } });
+    if(!resp.ok){ const d = await resp.json().catch(() => ({})); toast('Impossible d’ouvrir le fichier' + (d.error ? ' : ' + d.error : '') + '.'); return; }
+    const blob = await resp.blob();
+    window.open(URL.createObjectURL(blob) + (page ? '#page=' + page : ''), '_blank');
+  }catch(e){ toast('Erreur : ' + e.message); }
+}
+async function supprimerFichierKV(fileId){
+  if(!fileId) return;
+  const t = await jeton();
+  const resp = await fetch('/api/cr-file?fileId=' + encodeURIComponent(fileId), { method: 'DELETE', headers: { 'Authorization': 'Bearer ' + t } });
+  if(!resp.ok){ const d = await resp.json().catch(() => ({})); throw new Error(d.error || 'Suppression du fichier impossible'); }
+}
+
+/* ===== Fiche ===== */
+function apercuEcheance(){
+  const type = $('fiDuree').value, mois = parseInt($('fiMois').value, 10), date = $('fiDate').value, fin = $('fiFin').value;
+  $('fiMois').style.display = type === 'determinee' ? '' : 'none';
+  let t = '';
+  if(fin) t = 'Échéance retenue : <b>' + esc(fmtFR(fin)) + '</b> (connue).';
+  else if(type === 'determinee') t = (date && mois) ? 'Échéance retenue : <em>' + esc(fmtFR(ajouterMois(date, mois))) + ' (estimée)</em>, calculée à partir de la signature.' : 'Renseigne la date de signature et la durée en mois pour estimer l’échéance.';
+  else if(type === 'indeterminee') t = 'Durée indéterminée : pas d’échéance.';
+  $('fiEcheanceHint').innerHTML = t;
+}
+['fiDuree','fiMois','fiDate','fiFin'].forEach(id => { $(id).addEventListener('input', apercuEcheance); $(id).addEventListener('change', apercuEcheance); });
+
+function ouvrirFiche(id){
+  const a = accords.find(x => x.id === id); if(!a) return;
+  ficheId = id;
+  $('ficheTitreHead').textContent = a.titre;
+  $('fTitre').value = a.titre || '';
+  $('fiType').innerHTML = opts(TYPES, a.type || 'Accord');
+  const themes = THEME_NOMS.slice(); if(a.theme && themes.indexOf(a.theme) === -1) themes.push(a.theme);
+  $('fiTheme').innerHTML = opts(themes, a.theme || '', '— à choisir —');
+  $('fiStatut').innerHTML = opts(STATUTS, a.statut || 'À qualifier');
+  $('fiDate').value = a.dateSignature || '';
+  $('fiDuree').value = a.dureeType || '';
+  $('fiMois').value = a.dureeMois || '';
+  $('fiFin').value = (a.echeance && !a.echeanceEstimee) ? a.echeance : '';
+  $('fiLien').value = a.lien || '';
+  const f = a.fichier || {};
+  $('ficheInfos').innerHTML =
+    '<b>Fichier :</b> ' + esc(f.nomFichier || '—') + ' · ' + esc((f.type || '').toUpperCase()) + (f.nbPages ? ' · ' + f.nbPages + ' p.' : '') + ' · ' + esc(fmtTaille(f.taille)) + '<br>' +
+    '<b>Enregistré :</b> ' + esc((a.creeLe || '').slice(0, 10).split('-').reverse().join('/')) + ' par ' + esc(a.creePar || '—') + (a.lotId ? ' · envoi ' + esc(a.lotId) : '') + (a.forceMalgreSemblable ? ' · ajouté malgré un accord semblable' : '') + '<br>' +
+    '<b>Accès collaborateurs :</b> non accessible' + (a.accessible ? ' (⚠️ marqué accessible)' : '') + ' — l’ouverture aux collaborateurs viendra à l’étape suivante.';
+  apercuEcheance();
+  $('ficheOverlay').classList.add('show');
+}
+function fermerFiche(){ $('ficheOverlay').classList.remove('show'); ficheId = null; }
+$('ficheClose').addEventListener('click', fermerFiche);
+$('fiAnnuler').addEventListener('click', fermerFiche);
+$('ficheOverlay').addEventListener('click', e => { if(e.target === $('ficheOverlay')) fermerFiche(); });
+document.addEventListener('keydown', e => { if(e.key === 'Escape' && ficheId) fermerFiche(); });
+$('fiOuvrir').addEventListener('click', () => { const a = accords.find(x => x.id === ficheId); if(a && a.fichier) ouvrirFichier(a.fichier.fileId, a.fichier.nomFichier); });
+
+$('fiEnregistrer').addEventListener('click', async () => {
+  const a = accords.find(x => x.id === ficheId); if(!a) return;
+  const titre = $('fTitre').value.trim(), date = $('fiDate').value;
+  if(!titre){ toast('Le titre est obligatoire.'); return; }
+  if(!date){ toast('La date de signature est obligatoire.'); return; }
+  const dureeType = $('fiDuree').value, mois = parseInt($('fiMois').value, 10) || null, fin = $('fiFin').value;
+  let echeance = '', estimee = false;
+  if(dureeType === 'indeterminee'){ echeance = ''; }
+  else if(fin){ echeance = fin; }
+  else if(dureeType === 'determinee' && mois){ echeance = ajouterMois(date, mois); estimee = true; }
+  const champs = { titre: titre, type: $('fiType').value, theme: $('fiTheme').value, dateSignature: date, statut: $('fiStatut').value,
+    dureeType: dureeType, dureeMois: dureeType === 'determinee' ? mois : null, echeance: echeance, echeanceEstimee: estimee, lien: $('fiLien').value.trim() };
+  if(date !== a.dateSignature) champs.dateSource = 'manuel';
+  try{ await window.ACC_FB.majAccord(ficheId, champs); toast('Accord enregistré.'); fermerFiche(); }
+  catch(e){ toast('Enregistrement impossible : ' + (e && e.message ? e.message : e)); }
+});
+$('fiSupprimer').addEventListener('click', async () => {
+  const a = accords.find(x => x.id === ficheId); if(!a) return;
+  if(!confirm('Supprimer « ' + a.titre + ' » ?\n\nL’accord, son fichier et son texte seront supprimés définitivement. Il n’y a pas de corbeille.')) return;
+  attente(true, 'Suppression en cours…');
+  try{
+    await window.ACC_FB.supprimerTexte(a.id, a.texteParts || 0);
+    if(a.fichier && a.fichier.fileId) await supprimerFichierKV(a.fichier.fileId);
+    await window.ACC_FB.supprimerAccord(a.id);
+    texteCache.delete(a.id);
+    attente(false); fermerFiche(); toast('Accord supprimé.');
+  }catch(e){ attente(false); toast('Suppression incomplète : ' + (e && e.message ? e.message : e) + ' (l’accord est conservé, tu peux réessayer).'); }
+});
+
+/* ===== Recherche plein texte ===== */
+async function chargerTextes(liste){
+  const manquants = liste.filter(a => (a.texteParts || 0) > 0 && !texteCache.has(a.id));
+  for(let i = 0; i < manquants.length; i += 6){
+    await Promise.all(manquants.slice(i, i + 6).map(async a => {
+      try{ texteCache.set(a.id, await window.ACC_FB.lireTexte(a.id, a.texteParts)); }
+      catch(e){ texteCache.set(a.id, []); console.error('Texte illisible', a.id, e); }
+    }));
+  }
+}
+function surligner(ligne, q){
+  const nl = norm(ligne).toLowerCase(), nq = norm(q).toLowerCase();
+  if(!nq) return esc(ligne);
+  if(nl.length !== ligne.length) return '<mark>' + esc(ligne) + '</mark>';
+  let out = '', i = 0, k;
+  while((k = nl.indexOf(nq, i)) !== -1){ out += esc(ligne.slice(i, k)) + '<mark>' + esc(ligne.slice(k, k + nq.length)) + '</mark>'; i = k + nq.length; }
+  return out + esc(ligne.slice(i));
+}
+function chercher(q, liste){
+  const nq = norm(q).toLowerCase(), res = [];
+  const pousser = (a, lignes, extra) => lignes.forEach((l, idx) => {
+    if(norm(l).toLowerCase().indexOf(nq) !== -1) res.push(Object.assign({ a: a, avant: lignes.slice(Math.max(0, idx - 3), idx), ligne: l, apres: lignes.slice(idx + 1, idx + 4) }, extra));
+  });
+  triees(liste).forEach(a => {
+    pousser(a, [a.titre || ''], { source: 'titre' });
+    if(a.lien) pousser(a, [a.lien], { source: 'lien' });
+    (texteCache.get(a.id) || []).forEach(pg => pousser(a, pg.lignes || [], { source: 'fichier', page: pg.page }));
+  });
+  return res;
+}
+let _debounce = null;
+function lancerRecherche(){ clearTimeout(_debounce); _debounce = setTimeout(rechercher, 180); }
+async function rechercher(){
+  const q = $('searchInput').value.trim(), seq = ++rechercheSeq, box = $('results');
+  if(q.length < 2){ box.style.display = 'none'; box.innerHTML = ''; $('searchHint').textContent = q ? 'Saisis au moins 2 caractères.' : ''; return; }
+  const cibles = accords.filter(passeFiltres);
+  const manque = cibles.some(a => (a.texteParts || 0) > 0 && !texteCache.has(a.id));
+  if(manque) $('searchHint').textContent = 'Chargement du texte des accords…';
+  await chargerTextes(cibles);
+  if(seq !== rechercheSeq) return;
+  const res = chercher(q, cibles);
+  const filtre = Object.keys(filtres).some(k => filtres[k]);
+  $('searchHint').textContent = res.length ? pluriel(res.length, 'résultat') + ' dans ' + pluriel(new Set(res.map(r => r.a.id)).size, 'accord') + (filtre ? ' (filtres actifs : la recherche ne porte que sur les accords affichés)' : '') + (res.length > 300 ? ' · affichage limité aux 300 premiers' : '') : (filtre ? 'Aucun résultat parmi les accords affichés (filtres actifs).' : '');
+  box.style.display = 'flex';
+  if(!res.length){ box.innerHTML = '<div class="empty">Aucun résultat.</div>'; return; }
+  const groupes = [], parId = {};
+  res.slice(0, 300).forEach(r => { if(!parId[r.a.id]){ parId[r.a.id] = { a: r.a, items: [] }; groupes.push(parId[r.a.id]); } parId[r.a.id].items.push(r); });
+  box.innerHTML = groupes.map((g, gi) => {
+    const items = g.items.map(r => {
+      const ctx = r.avant.map(esc).join('<br>') + (r.avant.length ? '<br>' : '') + surligner(r.ligne, q) + (r.apres.length ? '<br>' : '') + r.apres.map(esc).join('<br>');
+      const lib = r.source === 'fichier' ? ((r.page ? 'page ' + r.page + ' · ' : '') + esc(g.a.fichier && g.a.fichier.nomFichier || '')) : (r.source === 'titre' ? '📝 Titre' : '📝 Lien avec un autre accord');
+      const ouvrir = r.source === 'fichier' && g.a.fichier ? '<button class="mini" data-ouvrir="' + esc(g.a.id) + '" data-page="' + (r.page || '') + '">📄 Ouvrir' + (r.page ? ' (p.' + r.page + ')' : '') + '</button>' : '';
+      return '<div class="sr-item"><div class="sr-item-head"><div class="r-meta">' + lib + '</div><div style="display:flex;gap:6px;"><button class="mini" data-fiche="' + esc(g.a.id) + '">📋 Voir la fiche</button>' + ouvrir + '</div></div><div class="sr-ctx">' + ctx + '</div></div>';
+    }).join('');
+    return '<div class="sr-group"><div class="sr-head" data-groupe="g' + gi + '"><div><strong style="font-size:12.5px;">' + esc(g.a.titre) + '</strong><div class="r-meta">' + esc(fmtFR(g.a.dateSignature)) + ' · ' + esc(g.a.statut || '') + '</div></div><span class="sr-count">' + pluriel(g.items.length, 'résultat') + '</span></div><div class="sr-body' + (gi === 0 ? ' open' : '') + '" id="g' + gi + '">' + items + '</div></div>';
+  }).join('');
+}
+$('searchInput').addEventListener('input', lancerRecherche);
+$('results').addEventListener('click', e => {
+  const o = e.target.closest('[data-ouvrir]'), f = e.target.closest('[data-fiche]'), h = e.target.closest('[data-groupe]');
+  if(o){ const a = accords.find(x => x.id === o.dataset.ouvrir); if(a && a.fichier) ouvrirFichier(a.fichier.fileId, a.fichier.nomFichier, o.dataset.page); return; }
+  if(f){ ouvrirFiche(f.dataset.fiche); return; }
+  if(h){ const b = $(h.dataset.groupe); if(b) b.classList.toggle('open'); }
+});
+
+/* ===== Démarrage (après connexion) ===== */
+window.onAccAuth = function(user){
+  $('who').textContent = (user && user.email) || '';
+  window.ACC_FB.ecouterAccords(function(liste, erreur){
+    if(erreur){
+      banniere(erreur.code === 'permission-denied' ? 'Ton compte n’est pas autorisé à consulter les accords : demande à un administrateur de l’ajouter aux comptes autorisés (et vérifie que la règle Firestore « accords » est publiée).' : 'Lecture des accords impossible (' + (erreur.message || erreur) + ').');
+      return;
+    }
+    banniere('');
+    accords = liste;
+    render();
+    if($('searchInput').value.trim().length >= 2) lancerRecherche();
+  });
+};
+</script>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js";
+  import { getAuth, sendSignInLinkToEmail, isSignInWithEmailLink, signInWithEmailLink, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js";
+  import { getFirestore, collection, onSnapshot, getDoc, updateDoc, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+  apiKey: "AIzaSyACY8fyy8Rd9NyLJ855xsDyknuUMV-pAag",
+  authDomain: "cssct-cs2e-c655b.firebaseapp.com",
+  projectId: "cssct-cs2e-c655b",
+  storageBucket: "cssct-cs2e-c655b.firebasestorage.app",
+  messagingSenderId: "277603883255",
+  appId: "1:277603883255:web:b3b7a5c3097a60caac1bf2"
+};
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+  const colAccords = collection(db, "accords");
+
+  const actionCodeSettings = { url: window.location.origin + window.location.pathname, handleCodeInApp: true };
+  if (isSignInWithEmailLink(auth, window.location.href)) {
+    let email = window.prompt("Confirme ton adresse email pour terminer la connexion :");
+    signInWithEmailLink(auth, email, window.location.href)
+      .then(() => window.history.replaceState({}, document.title, window.location.pathname))
+      .catch(err => alert("Connexion impossible : " + err.message));
+  }
+
+  function applyBrandingLogo(){
+    getDoc(doc(db, 'config', 'branding')).then((snap) => {
+      const data = snap.exists() ? snap.data() : {};
+      if(!data.logoBase64) return;
+      document.querySelectorAll('.brand-mark').forEach(function(el){
+        el.style.background = 'none';
+        el.innerHTML = '<img src="data:image/png;base64,' + data.logoBase64 + '" alt="Logo" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">';
+      });
+    }).catch(() => {});
+  }
+
+  window.ACC_FB = {
+    async idToken(){ return auth.currentUser ? await auth.currentUser.getIdToken() : null; },
+    ecouterAccords(cb){
+      return onSnapshot(colAccords, (snap) => cb(snap.docs.map(d => ({ id: d.id, ...d.data() })), null), (err) => cb([], err));
+    },
+    async lireTexte(id, nbParts){
+      const parts = await Promise.all(Array.from({ length: nbParts }, (_, n) => getDoc(doc(db, 'accords_texte', id + '_' + n))));
+      const pages = [];
+      parts.forEach(s => { if(s.exists()) (s.data().pages || []).forEach(p => pages.push(p)); });
+      return pages;
+    },
+    async majAccord(id, champs){ await updateDoc(doc(db, 'accords', id), champs); },
+    async supprimerTexte(id, nbParts){ for(let n = 0; n < nbParts; n++){ await deleteDoc(doc(db, 'accords_texte', id + '_' + n)); } },
+    async supprimerAccord(id){ await deleteDoc(doc(db, 'accords', id)); }
+  };
+
+  let appele = false;
+  onAuthStateChanged(auth, (user) => {
+    document.getElementById('authChecking').style.display = 'none';
+    if (user) {
+      document.getElementById('authGate').style.display = 'none';
+      applyBrandingLogo();
+      if(!appele){ appele = true; window.onAccAuth(user); }
+    } else {
+      document.getElementById('authGate').style.display = 'flex';
+      document.getElementById('authForm').style.display = 'block';
+    }
+  });
+
+  document.getElementById('authSendLink').addEventListener('click', () => {
+    const email = document.getElementById('authEmail').value.trim();
+    const msg = document.getElementById('authMsg');
+    if (!email) { msg.textContent = "Merci de saisir ton email."; return; }
+    sendSignInLinkToEmail(auth, email, actionCodeSettings)
+      .then(() => { msg.style.color = '#019682'; msg.textContent = "Lien envoyé, vérifie ta boîte mail."; })
+      .catch(err => { msg.textContent = "Erreur : " + err.message; });
+  });
+  document.getElementById('pastedLinkBtn').addEventListener('click', () => {
+    const link = document.getElementById('pastedLinkInput').value.trim();
+    const msg = document.getElementById('pastedLinkMsg');
+    if (!link) { msg.textContent = "Colle d'abord le lien reçu par email."; return; }
+    if (!isSignInWithEmailLink(auth, link)) { msg.textContent = "Ce lien ne semble pas valide."; return; }
+    let email = window.prompt("Confirme ton adresse email pour terminer la connexion :");
+    if (!email) return;
+    signInWithEmailLink(auth, email, link)
+      .then(() => { msg.style.color = '#019682'; msg.textContent = "Connexion réussie !"; })
+      .catch(err => { msg.textContent = "Erreur : " + err.message; });
+  });
+  document.getElementById('logoutBtn').addEventListener('click', () => {
+    if(confirm('Se déconnecter ?')){ signOut(auth).then(() => { window.location.href = 'index.html'; }); }
+  });
+</script>
+</body>
+</html>
