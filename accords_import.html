@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex">
+<title>Accords d'entreprise · dépôt en masse · CSSCT</title>
+<link rel="icon" href="icon-192.png">
+<meta name="theme-color" content="#2B2A2E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,500;8..60,600;8..60,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/pdfjs-dist@3.11.174/legacy/build/pdf.min.js"></script>
+<script src="https://unpkg.com/mammoth@1.7.1/mammoth.browser.min.js"></script>
+<script>
+  if (window.pdfjsLib) {
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://unpkg.com/pdfjs-dist@3.11.174/legacy/build/pdf.worker.min.js';
+  }
+</script>
+<style>
+  :root{
+    --teal:#019682; --teal-dark:#017162; --purple:#5A4570; --gold:#C6AB76;
+    --paper:#F7F5F1; --ink:#2B2A2E; --ink-soft:#6B6873; --line:#E4E0D8;
+    --danger:#A85D45; --warn:#B7822B; --radius:10px;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0; background:var(--paper); color:var(--ink); font-family:'Inter',system-ui,sans-serif; line-height:1.5;}
+  .wrap{max-width:1280px; margin:0 auto; padding:32px 24px 90px;}
+  header.top{display:flex; align-items:center; justify-content:space-between; padding-bottom:20px; border-bottom:2px solid var(--ink); margin-bottom:24px; flex-wrap:wrap; gap:10px;}
+  .brand{display:flex; align-items:center; gap:12px;}
+  .brand-mark{width:38px; height:38px; border-radius:50%; background:conic-gradient(var(--teal) 0deg 120deg, var(--gold) 120deg 240deg, var(--purple) 240deg 360deg); flex:none;}
+  .brand-text{font-family:'Source Serif 4',serif; font-weight:700; font-size:19px;}
+  .brand-text span{color:var(--teal);}
+  .back-link{font-size:12.5px; font-weight:600; color:var(--ink-soft); text-decoration:none; border:1px solid var(--line); padding:6px 14px; border-radius:20px;}
+  h1{font-family:'Source Serif 4',serif; font-size:22px; margin:0 0 4px; color:var(--teal-dark);}
+  .subtitle{font-size:12.5px; color:var(--ink-soft); margin:0 0 18px;}
+  .privacy{font-size:12px; background:#E4F3EF; color:var(--teal-dark); border-radius:8px; padding:8px 12px; margin:0 0 16px; display:inline-block;}
+
+  .drop{border:2px dashed var(--line); background:#fff; border-radius:var(--radius); padding:26px 20px; text-align:center; font-size:13.5px; color:var(--ink-soft); transition:border-color .15s, background .15s;}
+  .drop.over{border-color:var(--teal); background:#F2FBF9;}
+  .drop strong{color:var(--ink);}
+  .btn{background:var(--ink); color:#fff; border:none; padding:9px 18px; border-radius:20px; font-weight:600; font-size:12.5px; cursor:pointer; font-family:inherit;}
+  .btn.ghost{background:#fff; color:var(--ink-soft); border:1px solid var(--line);}
+  .btn.ghost:hover{border-color:var(--purple); color:var(--purple);}
+  .btn:disabled{opacity:.45; cursor:default;}
+  .drop .btn{margin-top:10px;}
+
+  #progress{display:none; margin:14px 0; font-size:12.5px; color:var(--ink-soft);}
+  #progress .bar{height:6px; background:var(--line); border-radius:4px; overflow:hidden; margin-top:6px;}
+  #progress .bar i{display:block; height:100%; width:0; background:var(--teal); transition:width .2s;}
+
+  #summary{display:flex; flex-wrap:wrap; gap:8px; margin:18px 0 10px;}
+  .chip{font-size:12px; font-weight:600; background:#fff; border:1px solid var(--line); border-radius:16px; padding:5px 12px; color:var(--ink-soft);}
+  .chip b{color:var(--ink);}
+  .chip.err b{color:var(--danger);} .chip.warn b{color:var(--warn);}
+
+  .toolbar{display:flex; flex-wrap:wrap; align-items:center; gap:10px; margin:6px 0 10px; font-size:12.5px;}
+  .toolbar label{display:flex; align-items:center; gap:6px; color:var(--ink-soft); cursor:pointer;}
+  .toolbar select{font-family:inherit; font-size:12.5px; padding:6px 8px; border:1px solid var(--line); border-radius:7px; background:#fff;}
+  #bulk{display:none; align-items:center; gap:8px; background:#fff; border:1px solid var(--purple); border-radius:10px; padding:6px 10px; margin-left:auto;}
+  #bulk.show{display:flex;}
+
+  .tablewrap{overflow-x:auto; background:#fff; border:1px solid var(--line); border-radius:var(--radius);}
+  table{border-collapse:collapse; width:100%; min-width:1120px; font-size:12.5px;}
+  th{position:sticky; top:0; background:#FBFAF7; text-align:left; font-size:10.5px; text-transform:uppercase; letter-spacing:.06em; color:var(--ink-soft); padding:9px 8px; border-bottom:1px solid var(--line); white-space:nowrap;}
+  td{padding:8px; border-bottom:1px solid var(--line); vertical-align:top;}
+  tr.r{border-left:4px solid var(--teal);}
+  tr.r.lvl-warn td:first-child{box-shadow:inset 4px 0 0 var(--warn);}
+  tr.r.lvl-err td:first-child{box-shadow:inset 4px 0 0 var(--danger);}
+  tr.r.lvl-ok td:first-child{box-shadow:inset 4px 0 0 var(--teal);}
+  td input[type=text], td input[type=date], td input[type=number], td select, .detail input[type=text], .detail input[type=date]{
+    width:100%; font-family:inherit; font-size:12.5px; padding:6px 7px; border:1px solid var(--line); border-radius:6px; background:#fff;}
+  td input:focus, td select:focus{outline:2px solid var(--teal); outline-offset:-1px;}
+  .fname{font-weight:600; max-width:230px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .fmeta{font-size:11px; color:var(--ink-soft);}
+  .src{display:inline-block; font-size:10px; font-weight:700; border-radius:9px; padding:2px 8px; margin-top:4px;}
+  .src-texte{background:#E4F3EF; color:var(--teal-dark);}
+  .src-nom{background:#FBF1DC; color:var(--warn);}
+  .src-modification{background:#F6DDD3; color:var(--danger);}
+  .src-manuel{background:#ECE6F2; color:var(--purple);}
+  .src-aucune{background:#F6DDD3; color:var(--danger);}
+  .dur{display:flex; gap:6px; align-items:center;}
+  .dur input[type=number]{width:62px; flex:none;}
+  .fin{font-size:11.5px; margin-top:4px; color:var(--ink-soft);}
+  .fin em{font-style:normal; font-weight:700; color:var(--warn);}
+  .fin .over{color:var(--danger); font-weight:700;}
+  .mini{background:#fff; border:1px solid var(--line); border-radius:14px; padding:3px 10px; font-size:11.5px; cursor:pointer; font-family:inherit; color:var(--ink-soft);}
+  .mini .nb{font-weight:700; color:var(--warn);}
+  tr.detail td{background:#FBFAF7; font-size:12px;}
+  .detail-grid{display:grid; grid-template-columns:1fr 1fr; gap:16px;}
+  @media (max-width:900px){ .detail-grid{grid-template-columns:1fr;} }
+  .detail h4{margin:0 0 6px; font-size:10.5px; text-transform:uppercase; letter-spacing:.06em; color:var(--ink-soft);}
+  .al{margin:0 0 4px; padding-left:16px;}
+  .al li.err{color:var(--danger);} .al li.warn{color:var(--warn);} .al li.info{color:var(--ink-soft);}
+  .snippet{background:#fff; border:1px solid var(--line); border-radius:6px; padding:6px 8px; font-size:11.5px; color:var(--ink-soft); word-break:break-word;}
+  .empty-note{padding:30px; text-align:center; color:var(--ink-soft); font-size:13px;}
+  .foot{margin-top:18px; font-size:12px; color:var(--ink-soft);}
+  #toast{position:fixed; left:50%; bottom:24px; transform:translate(-50%,120%); background:var(--ink); color:#fff; padding:12px 20px; border-radius:12px; font-size:13.5px; transition:transform .3s ease; z-index:250; max-width:90vw;}
+  #toast.show{transform:translate(-50%,0);}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="brand"><div class="brand-mark"></div><div class="brand-text">CS<span>2E</span> · CSSCT</div></div>
+    <a class="back-link" href="index.html">← Accueil</a>
+  </header>
+
+  <h1>Accords d’entreprise : dépôt en masse</h1>
+  <p class="subtitle">Étape 1 sur 3 : sélection et contrôle des fichiers.</p>
+  <p class="privacy">🔒 Rien n’est enregistré à cette étape : les fichiers sont lus dans ton navigateur et n’en sortent pas.</p>
+
+  <div class="drop" id="drop">
+    <div><strong>Glisse tes accords ici</strong> (PDF ou Word .docx, 25 Mo maximum par fichier)</div>
+    <button class="btn" id="pick">Choisir des fichiers</button>
+    <input type="file" id="file" multiple accept=".pdf,.docx,.doc" hidden>
+  </div>
+  <div id="progress"><span id="progressTxt"></span><div class="bar"><i id="progressBar"></i></div></div>
+
+  <div id="summary"></div>
+
+  <div class="toolbar" id="toolbar" style="display:none;">
+    <label><input type="checkbox" id="onlyCheck"> À vérifier seulement</label>
+    <label>Tri
+      <select id="sortSel"><option value="date">Date de signature (récente d’abord)</option><option value="nom">Nom de fichier</option></select>
+    </label>
+    <div id="bulk">
+      <span>Pour la sélection :</span>
+      <select id="bulkTheme"><option value="">Thème : inchangé</option></select>
+      <select id="bulkStatut"><option value="">Statut : inchangé</option></select>
+      <button class="btn" id="bulkApply">Appliquer</button>
+    </div>
+  </div>
+
+  <div class="tablewrap" id="tableWrap" style="display:none;">
+    <table>
+      <thead><tr>
+        <th style="width:30px"><input type="checkbox" id="selAll" title="Tout sélectionner"></th>
+        <th>Fichier</th><th style="min-width:260px">Titre</th><th style="width:110px">Type</th>
+        <th style="min-width:170px">Thème</th><th style="width:150px">Signature</th>
+        <th style="min-width:190px">Durée / échéance</th><th style="width:120px">Statut</th><th style="width:70px">Détails</th>
+      </tr></thead>
+      <tbody id="tbody"></tbody>
+    </table>
+  </div>
+  <p class="foot" id="foot" style="display:none;">Vérifie surtout les lignes marquées en orange ou en rouge. L’enregistrement des accords et le lien avec l’accueil arrivent à l’étape 2.</p>
+</div>
+<div id="toast"></div>
+
+<script>
+/* <DETECTION> — fonctions pures, testées hors navigateur */
+const MOIS = {janvier:1,fevrier:2,mars:3,avril:4,mai:5,juin:6,juillet:7,aout:8,septembre:9,octobre:10,novembre:11,decembre:12};
+const MOIS_RE = 'janvier|fevrier|mars|avril|mai|juin|juillet|aout|septembre|octobre|novembre|decembre';
+const DATE_TOKEN = '(?:\\d{1,2}(?:er)?\\s+(?:' + MOIS_RE + ')\\s+\\d{4}|\\d{1,2}[\\/.\\-]\\d{1,2}[\\/.\\-]\\d{4})';
+const NOMBRES = {un:1,une:1,deux:2,trois:3,quatre:4,cinq:5,six:6,sept:7,huit:8,neuf:9,dix:10};
+const THEMES = [
+  {nom:'Santé & prévoyance', re:/prevoyance|mutuelle|complementaire sante|frais de sante|couverture sociale/},
+  {nom:'Égalité & diversité', re:/egalite professionnelle|diversite|handicap|mixite/},
+  {nom:'Organisation & temps de travail', re:/teletravail|organisations? du travail|temps de travail|horaires|astreinte|deconnexion|forfait jours/},
+  {nom:'Rémunération & épargne', re:/remuneration|salaire|interessement|participation|epargne|perco|\bpee\b|\bnao\b|negociation annuelle/},
+  {nom:'Dialogue social', re:/dialogue social|droit syndical|elections professionnelles|\bcse\b|representants du personnel|moyens syndicaux/},
+  {nom:'Emploi & formation', re:/gpec|formation professionnelle|emploi des seniors|recrutement|mobilite/}
+];
+const ACCENTS = {egalite:'égalité', privee:'privée', regime:'régime', prevoyance:'prévoyance', diversite:'diversité', remuneration:'rémunération',
+  sante:'santé', securite:'sécurité', teletravail:'télétravail', evolution:'évolution', generale:'générale', complementaire:'complémentaire',
+  conges:'congés', interessement:'intéressement', epargne:'épargne', reglement:'règlement', mixite:'mixité', qualite:'qualité',
+  elections:'élections', negociation:'négociation', deconnexion:'déconnexion', creation:'création', modifiant:'modifiant', evenement:'événement'};
+const SIGLES = ['cse','cssct','nao','rh','cdi','cdd','pee','perco','gpec','qvt'];
+
+function norm(s){ return String(s == null ? '' : s).normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[\u2018\u2019\u00b4`]/g,"'"); }
+function pad(n){ return String(n).padStart(2,'0'); }
+function toISO(y,m,d){
+  const dt = new Date(Date.UTC(y,m-1,d));
+  if(dt.getUTCFullYear() !== y || dt.getUTCMonth() !== m-1 || dt.getUTCDate() !== d) return '';
+  return y + '-' + pad(m) + '-' + pad(d);
+}
+function parseDateFr(str){
+  const s = norm(str).toLowerCase().trim();
+  let m = s.match(/^(\d{1,2})(?:er)?\s+([a-z]+)\s+(\d{4})$/);
+  if(m && MOIS[m[2]]) return toISO(+m[3], MOIS[m[2]], +m[1]);
+  m = s.match(/^(\d{1,2})[\/.\-](\d{1,2})[\/.\-](\d{4})$/);
+  if(m) return toISO(+m[3], +m[2], +m[1]);
+  return '';
+}
+function ajouterMois(iso, n){
+  const p = iso.split('-').map(Number);
+  const premier = new Date(Date.UTC(p[0], p[1]-1+n, 1));
+  const dernier = new Date(Date.UTC(premier.getUTCFullYear(), premier.getUTCMonth()+1, 0)).getUTCDate();
+  return toISO(premier.getUTCFullYear(), premier.getUTCMonth()+1, Math.min(p[2], dernier));
+}
+
+/* Signature : formule « Fait à [ville], le [date] », dernière occurrence du document */
+function detecterSignature(texte){
+  const flat = norm(texte).replace(/\s+/g,' ');
+  const ville = "a\\s+[a-z' \\-]{2,40}?\\s*,?\\s*";
+  const re = new RegExp("\\b(?:fait\\s+(?:en\\s+\\w+\\s+exemplaires?\\s+)?(?:" + ville + ")?|signe\\s+" + ville + ")le\\s+(" + DATE_TOKEN + ")", 'gi');
+  const trouves = [];
+  let m;
+  while((m = re.exec(flat)) !== null){
+    const iso = parseDateFr(m[1]);
+    if(iso) trouves.push({iso:iso, snippet:flat.slice(Math.max(0, m.index-20), m.index + m[0].length + 30).trim()});
+  }
+  if(!trouves.length) return {iso:'', snippet:'', autres:[]};
+  const dernier = trouves[trouves.length-1];
+  const autres = Array.from(new Set(trouves.map(t => t.iso))).filter(i => i !== dernier.iso);
+  return {iso:dernier.iso, snippet:dernier.snippet, autres:autres};
+}
+
+/* Date et années dans le nom du fichier */
+function dateDuNom(nom){
+  const base = String(nom).replace(/\.[a-z0-9]+$/i,'');
+  const annees = (base.match(/(?<!\d)(?:19|20)\d{2}(?!\d)/g) || []).map(Number);
+  let m = base.match(/(?<!\d)((?:19|20)\d{2})[-_. ]?(\d{2})[-_. ]?(\d{2})(?!\d)/);
+  if(m){ const iso = toISO(+m[1], +m[2], +m[3]); if(iso) return {iso:iso, annees:annees}; }
+  m = base.match(/(?<!\d)(\d{2})[-_. ](\d{2})[-_. ]((?:19|20)\d{2})(?!\d)/);
+  if(m){ const iso = toISO(+m[3], +m[2], +m[1]); if(iso) return {iso:iso, annees:annees}; }
+  return {iso:'', annees:annees};
+}
+
+/* Durée : uniquement la phrase « Le présent accord/avenant est conclu pour… » (évite les mentions CDI/CDD) */
+function detecterDuree(texte){
+  const flat = norm(texte).toLowerCase().replace(/\s+/g,' ');
+  const reA = /present(?:e)? (?:accord|avenant|protocole|convention) est conclue? pour (?:une )?duree (indeterminee|determinee)(?: de (\w+) (ans?|mois))?/g;
+  const reB = /present(?:e)? (?:accord|avenant|protocole|convention) est conclue? pour (?:une )?(?:duree|periode) de (\w+) (ans?|mois)/g;
+  const reC = new RegExp("present(?:e)? (?:accord|avenant|protocole|convention) est conclue?[^.]{0,80}?jusqu'?au (" + DATE_TOKEN + ")", 'g');
+  const nb = v => /^\d+$/.test(v) ? +v : (NOMBRES[v] || 0);
+  const dernierMatch = re => { let m, last = null; while((m = re.exec(flat)) !== null) last = m; return last; };
+  const a = dernierMatch(reA);
+  if(a){
+    if(a[1] === 'indeterminee') return {type:'indeterminee', mois:0, finISO:''};
+    const n = a[2] ? nb(a[2]) : 0;
+    return {type:'determinee', mois: n ? (a[3].startsWith('an') ? n*12 : n) : 0, finISO:''};
+  }
+  const b = dernierMatch(reB);
+  if(b && nb(b[1])) return {type:'determinee', mois: b[2].startsWith('an') ? nb(b[1])*12 : nb(b[1]), finISO:''};
+  const c = dernierMatch(reC);
+  if(c){ const iso = parseDateFr(c[1]); if(iso) return {type:'determinee', mois:0, finISO:iso}; }
+  return {type:'', mois:0, finISO:''};
+}
+
+/* Titre : bloc de lignes en majuscules en tête de document */
+function ratioMajuscules(l){
+  const lettres = l.replace(/[^A-Za-zÀ-ÿ]/g,'');
+  if(lettres.length < 4) return 0;
+  return lettres.replace(/[^A-ZÀ-Þ]/g,'').length / lettres.length;
+}
+function detecterTitre(texte){
+  const lignes = String(texte || '').split('\n').map(l => l.trim()).filter(Boolean).slice(0, 80);
+  const ignorer = l => /^docusign envelope id/i.test(l) || /^\d+(\s*\/\s*\d+)?$/.test(l) || /^page\s*\|?\s*\d+/i.test(l)
+    || /^(?:\S\s){6,}\S?$/.test(l) || /^[0-9A-F]{8}-[0-9A-F]{4}-/i.test(l);
+  const arret = l => /^(entre\b.*soussign|entre\s*:?\s*$|et\s*:?\s*$|la societe|le groupe|union invivo,|l'organisation|preambule)/i.test(norm(l));
+  const titre = [];
+  for(const l of lignes){
+    if(ignorer(l)) continue;
+    if(arret(l)) { if(titre.length) break; else continue; }
+    if(ratioMajuscules(l) >= 0.8){ titre.push(l); if(titre.length >= 4) break; }
+    else if(titre.length) break;
+  }
+  return titre.join(' ');
+}
+function prettifierTitre(brut){
+  if(!brut) return '';
+  const mots = norm(brut).toLowerCase().replace(/\s+/g,' ').trim().split(' ').map(w => {
+    const nu = w.replace(/[^a-z]/g,'');
+    if(SIGLES.indexOf(nu) !== -1) return w.replace(nu, nu.toUpperCase());
+    if(nu === 'invivo') return w.replace('invivo','InVivo');
+    if(ACCENTS[nu]) return w.replace(nu, ACCENTS[nu]);
+    const apo = w.match(/^([dlsjn]')(.+)$/);
+    if(apo){ const reste = apo[2].replace(/[^a-z]/g,''); if(ACCENTS[reste]) return apo[1] + apo[2].replace(reste, ACCENTS[reste]); }
+    return w;
+  });
+  const t = mots.join(' ');
+  return t.charAt(0).toUpperCase() + t.slice(1);
+}
+function titreDepuisNom(nom){ return String(nom).replace(/\.[a-z0-9]+$/i,'').replace(/[_]+/g,' ').replace(/\s+/g,' ').trim(); }
+function detecterType(titre){
+  const t = norm(titre).toLowerCase();
+  if(/\bavenant\b/.test(t)) return 'Avenant';
+  if(/\baccord\b/.test(t)) return 'Accord';
+  return 'Autre';
+}
+function detecterTheme(titre, texte){
+  const t = norm(titre).toLowerCase();
+  for(const th of THEMES) if(th.re.test(t)) return th.nom;
+  const tete = norm(String(texte || '').slice(0, 2500)).toLowerCase();
+  for(const th of THEMES) if(th.re.test(tete)) return th.nom;
+  return '';
+}
+/* </DETECTION> */
+
+/* ===== Interface ===== */
+const STATUTS = ['À qualifier','En vigueur','Échu','Dénoncé','Remplacé'];
+const TYPES = ['Accord','Avenant','Autre'];
+const THEME_NOMS = THEMES.map(t => t.nom).concat(['Autre']);
+let items = [], nextId = 1, seulementAVerifier = false, tri = 'date';
+
+const $ = id => document.getElementById(id);
+const esc = s => (s == null ? '' : String(s)).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function toast(msg){ const t = $('toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(toast._t); toast._t = setTimeout(() => t.classList.remove('show'), 3200); }
+function fmtFR(iso){ return iso ? iso.split('-').reverse().join('/') : ''; }
+function fmtTaille(n){ return n > 1048576 ? (n/1048576).toFixed(1) + ' Mo' : Math.max(1, Math.round(n/1024)) + ' Ko'; }
+function aujourdhui(){ const d = new Date(); return d.getFullYear() + '-' + pad(d.getMonth()+1) + '-' + pad(d.getDate()); }
+function opts(liste, val, vide){ return (vide ? '<option value="">' + esc(vide) + '</option>' : '') + liste.map(o => '<option value="' + esc(o) + '"' + (o === val ? ' selected' : '') + '>' + esc(o) + '</option>').join(''); }
+
+async function extrairePdf(buf){
+  if(!window.pdfjsLib) throw new Error('bibliothèque PDF non chargée (vérifie la connexion)');
+  const pdf = await pdfjsLib.getDocument({ data: buf }).promise;
+  const pages = [];
+  for(let i = 1; i <= pdf.numPages; i++){
+    const page = await pdf.getPage(i);
+    const content = await page.getTextContent();
+    let cur = '';
+    const lignes = [];
+    content.items.forEach(function(it){
+      cur += it.str;
+      if(it.hasEOL){ lignes.push(cur); cur = ''; }
+      else if(it.str){ cur += ' '; }
+    });
+    if(cur.trim()) lignes.push(cur);
+    pages.push({ page: i, lignes: lignes.map(l => l.trim()).filter(Boolean) });
+  }
+  return { pages: pages, texte: pages.map(p => p.lignes.join('\n')).join('\n\n') };
+}
+async function extraireDocx(buf){
+  if(!window.mammoth) throw new Error('bibliothèque Word non chargée (vérifie la connexion)');
+  const r = await window.mammoth.extractRawText({ arrayBuffer: buf });
+  return (r.value || '').split('\n').map(l => l.trim()).filter(Boolean).join('\n');
+}
+
+function calculerEcheance(it){
+  if(it.dureeType === 'indeterminee'){ it.finISO = ''; it.finConnue = false; return; }
+  if(it.dureeType === 'determinee' && !it.finConnue){
+    it.finISO = (it.dateISO && it.dureeMois) ? ajouterMois(it.dateISO, +it.dureeMois) : '';
+  }
+}
+function detecter(it){
+  const brut = detecterTitre(it.texte);
+  it.titre = prettifierTitre(brut) || titreDepuisNom(it.name);
+  it.titreIncertain = !brut;
+  it.type = detecterType(it.titre);
+  it.theme = detecterTheme(it.titre, it.texte);
+  const sig = detecterSignature(it.texte);
+  const nom = dateDuNom(it.name);
+  it.anneesNom = nom.annees;
+  if(sig.iso){ it.dateISO = sig.iso; it.dateSource = 'texte'; it.dateSnippet = sig.snippet; it.datesAlt = sig.autres; }
+  else if(nom.iso){ it.dateISO = nom.iso; it.dateSource = 'nom'; }
+  else if(it.modifISO){ it.dateISO = it.modifISO; it.dateSource = 'modification'; }
+  const d = detecterDuree(it.texte);
+  it.dureeType = d.type; it.dureeMois = d.mois || '';
+  if(d.finISO){ it.finISO = d.finISO; it.finConnue = true; }
+  calculerEcheance(it);
+}
+async function analyserFichier(f, cle){
+  const ext = (f.name.split('.').pop() || '').toLowerCase();
+  const dm = new Date(f.lastModified);
+  const it = { id: nextId++, cle: cle, name: f.name, size: f.size, ext: ext, nbPages: 0, pages: null, texte: '', erreur: '',
+    modifISO: isNaN(dm) ? '' : dm.getFullYear() + '-' + pad(dm.getMonth()+1) + '-' + pad(dm.getDate()),
+    titre: '', titreIncertain: false, type: 'Accord', theme: '', dateISO: '', dateSource: '', dateSnippet: '', datesAlt: [], anneesNom: [],
+    dureeType: '', dureeMois: '', finISO: '', finConnue: false, statut: 'À qualifier', lien: '', ouvert: false, sel: false, doublon: '' };
+  if(['pdf','docx','doc'].indexOf(ext) === -1) it.erreur = 'Format non pris en charge (PDF, DOCX ou DOC).';
+  else if(f.size > 25*1024*1024) it.erreur = 'Fichier trop volumineux (25 Mo maximum).';
+  else if(ext === 'doc') it.erreur = 'Ancien format .doc : texte non lisible automatiquement, enregistre-le en .docx ou saisis à la main.';
+  else {
+    try{
+      const buf = await f.arrayBuffer();
+      if(ext === 'pdf'){ const r = await extrairePdf(buf); it.pages = r.pages; it.texte = r.texte; it.nbPages = r.pages.length; }
+      else it.texte = await extraireDocx(buf);
+      if(it.texte.replace(/\s/g,'').length < 100) it.erreur = 'Aucun texte lisible (PDF scanné ?) : une reconnaissance de texte (OCR) serait nécessaire.';
+    }catch(e){ it.erreur = 'Lecture impossible : ' + (e && e.message ? e.message : e); }
+  }
+  detecter(it);
+  return it;
+}
+
+function cleDoublon(s){ return norm(s).toLowerCase().replace(/[^a-z0-9]/g,''); }
+function recalcDoublons(){
+  const groupes = {};
+  items.forEach(it => { it.doublon = ''; const k = cleDoublon(it.titre); if(k){ (groupes[k] = groupes[k] || []).push(it); } });
+  Object.keys(groupes).forEach(k => { const g = groupes[k]; if(g.length > 1) g.forEach(it => { it.doublon = g.filter(x => x !== it).map(x => x.name).join(', '); }); });
+}
+function alertes(it){
+  const a = [];
+  if(it.erreur) a.push({n:'err', t:it.erreur});
+  if(it.titreIncertain && !it.erreur) a.push({n:'warn', t:'Titre non détecté dans le texte : repris du nom du fichier.'});
+  if(!it.dateISO) a.push({n:'err', t:'Date de signature introuvable : à saisir.'});
+  else if(it.dateSource === 'nom') a.push({n:'warn', t:'Date tirée du nom du fichier : à vérifier.'});
+  else if(it.dateSource === 'modification') a.push({n:'warn', t:'Date tirée de la dernière modification du fichier (peu fiable) : à vérifier.'});
+  if(it.datesAlt.length) a.push({n:'warn', t:'Plusieurs « Fait à » avec des dates différentes (autre date : ' + it.datesAlt.map(fmtFR).join(', ') + ').'});
+  if(it.dateISO && it.anneesNom.length && it.anneesNom.indexOf(+it.dateISO.slice(0,4)) === -1)
+    a.push({n:'warn', t:'L’année du nom du fichier (' + it.anneesNom.join(', ') + ') diffère de celle de la signature (' + it.dateISO.slice(0,4) + ').'});
+  if(!it.dureeType) a.push({n:'warn', t:'Durée non détectée : à renseigner.'});
+  if(it.dureeType === 'determinee' && !it.finISO) a.push({n:'warn', t:'Durée déterminée sans échéance calculable : renseigne la durée en mois ou l’échéance.'});
+  if(it.finISO && it.finISO < aujourdhui()) a.push({n:'info', t: (it.finConnue ? 'Échéance dépassée' : 'Échéance estimée dépassée') + ' : à qualifier (échu, renouvelé ou remplacé ?).'});
+  if(it.doublon) a.push({n:'warn', t:'Doublon possible dans ce lot : ' + it.doublon});
+  return a;
+}
+function niveau(it){ const a = alertes(it); return a.some(x => x.n === 'err') ? 'err' : (a.some(x => x.n === 'warn') ? 'warn' : 'ok'); }
+
+function srcBadge(it){
+  const lib = {texte:'texte du document', nom:'nom du fichier', modification:'dernière modification', manuel:'saisie manuelle', '':'aucune'};
+  const cls = it.dateSource || 'aucune';
+  return '<span class="src src-' + cls + '">' + lib[it.dateSource] + '</span>';
+}
+function finHtml(it){
+  if(it.dureeType === 'indeterminee') return 'Pas d’échéance';
+  if(!it.finISO) return it.dureeType === 'determinee' ? '<em>échéance à renseigner</em>' : '';
+  const depasse = it.finISO < aujourdhui();
+  return '→ <span class="' + (depasse ? 'over' : '') + '">' + fmtFR(it.finISO) + '</span> ' + (it.finConnue ? '' : '<em>estimée</em>') + (depasse ? ' <em class="over">dépassée</em>' : '');
+}
+function detailAlertes(it){
+  const a = alertes(it);
+  return a.length ? '<ul class="al">' + a.map(x => '<li class="' + x.n + '">' + esc(x.t) + '</li>').join('') + '</ul>' : '<div class="fmeta">Aucune alerte.</div>';
+}
+function nbAlertes(it){ return alertes(it).filter(x => x.n !== 'info').length; }
+
+function ligneHtml(it){
+  const lvl = niveau(it);
+  const meta = it.ext.toUpperCase() + (it.nbPages ? ' · ' + it.nbPages + ' p.' : '') + ' · ' + fmtTaille(it.size);
+  const det = it.dureeType === 'determinee';
+  return '<tr class="r lvl-' + lvl + '" data-id="' + it.id + '">' +
+    '<td><input type="checkbox" data-f="sel"' + (it.sel ? ' checked' : '') + '></td>' +
+    '<td><div class="fname" title="' + esc(it.name) + '">' + esc(it.name) + '</div><div class="fmeta">' + meta + '</div></td>' +
+    '<td><input type="text" data-f="titre" value="' + esc(it.titre) + '"></td>' +
+    '<td><select data-f="type">' + opts(TYPES, it.type) + '</select></td>' +
+    '<td><select data-f="theme">' + opts(THEME_NOMS, it.theme, '— à choisir —') + '</select></td>' +
+    '<td><input type="date" data-f="dateISO" value="' + esc(it.dateISO) + '"><div data-k="src">' + srcBadge(it) + '</div></td>' +
+    '<td><div class="dur"><select data-f="dureeType">' + '<option value=""' + (it.dureeType === '' ? ' selected' : '') + '>— à choisir —</option>' +
+      '<option value="indeterminee"' + (it.dureeType === 'indeterminee' ? ' selected' : '') + '>Indéterminée</option>' +
+      '<option value="determinee"' + (det ? ' selected' : '') + '>Déterminée</option></select>' +
+      '<input type="number" min="1" max="240" data-f="dureeMois" title="Durée en mois" placeholder="mois" value="' + esc(it.dureeMois) + '"' + (det ? '' : ' style="display:none"') + '></div>' +
+      '<div class="fin" data-k="fin">' + finHtml(it) + '</div></td>' +
+    '<td><select data-f="statut">' + opts(STATUTS, it.statut) + '</select></td>' +
+    '<td><button class="mini" data-act="toggle">' + (it.ouvert ? '▴' : '▾') + ' <span class="nb" data-k="nb">' + (nbAlertes(it) || '') + '</span></button></td>' +
+  '</tr>' +
+  '<tr class="detail" data-id="' + it.id + '"' + (it.ouvert ? '' : ' hidden') + '><td></td><td colspan="8"><div class="detail-grid">' +
+    '<div><h4>Alertes</h4><div data-k="al">' + detailAlertes(it) + '</div></div>' +
+    '<div><h4>Extrait de signature repéré</h4><div class="snippet">' + (it.dateSnippet ? esc(it.dateSnippet) : 'Aucune formule « Fait à … le … » trouvée.') + '</div>' +
+      '<h4 style="margin-top:10px">Échéance connue (si elle diffère du calcul)</h4><input type="date" data-f="finISO" value="' + (it.finConnue ? esc(it.finISO) : '') + '">' +
+      '<h4 style="margin-top:10px">Lien avec un autre accord (modifie / remplace)</h4><input type="text" data-f="lien" placeholder="ex. accord du 2 décembre 2022" value="' + esc(it.lien) + '">' +
+      '<div style="margin-top:10px"><button class="mini" data-act="retirer">Retirer ce fichier de la liste</button></div></div>' +
+  '</div></td></tr>';
+}
+
+function visibles(){
+  let l = items.slice();
+  if(seulementAVerifier) l = l.filter(it => nbAlertes(it) > 0);
+  if(tri === 'nom') l.sort((a,b) => a.name.localeCompare(b.name, 'fr'));
+  else l.sort((a,b) => (a.dateISO || '9999') === (b.dateISO || '9999') ? a.name.localeCompare(b.name, 'fr') : ((a.dateISO || '9999') < (b.dateISO || '9999') ? 1 : -1));
+  return l;
+}
+function render(){
+  const has = items.length > 0;
+  $('tableWrap').style.display = has ? 'block' : 'none';
+  $('toolbar').style.display = has ? 'flex' : 'none';
+  $('foot').style.display = has ? 'block' : 'none';
+  const l = visibles();
+  $('tbody').innerHTML = l.length ? l.map(ligneHtml).join('') : '<tr><td colspan="9"><div class="empty-note">Rien à afficher avec ce filtre.</div></td></tr>';
+  majResume(); majBarre();
+}
+function majResume(){
+  const n = items.length;
+  if(!n){ $('summary').innerHTML = ''; return; }
+  const sans = items.filter(i => !i.dateISO).length;
+  const aV = items.filter(i => nbAlertes(i) > 0).length;
+  const ech = items.filter(i => i.finISO && i.finISO < aujourdhui()).length;
+  const dbl = items.filter(i => i.doublon).length;
+  $('summary').innerHTML = '<span class="chip"><b>' + n + '</b> fichier' + (n > 1 ? 's' : '') + '</span>' +
+    '<span class="chip warn"><b>' + aV + '</b> à vérifier</span>' +
+    '<span class="chip err"><b>' + sans + '</b> sans date</span>' +
+    '<span class="chip"><b>' + ech + '</b> échéance dépassée</span>' +
+    '<span class="chip"><b>' + dbl + '</b> doublon' + (dbl > 1 ? 's' : '') + ' possible' + (dbl > 1 ? 's' : '') + '</span>';
+}
+function majBarre(){ $('bulk').classList.toggle('show', items.some(i => i.sel)); }
+function majDerives(){
+  recalcDoublons();
+  items.forEach(it => {
+    const rows = $('tbody').querySelectorAll('tr[data-id="' + it.id + '"]');
+    if(rows.length < 2) return;
+    rows[0].className = 'r lvl-' + niveau(it);
+    rows[0].querySelector('[data-k="src"]').innerHTML = srcBadge(it);
+    rows[0].querySelector('[data-k="fin"]').innerHTML = finHtml(it);
+    rows[0].querySelector('[data-k="nb"]').textContent = nbAlertes(it) || '';
+    rows[0].querySelector('[data-f="dureeMois"]').style.display = it.dureeType === 'determinee' ? '' : 'none';
+    rows[1].querySelector('[data-k="al"]').innerHTML = detailAlertes(it);
+  });
+  majResume();
+}
+function appliquerChamp(it, f, v){
+  switch(f){
+    case 'titre': it.titre = v; it.titreIncertain = false; break;
+    case 'dateISO': it.dateISO = v; it.dateSource = v ? 'manuel' : ''; it.datesAlt = []; calculerEcheance(it); break;
+    case 'dureeType': it.dureeType = v; if(v !== 'determinee') it.dureeMois = ''; calculerEcheance(it); break;
+    case 'dureeMois': it.dureeMois = v ? (parseInt(v, 10) || '') : ''; it.finConnue = false; calculerEcheance(it); break;
+    case 'finISO': it.finISO = v; it.finConnue = !!v; if(!v) calculerEcheance(it); break;
+    default: it[f] = v;
+  }
+}
+
+$('tbody').addEventListener('change', e => {
+  const el = e.target, f = el.dataset.f, tr = el.closest('tr[data-id]');
+  if(!f || !tr) return;
+  const it = items.find(i => i.id === +tr.dataset.id);
+  if(!it) return;
+  if(f === 'sel'){ it.sel = el.checked; majBarre(); return; }
+  appliquerChamp(it, f, el.value);
+  majDerives();
+});
+$('tbody').addEventListener('click', e => {
+  const b = e.target.closest('[data-act]'), tr = e.target.closest('tr[data-id]');
+  if(!b || !tr) return;
+  const it = items.find(i => i.id === +tr.dataset.id);
+  if(!it) return;
+  if(b.dataset.act === 'toggle'){
+    it.ouvert = !it.ouvert;
+    const rows = $('tbody').querySelectorAll('tr[data-id="' + it.id + '"]');
+    rows[1].hidden = !it.ouvert;
+    b.firstChild.textContent = it.ouvert ? '▴ ' : '▾ ';
+  } else if(b.dataset.act === 'retirer'){
+    items = items.filter(i => i.id !== it.id);
+    recalcDoublons(); render();
+  }
+});
+$('selAll').addEventListener('change', e => { visibles().forEach(it => { it.sel = e.target.checked; }); render(); });
+$('onlyCheck').addEventListener('change', e => { seulementAVerifier = e.target.checked; render(); });
+$('sortSel').addEventListener('change', e => { tri = e.target.value; render(); });
+$('bulkTheme').innerHTML = opts(THEME_NOMS, '', 'Thème : inchangé');
+$('bulkStatut').innerHTML = opts(STATUTS, '', 'Statut : inchangé');
+$('bulkApply').addEventListener('click', () => {
+  const th = $('bulkTheme').value, st = $('bulkStatut').value;
+  const cibles = items.filter(i => i.sel);
+  if(!cibles.length || (!th && !st)){ toast('Choisis un thème ou un statut à appliquer.'); return; }
+  cibles.forEach(i => { if(th) i.theme = th; if(st) i.statut = st; i.sel = false; });
+  $('selAll').checked = false; render();
+  toast('Appliqué à ' + cibles.length + ' ligne' + (cibles.length > 1 ? 's' : '') + '.');
+});
+
+async function ajouterFichiers(liste){
+  const fichiers = Array.from(liste);
+  const connues = new Set(items.map(i => i.cle));
+  const aTraiter = [];
+  fichiers.forEach(f => { const c = f.name + '|' + f.size + '|' + f.lastModified; if(!connues.has(c)){ connues.add(c); aTraiter.push({f:f, c:c}); } });
+  if(!aTraiter.length){ toast('Ces fichiers sont déjà dans la liste.'); return; }
+  $('progress').style.display = 'block';
+  for(let k = 0; k < aTraiter.length; k++){
+    $('progressTxt').textContent = 'Lecture ' + (k+1) + ' / ' + aTraiter.length + ' : ' + aTraiter[k].f.name;
+    $('progressBar').style.width = Math.round(k / aTraiter.length * 100) + '%';
+    items.push(await analyserFichier(aTraiter[k].f, aTraiter[k].c));
+  }
+  $('progressBar').style.width = '100%';
+  setTimeout(() => { $('progress').style.display = 'none'; }, 600);
+  recalcDoublons(); render();
+  toast(aTraiter.length + ' fichier' + (aTraiter.length > 1 ? 's' : '') + ' analysé' + (aTraiter.length > 1 ? 's' : '') + '.');
+}
+$('pick').addEventListener('click', () => $('file').click());
+$('file').addEventListener('change', e => { ajouterFichiers(e.target.files); e.target.value = ''; });
+['dragenter','dragover'].forEach(ev => $('drop').addEventListener(ev, e => { e.preventDefault(); $('drop').classList.add('over'); }));
+['dragleave','drop'].forEach(ev => $('drop').addEventListener(ev, e => { e.preventDefault(); $('drop').classList.remove('over'); }));
+$('drop').addEventListener('drop', e => { if(e.dataTransfer && e.dataTransfer.files.length) ajouterFichiers(e.dataTransfer.files); });
+</script>
+</body>
+</html>
