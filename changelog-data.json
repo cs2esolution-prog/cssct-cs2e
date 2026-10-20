@@ -1,5 +1,17 @@
 [
   {
+    "hash": "9a71db9",
+    "date": "20/10/2026",
+    "title": "Update accords_import.html",
+    "description": ""
+  },
+  {
+    "hash": "24dad02",
+    "date": "20/10/2026",
+    "title": "chore: mise a jour automatique du changelog [skip ci]",
+    "description": ""
+  },
+  {
     "hash": "ae2361e",
     "date": "20/10/2026",
     "title": "Update accords_import.html",
