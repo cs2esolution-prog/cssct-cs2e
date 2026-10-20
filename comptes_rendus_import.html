@@ -1,0 +1,956 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex">
+<title>Comptes-rendus · dépôt en masse · CSSCT</title>
+<link rel="icon" href="icon-192.png">
+<meta name="theme-color" content="#2B2A2E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,500;8..60,600;8..60,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/pdfjs-dist@3.11.174/legacy/build/pdf.min.js"></script>
+<script src="https://unpkg.com/mammoth@1.7.1/mammoth.browser.min.js"></script>
+<script>
+  if (window.pdfjsLib) {
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://unpkg.com/pdfjs-dist@3.11.174/legacy/build/pdf.worker.min.js';
+  }
+</script>
+<style>
+  :root{
+    --teal:#019682; --teal-dark:#017162; --purple:#5A4570; --gold:#C6AB76;
+    --paper:#F7F5F1; --ink:#2B2A2E; --ink-soft:#6B6873; --line:#E4E0D8;
+    --danger:#A85D45; --warn:#B7822B; --radius:10px;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0; background:var(--paper); color:var(--ink); font-family:'Inter',system-ui,sans-serif; line-height:1.5;}
+  .wrap{max-width:1480px; margin:0 auto; padding:32px 24px 40px;}
+  header.top{display:flex; align-items:center; justify-content:space-between; padding-bottom:20px; border-bottom:2px solid var(--ink); margin-bottom:24px; flex-wrap:wrap; gap:10px;}
+  .brand{display:flex; align-items:center; gap:12px;}
+  .brand-mark{width:38px; height:38px; border-radius:50%; background:conic-gradient(var(--teal) 0deg 120deg, var(--gold) 120deg 240deg, var(--purple) 240deg 360deg); flex:none; overflow:hidden;}
+  .brand-text{font-family:'Source Serif 4',serif; font-weight:700; font-size:19px;}
+  .brand-text span{color:var(--teal);}
+  .top-right{display:flex; align-items:center; gap:10px;}
+  .who{font-size:11.5px; color:var(--ink-soft);}
+  @media (max-width:700px){ .who{display:none;} }
+  .back-link{font-size:12.5px; font-weight:600; color:var(--ink-soft); text-decoration:none; border:1px solid var(--line); padding:6px 14px; border-radius:20px;}
+  #logoutBtn{background:#fff; border:1px solid var(--line); color:var(--danger); width:34px; height:34px; border-radius:50%; font-weight:700; cursor:pointer; font-size:14px;}
+  h1{font-family:'Source Serif 4',serif; font-size:22px; margin:0 0 4px; color:var(--teal-dark);}
+  h2{font-family:'Source Serif 4',serif; font-size:16px; margin:26px 0 8px;}
+  .subtitle{font-size:12.5px; color:var(--ink-soft); margin:0 0 18px;}
+  .privacy{font-size:12px; background:#E4F3EF; color:var(--teal-dark); border-radius:8px; padding:8px 12px; margin:0 0 16px; display:inline-block;}
+  #banniere{display:none; font-size:12.5px; background:#F6DDD3; color:var(--danger); border-radius:8px; padding:10px 14px; margin:0 0 16px; font-weight:600;}
+
+  .drop{border:2px dashed var(--line); background:#fff; border-radius:var(--radius); padding:26px 20px; text-align:center; font-size:13.5px; color:var(--ink-soft); transition:border-color .15s, background .15s;}
+  .drop.over{border-color:var(--teal); background:#F2FBF9;}
+  .drop strong{color:var(--ink);}
+  .btn{background:var(--ink); color:#fff; border:none; padding:9px 18px; border-radius:20px; font-weight:600; font-size:12.5px; cursor:pointer; font-family:inherit;}
+  .btn.ghost{background:#fff; color:var(--ink-soft); border:1px solid var(--line);}
+  .btn.ghost:hover{border-color:var(--purple); color:var(--purple);}
+  .btn.danger{background:#fff; color:var(--danger); border:1px solid var(--danger);}
+  .btn.go{background:var(--teal-dark);}
+  .btn:disabled{opacity:.45; cursor:default;}
+  .drop .btn{margin-top:10px;}
+
+  #progress{display:none; margin:14px 0; font-size:12.5px; color:var(--ink-soft);}
+  .bar{height:6px; background:var(--line); border-radius:4px; overflow:hidden; margin-top:6px;}
+  .bar i{display:block; height:100%; width:0; background:var(--teal); transition:width .2s;}
+
+  #summary{display:flex; flex-wrap:wrap; gap:8px; margin:18px 0 10px;}
+  .chip{font-size:12px; font-weight:600; background:#fff; border:1px solid var(--line); border-radius:16px; padding:5px 12px; color:var(--ink-soft);}
+  .chip b{color:var(--ink);}
+  .chip.err b{color:var(--danger);} .chip.warn b{color:var(--warn);}
+
+  .toolbar{display:flex; flex-wrap:wrap; align-items:center; gap:10px; margin:6px 0 10px; font-size:12.5px;}
+  .toolbar label{display:flex; align-items:center; gap:6px; color:var(--ink-soft); cursor:pointer;}
+  .toolbar select{font-family:inherit; font-size:12.5px; padding:6px 8px; border:1px solid var(--line); border-radius:7px; background:#fff;}
+  #bulk{display:none; align-items:center; gap:8px; background:#fff; border:1px solid var(--purple); border-radius:10px; padding:6px 10px; margin-left:auto;}
+  #bulk.show{display:flex;}
+
+  .tablewrap{overflow-x:auto; background:#fff; border:1px solid var(--line); border-radius:var(--radius);}
+  table{border-collapse:collapse; table-layout:fixed; width:1400px; min-width:100%; font-size:12.5px;}
+  table.cote{width:100%; min-width:900px;}
+  th{background:#FBFAF7; text-align:left; font-size:10.5px; text-transform:uppercase; letter-spacing:.06em; color:var(--ink-soft); padding:9px 8px; border-bottom:1px solid var(--line); white-space:nowrap;}
+  td{padding:8px; border-bottom:1px solid var(--line); vertical-align:top;}
+  tr.r.lvl-warn td:first-child{box-shadow:inset 4px 0 0 var(--warn);}
+  tr.r.lvl-err td:first-child{box-shadow:inset 4px 0 0 var(--danger);}
+  tr.r.lvl-ok td:first-child{box-shadow:inset 4px 0 0 var(--teal);}
+  td input[type=text], td input[type=date], td input[type=number], td select, .detail input[type=text], .detail input[type=date]{
+    width:100%; font-family:inherit; font-size:12.5px; padding:6px 7px; border:1px solid var(--line); border-radius:6px; background:#fff;}
+  td input:focus, td select:focus{outline:2px solid var(--teal); outline-offset:-1px;}
+  .fname{font-weight:600; max-width:190px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .fmeta{font-size:11px; color:var(--ink-soft);}
+  .src{display:inline-block; font-size:10px; font-weight:700; border-radius:9px; padding:2px 8px; margin-top:4px;}
+  .src-texte{background:#E4F3EF; color:var(--teal-dark);}
+  .src-nom{background:#FBF1DC; color:var(--warn);}
+  .src-modification{background:#F6DDD3; color:var(--danger);}
+  .src-manuel{background:#ECE6F2; color:var(--purple);}
+  .src-aucune{background:#F6DDD3; color:var(--danger);}
+  .dur{display:flex; gap:6px; align-items:center;}
+  .dur input[type=number]{width:62px; flex:none;}
+  .fin{font-size:11.5px; margin-top:4px; color:var(--ink-soft);}
+  .fin em{font-style:normal; font-weight:700; color:var(--warn);}
+  .fin .over{color:var(--danger); font-weight:700;}
+  .mini{background:#fff; border:1px solid var(--line); border-radius:14px; padding:3px 10px; font-size:11.5px; cursor:pointer; font-family:inherit; color:var(--ink-soft);}
+  .mini:hover{border-color:var(--purple); color:var(--purple);}
+  .mini .nb{font-weight:700; color:var(--warn);}
+  tr.detail td{background:#FBFAF7; font-size:12px;}
+  .detail-grid{display:grid; grid-template-columns:1fr 1fr; gap:16px;}
+  @media (max-width:900px){ .detail-grid{grid-template-columns:1fr;} }
+  .detail h4{margin:0 0 6px; font-size:10.5px; text-transform:uppercase; letter-spacing:.06em; color:var(--ink-soft);}
+  .al{margin:0 0 4px; padding-left:16px;}
+  .al li.err{color:var(--danger);} .al li.warn{color:var(--warn);} .al li.info{color:var(--ink-soft);}
+  .snippet{background:#fff; border:1px solid var(--line); border-radius:6px; padding:6px 8px; font-size:11.5px; color:var(--ink-soft); word-break:break-word;}
+  .empty-note{padding:30px; text-align:center; color:var(--ink-soft); font-size:13px;}
+  .foot{margin-top:14px; font-size:12px; color:var(--ink-soft);}
+
+  .motif{display:inline-block; font-size:10.5px; font-weight:700; border-radius:9px; padding:2px 8px;}
+  .motif-identique{background:#ECE6F2; color:var(--purple);}
+  .motif-ressemblant{background:#FBF1DC; color:var(--warn);}
+  #coteBox, #lotsBox, #resultatBox{display:none;}
+  .panel{background:#fff; border:1px solid var(--line); border-radius:var(--radius); padding:14px 16px;}
+  .lotline{display:flex; align-items:center; justify-content:space-between; gap:10px; padding:8px 0; border-bottom:1px solid var(--line); font-size:12.5px;}
+  .lotline:last-child{border-bottom:none;}
+  .lotline .meta{color:var(--ink-soft); font-size:11.5px;}
+  #resultatBox .panel{border-color:var(--teal);}
+  #resultatBox ul{margin:6px 0 0; padding-left:18px; font-size:12.5px;}
+  #resultatBox li.err{color:var(--danger);}
+
+  .sendbar{position:sticky; bottom:0; z-index:20; display:none; align-items:center; justify-content:space-between; gap:12px; background:#fff; border:1px solid var(--line); border-radius:12px; padding:10px 16px; margin-top:14px; box-shadow:0 -4px 16px rgba(0,0,0,.06);}
+  .sendbar.show{display:flex;}
+  .sendbar .txt{font-size:12.5px; color:var(--ink-soft);}
+  .sendbar .txt b{color:var(--ink);}
+
+  .overlay{position:fixed; inset:0; background:rgba(30,28,32,.55); display:none; align-items:center; justify-content:center; z-index:300; padding:20px;}
+  .overlay.show{display:flex;}
+  .overlay .box{background:#fff; border-radius:14px; padding:26px; width:min(460px,100%);}
+  .overlay h3{margin:0 0 8px; font-family:'Source Serif 4',serif;}
+  .overlay .note{font-size:11.5px; color:var(--ink-soft); margin:12px 0 0;}
+
+  #authGate{position:fixed;inset:0;background:#2B2A2E;display:flex;align-items:center;justify-content:center;z-index:400;padding:20px;}
+  #authForm{display:none;background:#fff;border-radius:14px;padding:32px;max-width:360px;width:100%;text-align:center;}
+  #toast{position:fixed; left:50%; bottom:24px; transform:translate(-50%,120%); background:var(--ink); color:#fff; padding:12px 20px; border-radius:12px; font-size:13.5px; transition:transform .3s ease, opacity .3s ease; z-index:500; max-width:90vw; opacity:0; pointer-events:none;}
+  #toast.show{transform:translate(-50%,0); opacity:1;}
+
+  /* ===== Spécifique CR ===== */
+  .pairtag{display:inline-block; font-size:10px; font-weight:700; border-radius:9px; padding:2px 8px; margin-top:4px; background:#ECE6F2; color:var(--purple);}
+  tr.r.pair td{background:#F8F5FB;}
+  .src-texte,.src-nom,.src-modification,.src-manuel,.src-aucune{margin-top:3px;}
+  .dest{font-size:12px;}
+  .badge{display:inline-block; font-size:11px; font-weight:700; padding:2px 9px; border-radius:10px; white-space:nowrap;}
+  .b-ok{background:#E4F3EF; color:var(--teal-dark);} .b-warn{background:#FBF1DC; color:var(--warn);} .b-err{background:#F6DDD3; color:var(--danger);} .b-off{background:#EEEBE5; color:var(--ink-soft);}
+  .al{list-style:none; padding:0; margin:6px 0 0; font-size:11px;}
+  .al li{margin:2px 0;}
+  td input:disabled{background:#F4F1EB; color:var(--ink-soft);}
+  table.main{width:100%; min-width:1080px;}
+  @media (max-width:860px){
+    .wrap{padding:18px 14px 40px;}
+    #tableWrap{overflow:visible; background:none; border:none;}
+    table.cote{min-width:0; width:100%;}
+    table.cote td{display:block; width:100% !important; text-align:left !important;}
+    table.main{min-width:0; table-layout:auto;}
+    table.main thead{display:none;}
+    table.main, table.main tbody, table.main tr.r, table.main td{display:block; width:100%;}
+    table.main tr.r{background:#fff; border:1px solid var(--line); border-radius:12px; margin-bottom:10px; padding:6px 2px;}
+    table.main tr.r.pair{background:#F8F5FB;}
+    table.main td{border:none; padding:6px 10px;}
+    table.main td[data-l]::before{content:attr(data-l); display:block; font-size:10.5px; text-transform:uppercase; letter-spacing:.05em; color:var(--ink-soft); font-weight:700; margin-bottom:2px;}
+    table.main td.chk{display:flex; justify-content:space-between; align-items:center;}
+    .fname{max-width:none; white-space:normal; word-break:break-all;}
+    .sendbar{flex-direction:column; align-items:stretch;}
+    #bulk{margin-left:0; flex-wrap:wrap;}
+  }
+</style>
+</head>
+<body>
+
+<div id="authGate">
+  <div id="authChecking" style="color:#ffffffaa;font-size:13.5px;">Vérification de la connexion…</div>
+  <div id="authForm">
+    <div style="font-family:'Source Serif 4',serif;font-weight:700;font-size:18px;margin-bottom:6px;">CS<span style="color:#019682;">2E</span> · CSSCT</div>
+    <p style="font-size:13px;color:#6B6873;margin:0 0 18px;">Connecte-toi avec ton email professionnel.</p>
+    <input type="email" id="authEmail" placeholder="prenom.nom@entreprise.com" style="width:100%;padding:10px 12px;border:1px solid #E4E0D8;border-radius:8px;font-size:13.5px;margin-bottom:10px;">
+    <button id="authSendLink" style="width:100%;background:#2B2A2E;color:#fff;border:none;padding:11px;border-radius:20px;font-weight:600;cursor:pointer;">Recevoir un lien de connexion</button>
+    <div id="authMsg" style="font-size:12px;color:#A85D45;margin-top:10px;min-height:14px;"></div>
+    <div style="margin-top:16px;padding-top:14px;border-top:1px solid #E4E0D8;text-align:left;">
+      <p style="font-size:11px;color:#6B6873;margin:0 0 8px;">Le lien s'ouvre dans un autre navigateur au lieu de cette appli épinglée ? Copie-le depuis ton email et colle-le ici :</p>
+      <input type="text" id="pastedLinkInput" placeholder="Colle le lien reçu par email" style="width:100%;padding:9px 11px;border:1px solid #E4E0D8;border-radius:8px;font-size:12.5px;margin-bottom:8px;">
+      <button id="pastedLinkBtn" style="width:100%;background:#fff;color:#2B2A2E;border:1px solid #E4E0D8;padding:10px;border-radius:20px;font-weight:600;font-size:12.5px;cursor:pointer;">Se connecter avec ce lien</button>
+      <div id="pastedLinkMsg" style="font-size:11.5px;color:#A85D45;margin-top:8px;min-height:14px;"></div>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+  <header class="top">
+    <div class="brand"><div class="brand-mark"></div><div class="brand-text">CS<span>2E</span> · CSSCT</div></div>
+    <div class="top-right">
+      <span class="who" id="who"></span>
+      <a class="back-link" href="comptes_rendus_reunion.html">← Retour aux CR</a>
+      <button id="logoutBtn" title="Se déconnecter">✕</button>
+    </div>
+  </header>
+
+  <h1>Comptes-rendus : dépôt en masse</h1>
+  <p class="subtitle">Dépose des comptes-rendus CSSCT ou CSE (PDF ou Word, 25 Mo maximum chacun) : contrôle, doublons, puis création ou complément des fiches.</p>
+  <p class="privacy">🔒 Les fichiers sont déposés comme <strong>confidentiels</strong> par défaut et ne sont accessibles à aucun collaborateur tant que tu ne l'as pas décidé dans la fiche.</p>
+
+  <div id="banniere"></div>
+
+  <div class="drop" id="drop">
+    <div>Glisse tes fichiers ici, ou</div>
+    <button class="btn" id="pick">Choisir des fichiers</button>
+    <input type="file" id="file" multiple accept=".pdf,.docx,.doc" hidden>
+  </div>
+  <div id="progress"><span id="progressTxt"></span><div class="bar"><i id="progressBar"></i></div></div>
+
+  <div id="resultatBox"></div>
+  <div id="summary"></div>
+
+  <div class="toolbar" id="toolbar" style="display:none;">
+    <label><input type="checkbox" id="onlyCheck"> À vérifier seulement</label>
+    <div id="bulk">
+      <span id="bulkTxt"></span>
+      <select id="bulkCat"><option value="">Catégorie : inchangée</option></select>
+      <select id="bulkConf"><option value="">Confidentialité : inchangée</option><option value="confidentiel">Confidentiel</option><option value="non">Non confidentiel</option></select>
+      <button class="btn" id="bulkApply">Appliquer</button>
+    </div>
+  </div>
+
+  <div class="tablewrap" id="tableWrap" style="display:none;">
+    <table class="main">
+      <colgroup><col style="width:34px"><col style="width:15%"><col style="width:12%"><col style="width:12%"><col style="width:17%"><col style="width:11%"><col style="width:17%"><col style="width:14%"></colgroup>
+      <thead><tr><th><input type="checkbox" id="selAll" title="Tout sélectionner"></th><th>Fichier</th><th>Catégorie</th><th>Date de réunion</th><th>Titre de la fiche</th><th>Confidentialité</th><th>Destination</th><th>État</th></tr></thead>
+      <tbody id="tbody"></tbody>
+    </table>
+  </div>
+
+  <div class="sendbar" id="sendbar">
+    <div class="txt" id="sendTxt"></div>
+    <button class="btn go" id="sendBtn">Envoyer</button>
+  </div>
+  <p class="foot" id="foot" style="display:none;">Catégorie, date de réunion et titre sont obligatoires pour envoyer. Vérifie surtout les lignes marquées en orange ou en rouge. L'ordre du jour et les participants sont préremplis depuis le fichier, seulement s'ils sont vides, et jamais par-dessus une saisie existante.</p>
+
+  <div id="coteBox">
+    <h2>Mis de côté <span id="coteCount" style="font-family:Inter,sans-serif;font-size:12px;color:var(--ink-soft);"></span></h2>
+    <div class="tablewrap"><table class="cote"><tbody id="coteBody"></tbody></table></div>
+  </div>
+
+  <div id="lotsBox">
+    <h2>Envois précédents</h2>
+    <div class="panel" id="lotsList"></div>
+  </div>
+</div>
+
+<div class="overlay" id="envoiOverlay">
+  <div class="box">
+    <h3 id="envoiTitre">Envoi en cours…</h3>
+    <div id="envoiTxt" style="font-size:12.5px;color:var(--ink-soft);"></div>
+    <div class="bar"><i id="envoiBar"></i></div>
+    <p class="note">Ne ferme pas cette page pendant l'envoi.</p>
+  </div>
+</div>
+<div id="toast"></div>
+
+<script>
+/* ===== Fonctions reprises à l'identique des pages existantes (import des accords, module CR) ===== */
+const MOIS = {janvier:1,fevrier:2,mars:3,avril:4,mai:5,juin:6,juillet:7,aout:8,septembre:9,octobre:10,novembre:11,decembre:12};
+
+const MOIS_RE = 'janvier|fevrier|mars|avril|mai|juin|juillet|aout|septembre|octobre|novembre|decembre';
+
+const DATE_TOKEN = '(?:\\d{1,2}(?:er)?\\s+(?:' + MOIS_RE + ')\\s+\\d{4}|\\d{1,2}[\\/.\\-]\\d{1,2}[\\/.\\-]\\d{4})';
+
+function norm(s){ return String(s == null ? '' : s).normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[\u2018\u2019\u00b4`]/g,"'"); }
+
+function pad(n){ return String(n).padStart(2,'0'); }
+
+function toISO(y,m,d){
+  const dt = new Date(Date.UTC(y,m-1,d));
+  if(dt.getUTCFullYear() !== y || dt.getUTCMonth() !== m-1 || dt.getUTCDate() !== d) return '';
+  return y + '-' + pad(m) + '-' + pad(d);
+}
+
+function parseDateFr(str){
+  const s = norm(str).toLowerCase().trim();
+  let m = s.match(/^(\d{1,2})(?:er)?\s+([a-z]+)\s+(\d{4})$/);
+  if(m && MOIS[m[2]]) return toISO(+m[3], MOIS[m[2]], +m[1]);
+  m = s.match(/^(\d{1,2})[\/.\-](\d{1,2})[\/.\-](\d{4})$/);
+  if(m) return toISO(+m[3], +m[2], +m[1]);
+  return '';
+}
+
+function dateDuNom(nom){
+  const base = String(nom).replace(/\.[a-z0-9]+$/i,'');
+  const annees = (base.match(/(?<!\d)(?:19|20)\d{2}(?!\d)/g) || []).map(Number);
+  let m = base.match(/(?<!\d)((?:19|20)\d{2})[-_. ]?(\d{2})[-_. ]?(\d{2})(?!\d)/);
+  if(m){ const iso = toISO(+m[1], +m[2], +m[3]); if(iso) return {iso:iso, annees:annees}; }
+  m = base.match(/(?<!\d)(\d{2})[-_. ](\d{2})[-_. ]((?:19|20)\d{2})(?!\d)/);
+  if(m){ const iso = toISO(+m[3], +m[2], +m[1]); if(iso) return {iso:iso, annees:annees}; }
+  return {iso:'', annees:annees};
+}
+
+async function extractPdfPages(file){
+  if(!window.pdfjsLib) return null;
+  try{
+    const buf = await file.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({ data: buf }).promise;
+    const pages = [];
+    for(let i=1;i<=pdf.numPages;i++){
+      const page = await pdf.getPage(i);
+      const content = await page.getTextContent();
+      let currentLine = '';
+      const lignes = [];
+      content.items.forEach(function(it){
+        currentLine += it.str;
+        if(it.hasEOL){ lignes.push(currentLine); currentLine = ''; }
+        else if(it.str){ currentLine += ' '; }
+      });
+      if(currentLine.trim()) lignes.push(currentLine);
+      pages.push({ page: i, lignes: lignes.map(function(l){return l.trim();}).filter(Boolean) });
+    }
+    return pages;
+  }catch(err){ console.error('Extraction PDF impossible', err); return null; }
+}
+
+async function extractWordLines(file){
+  if(!window.mammoth) return null;
+  try{
+    const buf = await file.arrayBuffer();
+    const result = await mammoth.extractRawText({ arrayBuffer: buf });
+    return (result.value || '').split('\n').map(function(l){ return l.trim(); }).filter(Boolean);
+  }catch(err){ console.error('Extraction Word impossible', err); return null; }
+}
+
+function normalizeForMatch(s){
+  return String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
+}
+
+function isFooterLine(line){
+  const t = String(line||'').trim();
+  if(!t) return true;
+  if(/^\d{1,4}$/.test(t)) return true; // numéro de page isolé
+  if(/^par teams,/.test(normalizeForMatch(t))) return true; // pied de page horodaté CS2E
+  return false;
+}
+
+function cleanOdjLine(line){
+  return String(line||'')
+    .replace(/\.{2,}\s*\d+\s*$/, '')  // points de suite + numéro de page
+    .replace(/\s{2,}\d+\s*$/, '')     // ou simple espacement + numéro
+    .trim();
+}
+
+function extractOdjEtParticipants(fichier){
+  const result = { participants: null, ordreJour: null };
+  try{
+    if(fichier.pages && fichier.pages.length){
+      // PDF : structure par page, on reste cantonné à la page où chaque rubrique démarre
+      fichier.pages.forEach(function(pg){
+        const lignes = pg.lignes || [];
+        if(!result.participants){
+          const idx = lignes.findIndex(function(l){ return /^etaient?\s+present/.test(normalizeForMatch(l)); });
+          if(idx !== -1){
+            const bloc = lignes.slice(idx + 1).filter(function(l){ return !isFooterLine(l); });
+            if(bloc.length) result.participants = bloc.join('\n');
+          }
+        }
+        if(!result.ordreJour){
+          const idx = lignes.findIndex(function(l){ return normalizeForMatch(l) === 'ordre du jour'; });
+          if(idx !== -1){
+            const bloc = lignes.slice(idx + 1).filter(function(l){ return !isFooterLine(l); }).map(cleanOdjLine).filter(Boolean);
+            if(bloc.length) result.ordreJour = bloc.join('\n');
+          }
+        }
+      });
+    } else if(fichier.lignes && fichier.lignes.length){
+      // Word : pas de découpage par page, on s'arrête à la première ligne vide ou à la rubrique suivante
+      const lignes = fichier.lignes;
+      const presentsIdx = lignes.findIndex(function(l){ return /^etaient?\s+present/.test(normalizeForMatch(l)); });
+      if(presentsIdx !== -1){
+        const bloc = [];
+        for(let i = presentsIdx + 1; i < lignes.length; i++){
+          const l = lignes[i];
+          if(!l || !l.trim()) break;
+          if(/^ordre\s+du\s+jour$/i.test(l.trim())) break;
+          bloc.push(l);
+        }
+        if(bloc.length) result.participants = bloc.join('\n');
+      }
+      const odjIdx = lignes.findIndex(function(l){ return normalizeForMatch(l) === 'ordre du jour'; });
+      if(odjIdx !== -1){
+        const bloc = [];
+        for(let i = odjIdx + 1; i < lignes.length; i++){
+          const l = lignes[i];
+          if(!l || !l.trim()) break;
+          const cleaned = cleanOdjLine(l);
+          if(cleaned) bloc.push(cleaned);
+        }
+        if(bloc.length) result.ordreJour = bloc.join('\n');
+      }
+    }
+  }catch(e){ /* extraction best-effort : on ignore silencieusement tout échec */ }
+  return result;
+}
+
+function formatDateFr(iso){
+  if(!iso) return '';
+  const parts = iso.split('-');
+  if(parts.length !== 3) return iso;
+  return parts[2] + '/' + parts[1] + '/' + parts[0];
+}
+
+function titreAvecDate(titreBrut, date){
+  const suffixe = formatDateFr(date);
+  const titre = (titreBrut||'').trim();
+  if(!suffixe) return titre;
+  return titre.endsWith(suffixe) ? titre : (titre + ' - ' + suffixe);
+}
+
+/* ===== Logique du dépôt en masse des CR ===== */
+const EXT_OK = ['pdf','docx','doc'];
+const MAX_OCTETS = 25 * 1024 * 1024;
+const CATS_DEFAUT = ['CSSCT','CSE ordinaire','CSE extraordinaire'];
+let CONFIG = { categories: CATS_DEFAUT.slice(), sections: [] };
+let ROWS = [], COTE = [], EXISTANTS = [], SEQ = 0, CHARGE_OK = false, EN_ENVOI = false;
+const $ = id => document.getElementById(id);
+const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const SLOT = r => r.conf === 'non' ? 'fichierNonConfidentiel' : 'fichierConfidentiel';
+
+function toast(msg){ const t = $('toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(toast._t); toast._t = setTimeout(() => t.classList.remove('show'), 4200); }
+
+/* Catégorie */
+function categorieDepuisJeton(jeton){
+  const L = CONFIG.categories.map(c => ({ c: c, n: norm(c).toLowerCase() }));
+  let t;
+  if(jeton === 'cssct') t = L.find(x => x.n.indexOf('cssct') !== -1);
+  else if(jeton === 'extra') t = L.find(x => x.n.indexOf('extraordinaire') !== -1);
+  else t = L.find(x => x.n.indexOf('ordinaire') !== -1 && x.n.indexOf('extra') === -1) || L.find(x => /\bcse\b/.test(x.n) && x.n.indexOf('extra') === -1 && x.n.indexOf('cssct') === -1);
+  return t ? t.c : '';
+}
+function jetonDuNom(nom){
+  const n = norm(nom).toLowerCase();
+  if(/(^|[^a-z])cssct([^a-z]|$)/.test(n)) return 'cssct';
+  if(/extra/.test(n)) return 'extra';
+  if(/(^|[^a-z])cse([^a-z]|$)/.test(n)) return 'cse';
+  return '';
+}
+function jetonDuTexte(lignes){
+  const n = norm((lignes || []).slice(0, 8).join(' ')).toLowerCase();
+  if(/cssct|sante,? securite et conditions de travail/.test(n)) return 'cssct';
+  if(/extraordinaire/.test(n)) return 'extra';
+  if(/(^|[^a-z])cse([^a-z]|$)|comite social et economique/.test(n)) return 'cse';
+  return '';
+}
+function confidentialiteDuNom(nom){
+  return /non[ _.\-]?confidentiel|diffusion|diffusable|public|anonymis/.test(norm(nom).toLowerCase()) ? 'non' : '';
+}
+
+/* Date de réunion dans le texte (premières lignes) : on privilégie les lignes qui parlent de la réunion */
+function detecterDateReunion(lignes){
+  const L = (lignes || []).slice(0, 60);
+  let meilleur = null;
+  L.forEach(function(ligne, idx){
+    const n = norm(ligne).toLowerCase();
+    const re = new RegExp(DATE_TOKEN, 'g');
+    let m;
+    while((m = re.exec(n)) !== null){
+      const iso = parseDateFr(m[0]);
+      if(!iso) continue;
+      const score = /reunion|seance|proces|compte.?rendu|\bpv\b|cssct|\bcse\b|convocation/.test(n) ? 2 : 1;
+      if(!meilleur || score > meilleur.score || (score === meilleur.score && idx < meilleur.idx)){
+        meilleur = { iso: iso, score: score, idx: idx, snippet: ligne.trim().slice(0, 90) };
+      }
+    }
+  });
+  return meilleur ? { iso: meilleur.iso, snippet: meilleur.snippet } : { iso: '', snippet: '' };
+}
+function dateModif(file){
+  const d = new Date(file.lastModified || Date.now());
+  return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
+}
+function titreAuto(r){ return r.cat ? titreAvecDate(r.cat, r.dateISO) : ''; }
+function extensionDe(nom){ return String(nom).split('.').pop().toLowerCase(); }
+function nomNorm(nom){ return norm(nom).toLowerCase().trim(); }
+
+/* Noms de fichiers déjà rangés dans les fiches existantes (détection des doublons par le nom) */
+function indexNomsExistants(){
+  const idx = {};
+  EXISTANTS.forEach(function(f){
+    [f.fichierConfidentiel, f.fichierNonConfidentiel].forEach(function(x){ if(x && x.nomFichier) idx[nomNorm(x.nomFichier)] = f.titre || '(sans titre)'; });
+    (f.piecesJointes || []).forEach(function(p){ if(p && p.nom && p.fileId) idx[nomNorm(p.nom)] = f.titre || '(sans titre)'; });
+  });
+  return idx;
+}
+
+async function analyserFichier(file){
+  const ext = extensionDe(file.name);
+  let pages = null, lignes = null;
+  if(ext === 'pdf') pages = await extractPdfPages(file); else lignes = await extractWordLines(file);
+  const texte = pages ? [].concat.apply([], pages.map(p => p.lignes)) : (lignes || []);
+  const lu = texte.length > 0;
+  const jNom = jetonDuNom(file.name), jTxt = jetonDuTexte(texte);
+  let cat = '', catSrc = 'aucune';
+  if(jNom){ cat = categorieDepuisJeton(jNom); if(cat) catSrc = 'nom'; }
+  if(!cat && jTxt){ cat = categorieDepuisJeton(jTxt); if(cat) catSrc = 'texte'; }
+  const dTxt = detecterDateReunion(texte).iso, dNom = dateDuNom(file.name).iso;
+  let dateISO = '', dateSrc = 'aucune';
+  if(dTxt){ dateISO = dTxt; dateSrc = 'texte'; }
+  else if(dNom){ dateISO = dNom; dateSrc = 'nom'; }
+  else { dateISO = dateModif(file); dateSrc = 'modification'; }
+  const confNom = confidentialiteDuNom(file.name);
+  const r = {
+    id: ++SEQ, file: file, nom: file.name, ext: ext, taille: file.size, pages: pages, lignes: lignes, lu: lu,
+    cat: cat, catSrc: catSrc, dateISO: dateISO, dateSrc: dateSrc, dTxt: dTxt, dNom: dNom,
+    jNom: jNom, jTxt: jTxt,
+    titre: '', titreDirty: false, conf: confNom || 'confidentiel', confAuto: !!confNom, sel: true
+  };
+  r.titre = titreAuto(r);
+  return r;
+}
+
+async function ajouterFichiers(liste){
+  if(!CHARGE_OK){ toast('Chargement des fiches existantes impossible : dépôt bloqué.'); return; }
+  const fichiers = Array.prototype.slice.call(liste || []);
+  if(!fichiers.length) return;
+  const refus = [];
+  const idx = indexNomsExistants();
+  $('progress').style.display = 'block';
+  let faits = 0;
+  for(const f of fichiers){
+    $('progressTxt').textContent = 'Analyse ' + (faits + 1) + ' / ' + fichiers.length + ' : ' + f.name;
+    $('progressBar').style.width = Math.round(faits / fichiers.length * 100) + '%';
+    const ext = extensionDe(f.name);
+    if(EXT_OK.indexOf(ext) === -1){ refus.push(f.name + ' (format non accepté)'); faits++; continue; }
+    if(f.size > MAX_OCTETS){ refus.push(f.name + ' (plus de 25 Mo)'); faits++; continue; }
+    const n = nomNorm(f.name);
+    const dansLot = ROWS.concat(COTE.map(c => c.row)).some(x => nomNorm(x.nom) === n);
+    if(idx[n] || dansLot){
+      const row = await analyserFichier(f);
+      COTE.push({ row: row, motif: idx[n] ? ('Même nom de fichier que celui déjà rangé dans la fiche « ' + idx[n] + ' »') : 'Même nom de fichier qu\'un autre fichier de ce lot' });
+    } else {
+      ROWS.push(await analyserFichier(f));
+    }
+    faits++;
+  }
+  $('progressBar').style.width = '100%';
+  setTimeout(() => { $('progress').style.display = 'none'; }, 400);
+  if(refus.length) toast('Ignorés : ' + refus.join(', '));
+  calculer(); rendre();
+}
+
+/* Calcul des destinations, regroupements et alertes */
+function calculer(){
+  ROWS.forEach(function(r){ r.alertes = []; r.niveau = 'off'; r.dest = ''; r.lead = true; r.pair = false; r.cible = null; r.groupeNom = ''; });
+  const actifs = ROWS.filter(r => r.sel);
+  const groupes = {};
+  actifs.forEach(function(r){
+    if(r.cat && r.dateISO){ const k = r.cat + '|' + r.dateISO; (groupes[k] = groupes[k] || []).push(r); }
+  });
+  actifs.forEach(function(r){
+    const al = r.alertes;
+    if(!r.cat) al.push(['err', 'Catégorie à choisir']);
+    if(!r.dateISO) al.push(['err', 'Date de réunion à saisir']);
+    if(r.dateSrc === 'modification') al.push(['warn', 'Date prise sur la date de modification du fichier : à vérifier']);
+    if(r.dTxt && r.dNom && r.dTxt !== r.dNom) al.push(['warn', 'La date du texte (' + formatDateFr(r.dTxt) + ') diffère de celle du nom du fichier (' + formatDateFr(r.dNom) + ')']);
+    if(r.catSrc !== 'aucune' && r.jNom && r.jTxt && r.jNom !== r.jTxt) al.push(['warn', 'Le nom et le texte du fichier ne désignent pas la même instance : à vérifier']);
+    if(!r.lu) al.push(['warn', r.ext === 'doc' ? 'Ancien format Word : texte non lu (préremplissage et recherche impossibles)' : 'Texte non lisible (PDF scanné ?) : préremplissage et recherche impossibles']);
+    if(r.confAuto && r.conf === 'non') al.push(['info', 'Confidentialité déduite du nom du fichier']);
+  });
+  Object.keys(groupes).forEach(function(k){
+    const rows = groupes[k];
+    const lead = rows[0];
+    const compte = { confidentiel: 0, non: 0 };
+    rows.forEach(r => compte[r.conf]++);
+    const conflit = compte.confidentiel > 1 || compte.non > 1;
+    if(conflit) rows.forEach(r => { if(compte[r.conf] > 1) r.alertes.push(['err', 'Plusieurs fichiers ' + (r.conf === 'non' ? 'non confidentiels' : 'confidentiels') + ' pour la même réunion : change la confidentialité de l\'un d\'eux']); });
+    const candidates = EXISTANTS.filter(f => f.categorie === lead.cat && f.date === lead.dateISO);
+    const libre = candidates.find(f => rows.every(r => !f[SLOT(r)]));
+    if(libre){
+      rows.forEach(function(r){
+        r.cible = libre;
+        r.dest = 'Ajouter à la fiche existante « ' + (libre.titre || '(sans titre)') + ' » (emplacement libre)';
+        r.titre = libre.titre || r.titre;
+      });
+    } else {
+      if(candidates.length){
+        const f = candidates[0];
+        rows.forEach(function(r){
+          const occ = f[SLOT(r)];
+          if(occ) r.alertes.push(['warn', 'Une fiche existe déjà pour cette réunion (« ' + (f.titre || '(sans titre)') + ' ») avec un fichier ' + (r.conf === 'non' ? 'non confidentiel' : 'confidentiel') + ' déjà rangé (' + (occ.nomFichier || 'sans nom') + ') : rien n\'est écrasé, une nouvelle fiche serait créée']);
+        });
+      }
+      rows.forEach(function(r, i){
+        r.lead = i === 0;
+        r.dest = i === 0 ? 'Nouvelle fiche' : 'Même fiche que « ' + lead.nom + ' »';
+        if(i > 0 && !conflit) r.pair = true;
+        if(i > 0) r.titre = lead.titre;
+      });
+      if(rows.length > 1 && !conflit) lead.pair = true;
+    }
+  });
+  actifs.forEach(function(r){
+    if(!r.dest) r.dest = 'Nouvelle fiche';
+    if(r.lead && !r.cible && !String(r.titre).trim()) r.alertes.push(['err', 'Titre obligatoire']);
+    r.niveau = r.alertes.some(a => a[0] === 'err') ? 'err' : (r.alertes.some(a => a[0] === 'warn') ? 'warn' : 'ok');
+  });
+}
+
+/* Affichage */
+function remplirCategories(sel, vide){
+  sel.innerHTML = '<option value="">' + vide + '</option>' + CONFIG.categories.map(c => '<option value="' + esc(c) + '">' + esc(c) + '</option>').join('');
+}
+function rendre(){
+  const visibles = ROWS.filter(r => !$('onlyCheck').checked || (r.sel && (r.niveau === 'warn' || r.niveau === 'err')));
+  const vide = !ROWS.length && !COTE.length;
+  $('toolbar').style.display = ROWS.length ? 'flex' : 'none';
+  $('tableWrap').style.display = ROWS.length ? 'block' : 'none';
+  $('foot').style.display = ROWS.length ? 'block' : 'none';
+  $('tbody').innerHTML = visibles.map(function(r){
+    const lvl = 'lvl-' + (r.niveau === 'off' ? 'warn' : r.niveau);
+    const catOpts = '<option value=""' + (r.cat ? '' : ' selected') + '>— à choisir —</option>' + CONFIG.categories.map(c => '<option value="' + esc(c) + '"' + (c === r.cat ? ' selected' : '') + '>' + esc(c) + '</option>').join('');
+    const srcCat = '<span class="src src-' + (r.catSrc === 'aucune' ? 'aucune' : r.catSrc) + '">' + ({ nom: 'déduite du nom', texte: 'déduite du texte', manuel: 'choisie', aucune: 'non reconnue' }[r.catSrc]) + '</span>';
+    const srcDate = '<span class="src src-' + r.dateSrc + '">' + ({ texte: 'date du texte', nom: 'date du nom', modification: 'date de modification', manuel: 'saisie', aucune: 'non détectée' }[r.dateSrc]) + '</span>';
+    const titreDisabled = !r.lead || r.cible;
+    const bd = r.niveau === 'off' ? ['b-off', 'Exclu'] : (r.niveau === 'ok' ? ['b-ok', 'Prêt'] : (r.niveau === 'warn' ? ['b-warn', 'À vérifier'] : ['b-err', 'À compléter']));
+    const al = '<ul class="al">' + (r.alertes || []).map(a => '<li style="color:' + (a[0] === 'err' ? 'var(--danger)' : (a[0] === 'warn' ? 'var(--warn)' : 'var(--ink-soft)')) + '">' + esc(a[1]) + '</li>').join('') + '</ul>';
+    return '<tr class="r ' + lvl + (r.pair ? ' pair' : '') + '" data-id="' + r.id + '">' +
+      '<td class="chk"><input type="checkbox" data-f="sel"' + (r.sel ? ' checked' : '') + '></td>' +
+      '<td data-l="Fichier"><div class="fname" title="' + esc(r.nom) + '">' + esc(r.nom) + '</div><div class="fmeta">' + r.ext.toUpperCase() + ' · ' + (r.taille / 1048576).toFixed(1).replace('.', ',') + ' Mo</div>' + (r.pair ? '<span class="pairtag">🔗 Même réunion, deux versions</span>' : '') + '</td>' +
+      '<td data-l="Catégorie"><select data-f="cat">' + catOpts + '</select>' + srcCat + '</td>' +
+      '<td data-l="Date de réunion"><input type="date" data-f="date" value="' + esc(r.dateISO) + '">' + srcDate + '</td>' +
+      '<td data-l="Titre de la fiche"><input type="text" data-f="titre" value="' + esc(r.titre) + '" placeholder="Titre à saisir"' + (titreDisabled ? ' disabled' : '') + '></td>' +
+      '<td data-l="Confidentialité"><select data-f="conf"><option value="confidentiel"' + (r.conf === 'confidentiel' ? ' selected' : '') + '>Confidentiel</option><option value="non"' + (r.conf === 'non' ? ' selected' : '') + '>Non confidentiel</option></select></td>' +
+      '<td data-l="Destination"><div class="dest">' + esc(r.dest || '—') + '</div></td>' +
+      '<td data-l="État"><span class="badge ' + bd[0] + '">' + bd[1] + '</span>' + al + '</td></tr>';
+  }).join('');
+  /* Mis de côté */
+  $('coteBox').style.display = COTE.length ? 'block' : 'none';
+  $('coteCount').textContent = COTE.length ? '(' + COTE.length + ')' : '';
+  $('coteBody').innerHTML = COTE.map(function(c, i){
+    return '<tr><td><div class="fname" style="max-width:none;white-space:normal;">' + esc(c.row.nom) + '</div><div class="fmeta">' + esc(c.motif) + '</div></td><td style="text-align:right;width:190px;"><button class="mini" data-cote="' + i + '">Ajouter quand même</button></td></tr>';
+  }).join('');
+  /* Résumé */
+  const n = ROWS.length, actifs = ROWS.filter(r => r.sel);
+  const ok = actifs.filter(r => r.niveau === 'ok').length, warn = actifs.filter(r => r.niveau === 'warn').length, err = actifs.filter(r => r.niveau === 'err').length;
+  const couples = actifs.filter(r => r.pair && r.lead).length;
+  $('summary').innerHTML = (n + COTE.length) ? ('<span class="chip"><b>' + (n + COTE.length) + '</b> fichiers analysés</span>' +
+    '<span class="chip"><b>' + ok + '</b> prêts</span>' +
+    (warn ? '<span class="chip warn"><b>' + warn + '</b> à vérifier</span>' : '') +
+    (err ? '<span class="chip err"><b>' + err + '</b> à compléter</span>' : '') +
+    (COTE.length ? '<span class="chip"><b>' + COTE.length + '</b> mis de côté</span>' : '') +
+    (couples ? '<span class="chip"><b>' + couples + '</b> réunion(s) avec deux versions regroupées</span>' : '')) : '';
+  /* Barre d'envoi */
+  const aEnvoyer = actifs.filter(r => r.niveau !== 'err');
+  const cles = {}; aEnvoyer.forEach(r => { cles[r.cible ? 'E:' + r.cible.id : 'N:' + r.cat + '|' + r.dateISO] = !!r.cible; });
+  const nCrees = Object.keys(cles).filter(k => !cles[k]).length, nCompletes = Object.keys(cles).length - nCrees;
+  $('sendbar').classList.toggle('show', ROWS.length > 0);
+  $('sendTxt').innerHTML = '<b>' + aEnvoyer.length + ' fichier(s)</b> prêts à l\'envoi · ' + nCrees + ' fiche(s) créée(s), ' + nCompletes + ' fiche(s) complétée(s)' + (err ? ' · <span style="color:var(--danger)">' + err + ' ligne(s) à compléter non envoyée(s)</span>' : '');
+  $('sendBtn').disabled = !aEnvoyer.length || EN_ENVOI;
+  $('selAll').checked = n > 0 && ROWS.every(r => r.sel);
+  const nbSel = ROWS.filter(r => r.sel).length;
+  $('bulk').classList.toggle('show', nbSel > 0);
+  $('bulkTxt').textContent = 'Pour la sélection (' + nbSel + ') :';
+}
+
+/* Événements du tableau */
+function ligne(el){ const tr = el.closest('tr.r'); return tr ? ROWS.find(r => r.id === +tr.getAttribute('data-id')) : null; }
+function majTitreAuto(r){ if(!r.titreDirty) r.titre = titreAuto(r); }
+$('tbody').addEventListener('input', function(e){
+  if(e.target.getAttribute('data-f') === 'titre'){ const r = ligne(e.target); if(r){ r.titre = e.target.value; r.titreDirty = true; } }
+});
+$('tbody').addEventListener('change', function(e){
+  const f = e.target.getAttribute('data-f'); const r = ligne(e.target);
+  if(!f || !r) return;
+  if(f === 'sel') r.sel = e.target.checked;
+  else if(f === 'cat'){ r.cat = e.target.value; r.catSrc = r.cat ? 'manuel' : 'aucune'; majTitreAuto(r); }
+  else if(f === 'date'){ r.dateISO = e.target.value; r.dateSrc = r.dateISO ? 'manuel' : 'aucune'; majTitreAuto(r); }
+  else if(f === 'conf'){ r.conf = e.target.value; r.confAuto = false; }
+  calculer(); rendre();
+});
+$('selAll').addEventListener('change', function(){ const v = this.checked; ROWS.forEach(r => { r.sel = v; }); calculer(); rendre(); });
+$('onlyCheck').addEventListener('change', rendre);
+$('bulkApply').addEventListener('click', function(){
+  const c = $('bulkCat').value, k = $('bulkConf').value;
+  ROWS.filter(r => r.sel).forEach(function(r){
+    if(c){ r.cat = c; r.catSrc = 'manuel'; majTitreAuto(r); }
+    if(k){ r.conf = k; r.confAuto = false; }
+  });
+  $('bulkCat').value = ''; $('bulkConf').value = '';
+  calculer(); rendre();
+});
+$('coteBody').addEventListener('click', function(e){
+  const b = e.target.closest('[data-cote]'); if(!b) return;
+  const c = COTE.splice(+b.getAttribute('data-cote'), 1)[0];
+  ROWS.push(c.row); calculer(); rendre();
+});
+
+/* Dépôt de fichiers */
+const drop = $('drop');
+$('pick').addEventListener('click', () => $('file').click());
+$('file').addEventListener('change', function(){ ajouterFichiers(this.files); this.value = ''; });
+['dragenter','dragover'].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.add('over'); }));
+['dragleave','drop'].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.remove('over'); }));
+drop.addEventListener('drop', e => ajouterFichiers(e.dataTransfer.files));
+
+/* ===== Envoi ===== */
+function horodatage(){ const d = new Date(); return d.getFullYear() + pad(d.getMonth() + 1) + pad(d.getDate()) + 'T' + pad(d.getHours()) + pad(d.getMinutes()) + pad(d.getSeconds()); }
+async function televerser(file){
+  const t = await CRI_FB.idToken();
+  if(!t) throw new Error('Session expirée, reconnecte-toi.');
+  const resp = await fetch('/api/cr-file-upload', { method: 'POST', headers: { 'Authorization': 'Bearer ' + t, 'Content-Type': 'application/octet-stream' }, body: file });
+  let data = {}; try { data = await resp.json(); } catch(e) {}
+  if(!resp.ok || !data.fileId) throw new Error(data.error || 'Erreur pendant l\'envoi du fichier');
+  return data;
+}
+async function supprimerFichierKV(fileId){
+  if(!fileId) return;
+  const t = await CRI_FB.idToken();
+  if(!t) throw new Error('Session expirée, reconnecte-toi.');
+  const resp = await fetch('/api/cr-file?fileId=' + encodeURIComponent(fileId), { method: 'DELETE', headers: { 'Authorization': 'Bearer ' + t } });
+  if(!resp.ok && resp.status !== 404){ let d = {}; try { d = await resp.json(); } catch(e) {} throw new Error(d.error || ('Suppression du fichier refusée (' + resp.status + ')')); }
+}
+function majEnvoi(txt, pct){ $('envoiTxt').textContent = txt; $('envoiBar').style.width = pct + '%'; }
+
+async function envoyer(){
+  if(EN_ENVOI) return;
+  const aEnvoyer = ROWS.filter(r => r.sel && r.niveau !== 'err' && r.niveau !== 'off');
+  if(!aEnvoyer.length) return;
+  EN_ENVOI = true; $('sendBtn').disabled = true;
+  $('envoiTitre').textContent = 'Envoi en cours…'; $('envoiOverlay').classList.add('show');
+  const lotId = 'lot_' + horodatage();
+  const groupes = new Map();
+  aEnvoyer.forEach(function(r){
+    const k = r.cible ? 'E:' + r.cible.id : 'N:' + r.cat + '|' + r.dateISO;
+    if(!groupes.has(k)) groupes.set(k, []);
+    groupes.get(k).push(r);
+  });
+  const res = { crees: [], completes: [], erreurs: [], sansTexte: [] };
+  const envoyes = [];
+  let i = 0;
+  for(const [k, rows] of groupes){
+    i++;
+    const lead = rows[0]; const cible = lead.cible;
+    const fileIds = [];
+    try{
+      const fichiers = {};
+      for(const r of rows){
+        majEnvoi('Fiche ' + i + ' / ' + groupes.size + ' : envoi de ' + r.nom, Math.round((i - 1) / groupes.size * 100));
+        const up = await televerser(r.file);
+        fileIds.push(up.fileId);
+        fichiers[SLOT(r)] = { fileId: up.fileId, nomFichier: r.nom, type: r.ext, taille: up.taille || r.taille, pages: r.pages, lignes: r.lignes, accessible: false, dateAjout: new Date().toISOString(), lotId: lotId };
+      }
+      /* Garde-fou : une fiche Firestore ne dépasse pas 1 Mo */
+      const estimer = o => JSON.stringify(o).length;
+      if(estimer(fichiers) > 900000){
+        Object.keys(fichiers).forEach(s => { fichiers[s].pages = null; fichiers[s].lignes = null; });
+        res.sansTexte.push(lead.nom);
+      }
+      /* Préremplissage : fichier confidentiel d'abord, jamais par-dessus une saisie */
+      let ext = { participants: null, ordreJour: null };
+      ['fichierConfidentiel', 'fichierNonConfidentiel'].forEach(function(s){
+        const src = rows.find(r => SLOT(r) === s); if(!src) return;
+        const x = extractOdjEtParticipants({ pages: src.pages, lignes: src.lignes });
+        if(!ext.participants && x.participants) ext.participants = x.participants;
+        if(!ext.ordreJour && x.ordreJour) ext.ordreJour = x.ordreJour;
+      });
+      if(cible){
+        const champs = Object.assign({}, fichiers);
+        if(ext.participants && !cible.participants) champs.participants = ext.participants;
+        if(ext.ordreJour && !cible.ordreJour) champs.ordreJour = ext.ordreJour;
+        await CRI_FB.maj(cible.id, champs);
+        res.completes.push({ id: cible.id, titre: cible.titre });
+      } else {
+        const item = {
+          titre: titreAvecDate(lead.titre, lead.dateISO), date: lead.dateISO, categorie: lead.cat,
+          participants: ext.participants || '', ordreJour: ext.ordreJour || '', priseNoteBrute: '',
+          pointsAbordes: '', decisions: '', prochaineEcheance: '',
+          estReunionSSCT: norm(lead.cat).toLowerCase().indexOf('cssct') !== -1,
+          sectionsComplementaires: (CONFIG.sections || []).map(s => ({ titre: s, texte: '' })),
+          createdAt: new Date().toISOString(), lotImportId: lotId
+        };
+        Object.assign(item, fichiers);
+        const id = await CRI_FB.ajouter(item);
+        res.crees.push({ id: id, titre: item.titre });
+      }
+      rows.forEach(r => envoyes.push(r.id));
+    } catch(err){
+      for(const fid of fileIds){ try { await supprimerFichierKV(fid); } catch(e) {} }
+      res.erreurs.push({ noms: rows.map(r => r.nom), msg: err.message || String(err) });
+    }
+  }
+  majEnvoi('Terminé', 100);
+  ROWS = ROWS.filter(r => envoyes.indexOf(r.id) === -1);
+  try { await rechargerExistants(); } catch(e) {}
+  $('envoiOverlay').classList.remove('show');
+  EN_ENVOI = false;
+  afficherResultat(res, lotId);
+  calculer(); rendre(); rendreLots();
+}
+function afficherResultat(res, lotId){
+  const box = $('resultatBox'); box.style.display = 'block';
+  let h = '<div class="panel"><strong>Envoi terminé.</strong>';
+  h += '<ul>';
+  if(res.crees.length) h += '<li>' + res.crees.length + ' fiche(s) créée(s)</li>';
+  if(res.completes.length) h += '<li>' + res.completes.length + ' fiche(s) existante(s) complétée(s)</li>';
+  if(res.sansTexte.length) h += '<li>Texte non enregistré (fiche trop volumineuse) : ' + res.sansTexte.map(esc).join(', ') + '. Le fichier est bien rangé, mais la recherche plein texte ne le couvre pas.</li>';
+  res.erreurs.forEach(e => { h += '<li class="err">Non envoyé : ' + e.noms.map(esc).join(', ') + ' — ' + esc(e.msg) + '</li>'; });
+  h += '</ul>';
+  if(res.crees.length || res.completes.length) h += '<p class="foot" style="margin:8px 0 0;">Les fichiers restent non accessibles aux collaborateurs. Ouvre les fiches pour vérifier l\'ordre du jour et les participants préremplis. <a href="comptes_rendus_reunion.html">Aller aux comptes-rendus</a></p>';
+  h += '<div style="margin-top:8px;"><button class="mini" id="resultatFermer">Fermer</button></div></div>';
+  box.innerHTML = h;
+  $('resultatFermer').addEventListener('click', () => { box.style.display = 'none'; });
+}
+$('sendBtn').addEventListener('click', envoyer);
+
+/* ===== Envois précédents ===== */
+function calculerLots(){
+  const lots = {};
+  EXISTANTS.forEach(function(f){
+    if(f.lotImportId){ (lots[f.lotImportId] = lots[f.lotImportId] || { crees: [], ajouts: [] }).crees.push(f); }
+    ['fichierConfidentiel', 'fichierNonConfidentiel'].forEach(function(s){
+      const x = f[s];
+      if(x && x.lotId && x.lotId !== f.lotImportId){ (lots[x.lotId] = lots[x.lotId] || { crees: [], ajouts: [] }).ajouts.push({ fiche: f, slot: s }); }
+    });
+  });
+  return Object.keys(lots).sort().reverse().map(id => Object.assign({ id: id }, lots[id]));
+}
+function dateDuLot(id){
+  const m = /^lot_(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})/.exec(id);
+  return m ? (m[3] + '/' + m[2] + '/' + m[1] + ' à ' + m[4] + ' h ' + m[5]) : id;
+}
+function rendreLots(){
+  const lots = calculerLots();
+  $('lotsBox').style.display = lots.length ? 'block' : 'none';
+  $('lotsList').innerHTML = lots.map(function(l){
+    return '<div class="lotline"><div><div>Lot du ' + esc(dateDuLot(l.id)) + '</div><div class="meta">' + l.crees.length + ' fiche(s) créée(s) · ' + l.ajouts.length + ' fichier(s) ajouté(s) à des fiches existantes</div></div><button class="btn danger" data-annuler="' + esc(l.id) + '">Annuler ce lot</button></div>';
+  }).join('');
+}
+$('lotsList').addEventListener('click', async function(e){
+  const b = e.target.closest('[data-annuler]'); if(!b) return;
+  const lot = calculerLots().find(l => l.id === b.getAttribute('data-annuler')); if(!lot) return;
+  if(!confirm('Annuler ce lot ?\n\n• ' + lot.crees.length + ' fiche(s) créée(s) par ce lot seront supprimées, même si tu les as modifiées depuis.\n• ' + lot.ajouts.length + ' fichier(s) ajouté(s) à des fiches existantes seront retirés (les fiches restent).\n\nCette action est définitive.')) return;
+  b.disabled = true;
+  try{
+    for(const f of lot.crees){
+      const ids = [f.fichierConfidentiel, f.fichierNonConfidentiel].filter(Boolean).map(x => x.fileId).concat((f.piecesJointes || []).map(p => p.fileId).filter(Boolean));
+      for(const fid of ids) await supprimerFichierKV(fid);
+      await CRI_FB.supprimer(f.id);
+    }
+    for(const a of lot.ajouts){
+      await supprimerFichierKV(a.fiche[a.slot].fileId);
+      const champs = {}; champs[a.slot] = null;
+      await CRI_FB.maj(a.fiche.id, champs);
+    }
+    toast('Lot annulé');
+  } catch(err){
+    toast('Annulation interrompue : ' + err.message);
+  }
+  try { await rechargerExistants(); } catch(e2) {}
+  calculer(); rendre(); rendreLots();
+});
+
+/* ===== Démarrage (après connexion) ===== */
+async function rechargerExistants(){ EXISTANTS = await CRI_FB.charger(); }
+window.onCriAuth = async function(user){
+  $('who').textContent = user && user.email ? user.email : '';
+  try{
+    const c = await CRI_FB.config();
+    if(c && c.categories && c.categories.length) CONFIG.categories = c.categories;
+    CONFIG.sections = (c && c.sectionsComplementaires) || [];
+    await rechargerExistants();
+    CHARGE_OK = true;
+  } catch(err){
+    CHARGE_OK = false;
+    const b = $('banniere'); b.style.display = 'block';
+    b.textContent = 'Impossible de charger les fiches existantes (' + (err && err.message ? err.message : 'erreur') + '). Le dépôt est désactivé pour éviter les doublons : recharge la page.';
+  }
+  remplirCategories($('bulkCat'), 'Catégorie : inchangée');
+  rendreLots();
+};
+</script>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js";
+  import { getAuth, sendSignInLinkToEmail, isSignInWithEmailLink, signInWithEmailLink, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js";
+  import { getFirestore, collection, getDocs, getDoc, addDoc, updateDoc, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+  apiKey: "AIzaSyACY8fyy8Rd9NyLJ855xsDyknuUMV-pAag",
+  authDomain: "cssct-cs2e-c655b.firebaseapp.com",
+  projectId: "cssct-cs2e-c655b",
+  storageBucket: "cssct-cs2e-c655b.firebasestorage.app",
+  messagingSenderId: "277603883255",
+  appId: "1:277603883255:web:b3b7a5c3097a60caac1bf2"
+};
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+  const colCR = collection(db, "comptes_rendus_reunion");
+
+  const actionCodeSettings = { url: window.location.origin + window.location.pathname, handleCodeInApp: true };
+
+  if (isSignInWithEmailLink(auth, window.location.href)) {
+    let email = window.prompt("Confirme ton adresse email pour terminer la connexion :");
+    signInWithEmailLink(auth, email, window.location.href)
+      .then(() => window.history.replaceState({}, document.title, window.location.pathname))
+      .catch(err => alert("Connexion impossible : " + err.message));
+  }
+
+  function applyBrandingLogo(){
+    getDoc(doc(db, 'config', 'branding')).then((snap) => {
+      const data = snap.exists() ? snap.data() : {};
+      if(!data.logoBase64) return;
+      document.querySelectorAll('.brand-mark').forEach(function(el){
+        el.style.background = 'none';
+        el.innerHTML = '<img src="data:image/png;base64,' + data.logoBase64 + '" alt="Logo" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">';
+      });
+    }).catch(() => {});
+  }
+
+  window.CRI_FB = {
+    async idToken(){ return auth.currentUser ? await auth.currentUser.getIdToken() : null; },
+    async config(){ const s = await getDoc(doc(db, 'config', 'cr_reunion_template')); return s.exists() ? s.data() : {}; },
+    async charger(){ const snap = await getDocs(colCR); return snap.docs.map(d => ({ id: d.id, ...d.data() })); },
+    async ajouter(item){ const r = await addDoc(colCR, item); return r.id; },
+    async maj(id, champs){ await updateDoc(doc(db, 'comptes_rendus_reunion', id), champs); },
+    async supprimer(id){ await deleteDoc(doc(db, 'comptes_rendus_reunion', id)); }
+  };
+
+  let appele = false;
+  onAuthStateChanged(auth, (user) => {
+    document.getElementById('authChecking').style.display = 'none';
+    if (user) {
+      document.getElementById('authGate').style.display = 'none';
+      applyBrandingLogo();
+      if(!appele){ appele = true; window.onCriAuth(user); }
+    } else {
+      document.getElementById('authGate').style.display = 'flex';
+      document.getElementById('authForm').style.display = 'block';
+    }
+  });
+
+  document.getElementById('authSendLink').addEventListener('click', () => {
+    const email = document.getElementById('authEmail').value.trim();
+    const msg = document.getElementById('authMsg');
+    if (!email) { msg.textContent = "Merci de saisir ton email."; return; }
+    sendSignInLinkToEmail(auth, email, actionCodeSettings)
+      .then(() => { msg.style.color = '#019682'; msg.textContent = "Lien envoyé, vérifie ta boîte mail."; })
+      .catch(err => { msg.textContent = "Erreur : " + err.message; });
+  });
+  document.getElementById('pastedLinkBtn').addEventListener('click', () => {
+    const link = document.getElementById('pastedLinkInput').value.trim();
+    const msg = document.getElementById('pastedLinkMsg');
+    if (!link) { msg.textContent = "Colle d'abord le lien reçu par email."; return; }
+    if (!isSignInWithEmailLink(auth, link)) { msg.textContent = "Ce lien ne semble pas valide."; return; }
+    let email = window.prompt("Confirme ton adresse email pour terminer la connexion :");
+    if (!email) return;
+    signInWithEmailLink(auth, email, link)
+      .then(() => { msg.style.color = '#019682'; msg.textContent = "Connexion réussie !"; })
+      .catch(err => { msg.textContent = "Erreur : " + err.message; });
+  });
+  document.getElementById('logoutBtn').addEventListener('click', () => {
+    if(confirm('Se déconnecter ?')){ signOut(auth).then(() => { window.location.href = 'index.html'; }); }
+  });
+</script>
+</body>
+</html>

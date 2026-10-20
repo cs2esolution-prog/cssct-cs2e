@@ -30,7 +30,7 @@ Chaque CSSCT a sa propre instance, complètement séparée : projet Firebase dé
    - 1. Chercher `1:277603883255:web:b3b7a5c3097a60caac1bf2` → remplacer par le nouvel `appId`.
    - 2. Chercher `277603883255` → remplacer par le nouveau `messagingSenderId`.
    - 3. Chercher `AIzaSyACY8fyy8Rd9NyLJ855xsDyknuUMV-pAag` → remplacer par la nouvelle `apiKey`.
-   - 4. Chercher `cssct-cs2e-c655b` → remplacer par le nouveau `projectId` (remplace aussi `authDomain`, `storageBucket` et les liens de la console).
+   - 4. Chercher `cssct-cs2e-c655b` → remplacer par le nouveau `projectId` (remplace aussi `authDomain`, `storageBucket`, les liens de la console et l'adresse du logo des pages collaborateurs `cr_reunion_collaborateurs.html` et `accords_collaborateurs.html`, qui ne contiennent que cet identifiant : c'est ce remplacement qui les met à jour).
    - 5. Chercher `cdizien@agrosolutions.com;imariotti@smag.tech;choudayer@smag.tech` → remplacer par les adresses des élus CSSCT de l'organisation, séparées par `;` (2 fichiers).
    - 6. Chercher `alhermitte@smag.tech` → remplacer par l'adresse du président du CSE.
    - 7. Chercher `choudayer@smag.tech` → remplacer par l'adresse qui reçoit les notifications de secours (administrateur).
@@ -39,11 +39,11 @@ Chaque CSSCT a sa propre instance, complètement séparée : projet Firebase dé
    - 10. Chercher `["Smag","Agrinovex","Fermes Leader","Be API","Agrosolutions","Carbon & Co"]` → remplacer par `["Nom de l'organisation"]` ou la liste de l'organisation (4 fichiers).
    - 11. Chercher `Mon appli CSSCT` → remplacer par le nom de l'application.
 4. Contrôle : cherche `c655b` → les seuls résultats admis sont dans le texte de ce mode opératoire (`administration.html` et `mode-operatoire-multi-cssct.md`). Cherche aussi `smag` et `agrosolutions` pour repérer les exemples restants (sans impact sur le fonctionnement).
-5. Compare dans `index.html` le bloc `firebaseConfig` avec les 6 valeurs notées à l'étape 1 : `authDomain` et `storageBucket` doivent y être identiques. Sinon, corrige-les dans les 20 fichiers (cherche l'ancienne valeur) ou demande de l'aide à Claude.
+5. Compare dans `index.html` le bloc `firebaseConfig` avec les 6 valeurs notées à l'étape 1 : `authDomain` et `storageBucket` doivent y être identiques. Sinon, corrige-les dans les 23 fichiers (cherche l'ancienne valeur) ou demande de l'aide à Claude.
 6. Remplace les images `icon-192.png` et `apple-touch-icon.png` par celles de l'organisation, ainsi que `icon-512.png` s'il est présent (le manifeste le cite). Dans GitHub : page du dépôt → Add file → Upload files, en gardant exactement les mêmes noms.
 7. Dans l'éditeur web, onglet **Source Control** (à gauche) → écris un message → **Commit & Push**.
 
-> Décide liste par liste (sites, entreprises, destinataires) si tu reprends celle d'origine ou si tu pars vierge. Une fois l'instance en ligne, ces listes se modifient sans toucher au code : Administration → Sites, Entreprises, Mail de relance.
+> Décide liste par liste (sites, entreprises, destinataires) si tu reprends celle d'origine ou si tu pars vierge. Une fois l'instance en ligne, ces listes se modifient sans toucher au code : Administration → Listes et paramètres (Sites, Entreprises) et Notifications et e-mails (Mail de relance).
 
 ## Étape 3 — Hébergement Cloudflare (compte Cloudflare dédié)
 
@@ -69,7 +69,7 @@ Chaque CSSCT a sa propre instance, complètement séparée : projet Firebase dé
 1. Sur `console.cloud.google.com`, sélectionne le projet de cette instance (même nom que le projet Firebase).
 2. IAM et administration → Comptes de service → Créer un compte de service (ex. `worker-acces`), rôle **Cloud Datastore User**. Onglet Clés → Ajouter une clé → JSON → télécharge le fichier (jamais dans GitHub ; il ne peut pas être retéléchargé).
 3. Cloudflare → le Worker → Settings → Variables and Secrets → type **Secret** : `GOOGLE_SERVICE_ACCOUNT_KEY` = tout le contenu du fichier JSON ; `CR_ACCESS_SECRET` = une longue chaîne aléatoire (générateur de mot de passe). **Deploy**. Supprime ensuite le fichier JSON de ton ordinateur.
-4. À vérifier : Administration → CR réunion → Accès collaborateurs : définis un mot de passe test, ouvre `cr_reunion_collaborateurs.html` en navigation privée et confirme qu'il est accepté.
+4. À vérifier : Administration → Accès et sécurité → Comptes autorisés & administrateurs → onglet Accès CR réunion : définis un mot de passe test, ouvre `cr_reunion_collaborateurs.html` puis `accords_collaborateurs.html` en navigation privée et confirme qu'il est accepté sur les deux (le même mot de passe ouvre les deux pages).
 
 > Ce compte est nécessaire pour deux fonctions : les comptes rendus protégés par mot de passe et **toutes les notifications** (immédiates et rappels quotidiens). Sans lui, l'erreur est explicite (`GOOGLE_SERVICE_ACCOUNT_KEY absent`) et le reste de l'application fonctionne.
 
@@ -77,13 +77,13 @@ Chaque CSSCT a sa propre instance, complètement séparée : projet Firebase dé
 
 1. Firebase → Firestore → crée la collection `authorized_emails` avec un document dont l'identifiant est ton adresse e-mail (en minuscules).
 2. Ouvre le site, saisis ton adresse, clique sur le lien reçu par e-mail : tu es connecté.
-3. Administration → Comptes autorisés & administrateurs : la liste des administrateurs est vide au départ (« mode bootstrap »), nomme-toi premier administrateur en priorité. Ajoute ensuite les autres comptes et la configuration du mail de relance.
+3. Administration → Accès et sécurité → Comptes autorisés & administrateurs : la liste des administrateurs est vide au départ (« mode bootstrap »), nomme-toi premier administrateur en priorité. Ajoute ensuite les autres comptes et la configuration du mail de relance.
 
 ## Étape 7 — Notifications sur téléphone
 
-1. Administration → **Générer les clés de notification** : copie les deux valeurs affichées (elles ne sont enregistrées nulle part).
+1. Administration → Notifications et e-mails → **Générer les clés de notification** : copie les deux valeurs affichées (elles ne sont enregistrées nulle part).
 2. Cloudflare → le Worker → Variables and Secrets : `VAPID_PUBLIC` en variable de type **texte**, `VAPID_PRIVATE` en **secret**. Facultatif : `VAPID_SUBJECT` (`mailto:adresse`) et `FUSEAU_HORAIRE` (par défaut `Europe/Paris`, pour l'heure des rappels). **Deploy**.
-3. Administration → **Vérifier la configuration** : doit afficher « Configuration correcte ». Sinon le message dit ce qui manque.
+3. Administration → Notifications et e-mails → **Vérifier la configuration** : doit afficher « Configuration correcte ». Sinon le message dit ce qui manque.
 4. Chaque membre ouvre « Notifications » (cloche de l'accueil), active son appareil puis touche « Envoyer un test ». Sur iPhone, l'application doit d'abord être installée sur l'écran d'accueil (iOS 16.4 ou plus récent).
 5. Chaque appareil a ses réglages : heure du rappel quotidien (9 h par défaut) et familles de notifications. Les rappels portent sur les trousses (péremptions, contrôles) et les signalements non clos depuis plus de 30 jours.
 6. Ne régénère jamais les clés d'une instance en service : tous les appareils devraient être réactivés un par un.
@@ -91,7 +91,7 @@ Chaque CSSCT a sa propre instance, complètement séparée : projet Firebase dé
 ## Vérifications finales
 
 1. Dépose un signalement depuis le portail salarié : e-mail reçu, notification reçue sur un téléphone abonné, dossier visible dans l'application.
-2. Administration → Sites et Entreprises : les listes sont celles de l'organisation (ou vierges), pas celles d'origine.
+2. Administration → Listes et paramètres → Sites et Entreprises : les listes sont celles de l'organisation (ou vierges), pas celles d'origine.
 3. La recherche `c655b` dans l'éditeur web du dépôt ne trouve plus rien en dehors du texte de ce mode opératoire.
 
 ## Limites
