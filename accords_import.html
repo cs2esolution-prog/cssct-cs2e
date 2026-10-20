@@ -219,22 +219,32 @@ function dateDuNom(nom){
 /* Durée : uniquement la phrase « Le présent accord/avenant est conclu pour… » (évite les mentions CDI/CDD) */
 function detecterDuree(texte){
   const flat = norm(texte).toLowerCase().replace(/\s+/g,' ');
+  const nb = v => /^\d+$/.test(v) ? +v : (NOMBRES[v] || 0);
+  const mois = (n, u) => String(u).indexOf('an') === 0 ? n * 12 : n;
+  const dernier = (re, s) => { let m, last = null; while((m = re.exec(s)) !== null) last = m; return last; };
+  const extrait = m => flat.slice(Math.max(0, m.index - 10), m.index + m[0].length + 20).trim();
   const reA = /present(?:e)? (?:accord|avenant|protocole|convention) est conclue? pour (?:une )?duree (indeterminee|determinee)(?: de (\w+) (ans?|mois))?/g;
   const reB = /present(?:e)? (?:accord|avenant|protocole|convention) est conclue? pour (?:une )?(?:duree|periode) de (\w+) (ans?|mois)/g;
   const reC = new RegExp("present(?:e)? (?:accord|avenant|protocole|convention) est conclue?[^.]{0,80}?jusqu'?au (" + DATE_TOKEN + ")", 'g');
-  const nb = v => /^\d+$/.test(v) ? +v : (NOMBRES[v] || 0);
-  const dernierMatch = re => { let m, last = null; while((m = re.exec(flat)) !== null) last = m; return last; };
-  const a = dernierMatch(reA);
+  const a = dernier(reA, flat);
   if(a){
-    if(a[1] === 'indeterminee') return {type:'indeterminee', mois:0, finISO:''};
+    if(a[1] === 'indeterminee') return {type:'indeterminee', mois:0, finISO:'', extrait:extrait(a)};
     const n = a[2] ? nb(a[2]) : 0;
-    return {type:'determinee', mois: n ? (a[3].startsWith('an') ? n*12 : n) : 0, finISO:''};
+    return {type:'determinee', mois: n ? mois(n, a[3]) : 0, finISO:'', extrait:extrait(a)};
   }
-  const b = dernierMatch(reB);
-  if(b && nb(b[1])) return {type:'determinee', mois: b[2].startsWith('an') ? nb(b[1])*12 : nb(b[1]), finISO:''};
-  const c = dernierMatch(reC);
-  if(c){ const iso = parseDateFr(c[1]); if(iso) return {type:'determinee', mois:0, finISO:iso}; }
-  return {type:'', mois:0, finISO:''};
+  const b = dernier(reB, flat);
+  if(b && nb(b[1])) return {type:'determinee', mois: mois(nb(b[1]), b[2]), finISO:'', extrait:extrait(b)};
+  const c = dernier(reC, flat);
+  if(c){ const iso = parseDateFr(c[1]); if(iso) return {type:'determinee', mois:0, finISO:iso, extrait:extrait(c)}; }
+  /* repli : texte compacté, insensible aux espaces parasites de l'extraction */
+  const sq = flat.replace(/[^a-z0-9]/g, '');
+  const sA = dernier(/present(?:e)?(?:accord|avenant|protocole|convention)estconclue?pouruneduree(indeterminee|determinee)(?:de([a-z0-9]+?)(ans|an|mois))?/g, sq);
+  if(sA){
+    if(sA[1] === 'indeterminee') return {type:'indeterminee', mois:0, finISO:'', extrait:'(repérée dans le texte compacté)'};
+    const n = sA[2] ? nb(sA[2]) : 0;
+    return {type:'determinee', mois: n ? mois(n, sA[3]) : 0, finISO:'', extrait:'(repérée dans le texte compacté)'};
+  }
+  return {type:'', mois:0, finISO:'', extrait:''};
 }
 
 /* Titre : bloc de lignes en majuscules en tête de document */
@@ -243,16 +253,20 @@ function ratioMajuscules(l){
   if(lettres.length < 4) return 0;
   return lettres.replace(/[^A-ZÀ-Þ]/g,'').length / lettres.length;
 }
+function lettresEspacees(l){
+  const m = String(l).trim().split(/\s+/);
+  return m.length >= 6 && m.filter(t => t.length === 1).length / m.length >= 0.75;
+}
 function detecterTitre(texte){
   const lignes = String(texte || '').split('\n').map(l => l.trim()).filter(Boolean).slice(0, 80);
   const ignorer = l => /^docusign envelope id/i.test(l) || /^\d+(\s*\/\s*\d+)?$/.test(l) || /^page\s*\|?\s*\d+/i.test(l)
-    || /^(?:\S\s){6,}\S?$/.test(l) || /^[0-9A-F]{8}-[0-9A-F]{4}-/i.test(l);
+    || lettresEspacees(l) || /^[0-9A-F]{8}-[0-9A-F]{4}-/i.test(l);
   const arret = l => /^(entre\b.*soussign|entre\s*:?\s*$|et\s*:?\s*$|la societe|le groupe|union invivo,|l'organisation|preambule)/i.test(norm(l));
   const titre = [];
   for(const l of lignes){
     if(ignorer(l)) continue;
     if(arret(l)) { if(titre.length) break; else continue; }
-    if(ratioMajuscules(l) >= 0.8){ titre.push(l); if(titre.length >= 4) break; }
+    if(ratioMajuscules(l) >= 0.8){ titre.push(l); if(titre.length >= 5) break; }
     else if(titre.length) break;
   }
   return titre.join(' ');
@@ -272,10 +286,14 @@ function prettifierTitre(brut){
   return t.charAt(0).toUpperCase() + t.slice(1);
 }
 function titreDepuisNom(nom){ return String(nom).replace(/\.[a-z0-9]+$/i,'').replace(/[_]+/g,' ').replace(/\s+/g,' ').trim(); }
-function detecterType(titre){
-  const t = norm(titre).toLowerCase();
-  if(/\bavenant\b/.test(t)) return 'Avenant';
-  if(/\baccord\b/.test(t)) return 'Accord';
+function detecterType(){
+  /* essaie dans l'ordre : titre, nom de fichier, début du texte ; tolère les espaces parasites */
+  for(let k = 0; k < arguments.length; k++){
+    const sq = norm(arguments[k]).toLowerCase().replace(/[^a-z]/g,'');
+    const a = sq.indexOf('avenant'), c = sq.indexOf('accord');
+    if(a !== -1 && (c === -1 || a < c)) return 'Avenant';
+    if(c !== -1) return 'Accord';
+  }
   return 'Autre';
 }
 function detecterTheme(titre, texte){
@@ -308,15 +326,21 @@ async function extrairePdf(buf){
   for(let i = 1; i <= pdf.numPages; i++){
     const page = await pdf.getPage(i);
     const content = await page.getTextContent();
-    let cur = '';
+    let cur = '', prev = null;
     const lignes = [];
+    const fermer = () => { const t = cur.replace(/\s+/g, ' ').trim(); if(t) lignes.push(t); cur = ''; prev = null; };
     content.items.forEach(function(it){
-      cur += it.str;
-      if(it.hasEOL){ lignes.push(cur); cur = ''; }
-      else if(it.str){ cur += ' '; }
+      const s = it.str || '';
+      const tr = it.transform || [10,0,0,10,0,0];
+      const taille = Math.abs(tr[3]) || 10;
+      if(prev && Math.abs(tr[5] - prev.y) > taille * 0.5) fermer();
+      if(cur && prev && s && !/^\s/.test(s) && !/\s$/.test(cur) && (tr[4] - prev.fin) > taille * 0.15) cur += ' ';
+      cur += s;
+      if(s) prev = { fin: tr[4] + (it.width || 0), y: tr[5] };
+      if(it.hasEOL) fermer();
     });
-    if(cur.trim()) lignes.push(cur);
-    pages.push({ page: i, lignes: lignes.map(l => l.trim()).filter(Boolean) });
+    fermer();
+    pages.push({ page: i, lignes: lignes });
   }
   return { pages: pages, texte: pages.map(p => p.lignes.join('\n')).join('\n\n') };
 }
@@ -336,7 +360,7 @@ function detecter(it){
   const brut = detecterTitre(it.texte);
   it.titre = prettifierTitre(brut) || titreDepuisNom(it.name);
   it.titreIncertain = !brut;
-  it.type = detecterType(it.titre);
+  it.type = detecterType(it.titre, it.name, String(it.texte || '').slice(0, 800));
   it.theme = detecterTheme(it.titre, it.texte);
   const sig = detecterSignature(it.texte);
   const nom = dateDuNom(it.name);
@@ -345,7 +369,7 @@ function detecter(it){
   else if(nom.iso){ it.dateISO = nom.iso; it.dateSource = 'nom'; }
   else if(it.modifISO){ it.dateISO = it.modifISO; it.dateSource = 'modification'; }
   const d = detecterDuree(it.texte);
-  it.dureeType = d.type; it.dureeMois = d.mois || '';
+  it.dureeType = d.type; it.dureeMois = d.mois || ''; it.dureeExtrait = d.extrait || '';
   if(d.finISO){ it.finISO = d.finISO; it.finConnue = true; }
   calculerEcheance(it);
 }
@@ -354,7 +378,7 @@ async function analyserFichier(f, cle){
   const dm = new Date(f.lastModified);
   const it = { id: nextId++, cle: cle, name: f.name, size: f.size, ext: ext, nbPages: 0, pages: null, texte: '', erreur: '',
     modifISO: isNaN(dm) ? '' : dm.getFullYear() + '-' + pad(dm.getMonth()+1) + '-' + pad(dm.getDate()),
-    titre: '', titreIncertain: false, type: 'Accord', theme: '', dateISO: '', dateSource: '', dateSnippet: '', datesAlt: [], anneesNom: [],
+    titre: '', titreIncertain: false, type: 'Accord', dureeExtrait: '', theme: '', dateISO: '', dateSource: '', dateSnippet: '', datesAlt: [], anneesNom: [],
     dureeType: '', dureeMois: '', finISO: '', finConnue: false, statut: 'À qualifier', lien: '', ouvert: false, sel: false, doublon: '' };
   if(['pdf','docx','doc'].indexOf(ext) === -1) it.erreur = 'Format non pris en charge (PDF, DOCX ou DOC).';
   else if(f.size > 25*1024*1024) it.erreur = 'Fichier trop volumineux (25 Mo maximum).';
@@ -434,6 +458,8 @@ function ligneHtml(it){
   '<tr class="detail" data-id="' + it.id + '"' + (it.ouvert ? '' : ' hidden') + '><td></td><td colspan="8"><div class="detail-grid">' +
     '<div><h4>Alertes</h4><div data-k="al">' + detailAlertes(it) + '</div></div>' +
     '<div><h4>Extrait de signature repéré</h4><div class="snippet">' + (it.dateSnippet ? esc(it.dateSnippet) : 'Aucune formule « Fait à … le … » trouvée.') + '</div>' +
+      '<h4 style="margin-top:10px">Phrase de durée repérée</h4><div class="snippet">' + (it.dureeExtrait ? esc(it.dureeExtrait) : 'Aucune phrase « Le présent accord est conclu pour… » trouvée.') + '</div>' +
+      '<h4 style="margin-top:10px">Début du texte lu (contrôle de l’extraction)</h4><div class="snippet">' + (it.texte ? esc(it.texte.replace(/\s+/g, ' ').slice(0, 220)) + ' … (' + it.texte.length + ' caractères)' : 'Aucun texte lu.') + '</div>' +
       '<h4 style="margin-top:10px">Échéance connue (si elle diffère du calcul)</h4><input type="date" data-f="finISO" value="' + (it.finConnue ? esc(it.finISO) : '') + '">' +
       '<h4 style="margin-top:10px">Lien avec un autre accord (modifie / remplace)</h4><input type="text" data-f="lien" placeholder="ex. accord du 2 décembre 2022" value="' + esc(it.lien) + '">' +
       '<div style="margin-top:10px"><button class="mini" data-act="retirer">Retirer ce fichier de la liste</button></div></div>' +
