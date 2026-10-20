@@ -135,6 +135,42 @@
   .role-row:last-child{border-bottom:none;}
   .role-row-name{font-weight:600; font-size:13px;}
   .role-row-desc{font-size:11px; color:var(--ink-soft);}
+  /* ===== Refonte : onglets ===== */
+  .wrap{max-width:920px;}
+  header.top{gap:10px;}
+  .top-actions{display:flex; align-items:center; gap:8px;}
+  .pill{font-size:12.5px; font-weight:600; text-decoration:none; border:1px solid var(--line); padding:6px 14px; border-radius:20px; background:#fff; color:var(--ink-soft); white-space:nowrap;}
+  .pill.primary{background:var(--teal); color:#fff; border-color:var(--teal);}
+  h1{color:var(--teal);}
+  .admin-tabs{display:flex; gap:4px; overflow-x:auto; border-bottom:1px solid var(--line); margin-bottom:22px; position:sticky; top:0; background:var(--paper); z-index:5; scrollbar-width:none;}
+  .admin-tabs::-webkit-scrollbar{display:none;}
+  .admin-tab{flex:none; font:inherit; font-size:13px; font-weight:600; color:var(--ink-soft); background:none; border:none; border-bottom:3px solid transparent; padding:11px 12px; cursor:pointer; white-space:nowrap;}
+  .admin-tab:hover{color:var(--ink);}
+  .admin-tab.on{color:var(--teal-dark); border-bottom-color:var(--teal);}
+  .admin-panel{display:none;}
+  .admin-panel.on{display:block;}
+  .panel-intro{font-size:12.5px; color:var(--ink-soft); margin:0 0 6px;}
+  .section-lbl{color:#9a8250; font-weight:600;}
+  .admin-panel .section-lbl:first-of-type{margin-top:14px;}
+  .admin-note{background:#fff; border-left:4px solid var(--purple); border-radius:8px; padding:10px 14px; font-size:12px; color:var(--purple); margin:0 0 12px;}
+  .admin-tag{font-size:10.5px; font-weight:600; padding:2px 8px; border-radius:10px; background:#eee9f2; color:var(--purple); margin-left:8px; vertical-align:middle; text-transform:none; letter-spacing:0;}
+  .qr-grid{display:grid; grid-template-columns:1fr 1fr; gap:12px;}
+  .qr-grid .qr-card{padding:18px;}
+  .qr-grid .qr-img{width:140px; height:140px;}
+  .qr-card .qr-t{font-weight:600; font-size:13px; margin-bottom:2px;}
+  .qr-card .qr-d{font-size:11.5px; color:var(--ink-soft); margin-bottom:10px;}
+  .sitemap-link small{display:block; font-weight:400; color:var(--ink-soft); font-size:11px;}
+  .brand-text, .back-link{white-space:nowrap;}
+  .bl-short{display:none;}
+  .vapid-result{font-size:12.5px; margin:-2px 0 10px; white-space:pre-wrap; word-break:break-word;}
+  @media (max-width:620px){
+    .qr-grid{grid-template-columns:1fr;}
+    .wrap{padding:18px 14px 70px;}
+    .brand-text{font-size:16px;}
+    .pill.primary .pill-txt{display:none;}
+    .bl-long{display:none;} .bl-short{display:inline;}
+    .brand{gap:8px;} .brand-mark{width:32px; height:32px;}
+  }
 </style>
 </head>
 <body>
@@ -162,31 +198,177 @@
       <div class="brand-mark"></div>
       <div class="brand-text">CS<span>2E</span> · CSSCT</div>
     </div>
-    <a class="back-link" href="index.html">Retour à l'accueil</a>
+    <div class="top-actions">
+      <a class="pill primary" href="dashboard.html" aria-label="Tableau de bord">📊 <span class="pill-txt">Tableau de bord</span></a>
+      <a class="back-link" href="index.html"><span class="bl-long">Retour à l'accueil</span><span class="bl-short">Accueil</span></a>
+    </div>
   </header>
 
   <h1>Administration</h1>
-  <p class="subtitle">Accès rapide aux réglages techniques et à la gestion de l'application.</p>
+  <p class="subtitle">Réglages et gestion de l'application, classés par thème.</p>
 
-  <div class="section-lbl">Général</div>
-  <a class="admin-card" href="dashboard.html">
-    <div class="a-icon">📊</div>
-    <div><div class="a-title">Tableau de bord</div><div class="a-desc">Indicateurs, comparaison annuelle, bilan téléchargeable</div></div>
-    <div class="a-arrow">›</div>
-  </a>
+  <nav class="admin-tabs" id="adminTabs" role="tablist" aria-label="Rubriques d'administration">
+    <button type="button" class="admin-tab on" role="tab" data-tab="acces">Accès et sécurité</button>
+    <button type="button" class="admin-tab" role="tab" data-tab="listes">Listes et paramètres</button>
+    <button type="button" class="admin-tab" role="tab" data-tab="notifs">Notifications et e-mails</button>
+    <button type="button" class="admin-tab" role="tab" data-tab="partage">Partage</button>
+    <button type="button" class="admin-tab" role="tab" data-tab="outils">Outils techniques</button>
+    <button type="button" class="admin-tab" role="tab" data-tab="plan">Plan du site</button>
+  </nav>
+
+<section class="admin-panel on" id="panel-acces" role="tabpanel">
+  <p class="panel-intro">Qui peut se connecter, et avec quoi.</p>
+  <div class="section-lbl">Comptes</div>
   <button type="button" class="admin-card" onclick="openAccessModal()">
     <div class="a-icon">👤</div>
-    <div><div class="a-title">Comptes autorisés &amp; administrateurs</div><div class="a-desc">Ajouter / retirer des comptes et des administrateurs, directement depuis l'appli</div></div>
+    <div><div class="a-title">Comptes autorisés &amp; administrateurs</div><div class="a-desc">Ajouter / retirer des comptes et des administrateurs · onglet « Accès CR réunion »</div></div>
     <div class="a-arrow">›</div>
   </button>
-  <a class="admin-card" href="https://console.firebase.google.com/project/cssct-cs2e-c655b/firestore/data" target="_blank" rel="noopener">
-    <div class="a-icon">🗄️</div>
-    <div><div class="a-title">Base de données (Firestore)</div><div class="a-desc">Voir et modifier directement les données enregistrées</div></div>
-    <div class="a-arrow">↗</div>
-  </a>
+  <div class="admin-note">🔐 Le mot de passe « Accès CR réunion » ouvre aussi la page des <strong>accords d'entreprise</strong> (<em>accords_collaborateurs.html</em>).</div>
+  <button type="button" class="admin-card" onclick="document.getElementById('comptesTutoModal').classList.add('show')">
+    <div class="a-icon">📝</div>
+    <div><div class="a-title">Autoriser un nouveau compte (méthode manuelle)</div><div class="a-desc">Pas à pas, via Firestore et Authentication</div></div>
+    <div class="a-arrow">›</div>
+  </button>
+  <div class="section-lbl">Suivi des connexions et accès techniques</div>
   <a class="admin-card" href="https://console.firebase.google.com/project/cssct-cs2e-c655b/authentication/users" target="_blank" rel="noopener">
     <div class="a-icon">🔑</div>
     <div><div class="a-title">Connexions (Firebase Authentication)</div><div class="a-desc">Historique des personnes s'étant déjà connectées</div></div>
+    <div class="a-arrow">↗</div>
+  </a>
+  <a class="admin-card" href="https://console.cloud.google.com/iam-admin/serviceaccounts?project=cssct-cs2e-c655b" target="_blank" rel="noopener">
+    <div class="a-icon">🛡️</div>
+    <div><div class="a-title">Compte de service Google (accès Worker)</div><div class="a-desc">Utilisé par le Worker pour l'accès collaborateurs aux CR de réunion et aux accords — clé, rôle, rotation</div></div>
+    <div class="a-arrow">↗</div>
+  </a>
+</section>
+
+<section class="admin-panel" id="panel-listes" role="tabpanel">
+  <p class="panel-intro">Listes utilisées par les formulaires et l'annuaire.</p>
+  <div class="section-lbl">Listes partagées</div>
+  <button type="button" class="admin-card" onclick="openSitesModal()">
+    <div class="a-icon">📍</div>
+    <div><div class="a-title">Sites</div><div class="a-desc">Liste utilisée par le formulaire collaborateur, les inspections et les trousses de secours</div></div>
+    <div class="a-arrow">›</div>
+  </button>
+  <button type="button" class="admin-card" onclick="openEntreprisesModal()">
+    <div class="a-icon">🏢</div>
+    <div><div class="a-title">Entreprises / structures</div><div class="a-desc">Liste utilisée par le formulaire collaborateur et l'expression de besoin (public)</div></div>
+    <div class="a-arrow">›</div>
+  </button>
+  <div class="section-lbl">Annuaire CSE <span class="admin-tag">page publique, sans connexion</span></div>
+  <button type="button" class="admin-card" onclick="openElusModal()">
+    <div class="a-icon">🧑‍🤝‍🧑</div>
+    <div><div class="a-title">Élus (fiches individuelles)</div><div class="a-desc">Nom, société, site, fonctions, email(s), photo, message de présentation</div></div>
+    <div class="a-arrow">›</div>
+  </button>
+  <button type="button" class="admin-card" onclick="openRolesModal()">
+    <div class="a-icon">🏷️</div>
+    <div><div class="a-title">Rôles &amp; instances</div><div class="a-desc">CSE, CSSCT, référent handicap, secrétaire, trésorier... — description consultée par les salariés</div></div>
+    <div class="a-arrow">›</div>
+  </button>
+  <button type="button" class="admin-card" onclick="openCoordCseModal()">
+    <div class="a-icon">📇</div>
+    <div><div class="a-title">Coordonnées &amp; locaux CSE</div><div class="a-desc">Email, téléphone, site web, liens utiles, emplacement des locaux par site</div></div>
+    <div class="a-arrow">›</div>
+  </button>
+</section>
+
+<section class="admin-panel" id="panel-notifs" role="tabpanel">
+  <p class="panel-intro">Qui est prévenu, et avec quels textes.</p>
+  <div class="section-lbl">Dossiers de signalement</div>
+  <button type="button" class="admin-card" onclick="openNotifSignalementModal()">
+    <div class="a-icon">📧</div>
+    <div><div class="a-title">Destinataires — nouveaux signalements</div><div class="a-desc">Adresses qui reçoivent un mail à chaque nouveau dossier créé par un collaborateur</div></div>
+    <div class="a-arrow">›</div>
+  </button>
+  <button type="button" class="admin-card" onclick="openTemplatesSignalementModal()">
+    <div class="a-icon">✉️</div>
+    <div><div class="a-title">Modèles d'email</div><div class="a-desc">Textes envoyés au collaborateur et à l'équipe CSSCT après un signalement</div></div>
+    <div class="a-arrow">›</div>
+  </button>
+  <button type="button" class="admin-card" onclick="document.getElementById('mailRelanceModal').classList.add('show')">
+    <div class="a-icon">🔔</div>
+    <div><div class="a-title">Mail de relance</div><div class="a-desc">Destinataire (président du CSE) et copie (élus CSSCT) du bouton « ✉️ Mail de relance » d'un dossier</div></div>
+    <div class="a-arrow">›</div>
+  </button>
+  <div class="section-lbl">Expression de besoin</div>
+  <button type="button" class="admin-card" onclick="openNotifBesoinModal()">
+    <div class="a-icon">📧</div>
+    <div><div class="a-title">Destinataires — expressions de besoin</div><div class="a-desc">Adresses qui reçoivent un mail à chaque nouvelle expression de besoin ou complément</div></div>
+    <div class="a-arrow">›</div>
+  </button>
+  <button type="button" class="admin-card" onclick="openTemplatesBesoinModal()">
+    <div class="a-icon">✉️</div>
+    <div><div class="a-title">Modèles d'email</div><div class="a-desc">Textes envoyés au salarié et à l'équipe CSSCT après une expression de besoin</div></div>
+    <div class="a-arrow">›</div>
+  </button>
+  <div class="section-lbl">Notifications sur téléphone (Web Push)</div>
+  <p class="panel-intro" style="margin-bottom:10px;">Chaque membre active ses notifications depuis la page « Notifications ». Une seule fois par installation, un administrateur génère ici les clés du serveur.</p>
+  <button type="button" class="admin-card" id="vapid-gen-btn">
+    <div class="a-icon">🔑</div>
+    <div><div class="a-title">Générer les clés de notification</div><div class="a-desc">Une seule fois par installation — ne jamais régénérer sur une instance en service</div></div>
+    <div class="a-arrow">›</div>
+  </button>
+  <button type="button" class="admin-card" id="vapid-check-btn">
+    <div class="a-icon">✅</div>
+    <div><div class="a-title">Vérifier la configuration</div><div class="a-desc">Contrôle que les clés du serveur sont en place</div></div>
+    <div class="a-arrow">›</div>
+  </button>
+  <div id="vapid-check-result" class="vapid-result"></div>
+  <a class="admin-card" href="notifications.html">
+    <div class="a-icon">🔔</div>
+    <div><div class="a-title">Page « Notifications »</div><div class="a-desc">Activation par appareil</div></div>
+    <div class="a-arrow">›</div>
+  </a>
+</section>
+
+<section class="admin-panel" id="panel-partage" role="tabpanel">
+  <p class="panel-intro">Liens et QR codes à diffuser.</p>
+  <div class="section-lbl">Public — sans connexion</div>
+  <div class="qr-grid">
+    <div class="qr-card">
+      <div class="qr-t">Signalement collaborateur</div><div class="qr-d">Formulaire public à partager librement (affichage, e-mail, intranet…)</div>
+      <img class="qr-img" id="qrCanvasCollab" alt="QR code">
+      <div class="qr-url" id="qrUrlCollab"></div>
+      <button class="copy-btn" id="copyUrlBtnCollab">Copier le lien</button>
+    </div>
+    <div class="qr-card">
+      <div class="qr-t">Expression de besoin</div><div class="qr-d">Un salarié peut y rester anonyme</div>
+      <img class="qr-img" id="qrCanvasBesoin" alt="QR code">
+      <div class="qr-url" id="qrUrlBesoin"></div>
+      <button class="copy-btn" id="copyUrlBtnBesoin">Copier le lien</button>
+    </div>
+    <div class="qr-card">
+      <div class="qr-t">Portail salariés</div><div class="qr-d">Entrée unique : signalement + besoin + suivi</div>
+      <img class="qr-img" id="qrCanvasPortail" alt="QR code">
+      <div class="qr-url" id="qrUrlPortail"></div>
+      <button class="copy-btn" id="copyUrlBtnPortail">Copier le lien</button>
+    </div>
+    <div class="qr-card">
+      <div class="qr-t">Annuaire CSE</div><div class="qr-d">Élus, coordonnées du CSE, rôles/instances</div>
+      <img class="qr-img" id="qrCanvasAnnuaire" alt="QR code">
+      <div class="qr-url" id="qrUrlAnnuaire"></div>
+      <button class="copy-btn" id="copyUrlBtnAnnuaire">Copier le lien</button>
+    </div>
+  </div>
+  <div class="section-lbl">Équipe — connexion requise</div>
+  <div class="qr-grid">
+    <div class="qr-card">
+      <div class="qr-t">Application complète</div><div class="qr-d">Réservée à l'équipe CSSCT</div>
+      <img class="qr-img" id="qrCanvas" alt="QR code">
+      <div class="qr-url" id="qrUrl"></div>
+      <button class="copy-btn" id="copyUrlBtn">Copier le lien</button>
+    </div>
+  </div>
+</section>
+
+<section class="admin-panel" id="panel-outils" role="tabpanel">
+  <p class="panel-intro">Consoles externes et duplication de l'application.</p>
+  <div class="section-lbl">Consoles externes</div>
+  <a class="admin-card" href="https://console.firebase.google.com/project/cssct-cs2e-c655b/firestore/data" target="_blank" rel="noopener">
+    <div class="a-icon">🗄️</div>
+    <div><div class="a-title">Base de données (Firestore)</div><div class="a-desc">Voir et modifier directement les données enregistrées</div></div>
     <div class="a-arrow">↗</div>
   </a>
   <a class="admin-card" href="https://console.firebase.google.com/project/cssct-cs2e/overview" target="_blank" rel="noopener">
@@ -204,145 +386,70 @@
     <div><div class="a-title">Tableau de bord Cloudflare</div><div class="a-desc">Déploiements, statut du site</div></div>
     <div class="a-arrow">↗</div>
   </a>
-  <a class="admin-card" href="https://console.cloud.google.com/iam-admin/serviceaccounts?project=cssct-cs2e-c655b" target="_blank" rel="noopener">
-    <div class="a-icon">🛡️</div>
-    <div><div class="a-title">Compte de service Google (accès Worker)</div><div class="a-desc">Utilisé par le Worker pour l'accès collaborateurs aux CR de réunion — clé, rôle, rotation</div></div>
-    <div class="a-arrow">↗</div>
-  </a>
+  <div class="section-lbl">Duplication</div>
   <button type="button" class="admin-card" onclick="document.getElementById('modopModal').classList.add('show')">
     <div class="a-icon">🧭</div>
-    <div><div class="a-title">Créer une nouvelle instance CSSCT</div><div class="a-desc">Mode opératoire pas à pas, sans code, pour dupliquer l'appli pour un autre CSSCT</div></div>
+    <div><div class="a-title">Créer une nouvelle instance CSSCT</div><div class="a-desc">Mode opératoire complet pour dupliquer l'appli pour un autre CSSCT</div></div>
     <div class="a-arrow">›</div>
   </button>
+</section>
 
-  <div class="section-lbl">Listes partagées</div>
-  <button type="button" class="admin-card" onclick="openSitesModal()">
-    <div class="a-icon">📍</div>
-    <div><div class="a-title">Sites</div><div class="a-desc">Liste utilisée par le formulaire collaborateur, les inspections et les trousses de secours</div></div>
-    <div class="a-arrow">›</div>
-  </button>
-  <button type="button" class="admin-card" onclick="openEntreprisesModal()">
-    <div class="a-icon">🏢</div>
-    <div><div class="a-title">Entreprises / structures</div><div class="a-desc">Liste utilisée par le formulaire collaborateur et l'expression de besoin (public)</div></div>
-    <div class="a-arrow">›</div>
-  </button>
-
-  <div class="section-lbl">Annuaire CSE</div>
-  <button type="button" class="admin-card" onclick="openElusModal()">
-    <div class="a-icon">🧑‍🤝‍🧑</div>
-    <div><div class="a-title">Élus (fiches individuelles)</div><div class="a-desc">Nom, société, site, fonctions, email(s), photo, message de présentation</div></div>
-    <div class="a-arrow">›</div>
-  </button>
-  <button type="button" class="admin-card" onclick="openRolesModal()">
-    <div class="a-icon">🏷️</div>
-    <div><div class="a-title">Rôles &amp; instances</div><div class="a-desc">CSE, CSSCT, référent handicap, secrétaire, trésorier... — description consultée par les salariés</div></div>
-    <div class="a-arrow">›</div>
-  </button>
-  <button type="button" class="admin-card" onclick="openCoordCseModal()">
-    <div class="a-icon">📇</div>
-    <div><div class="a-title">Coordonnées &amp; locaux CSE</div><div class="a-desc">Email, téléphone, site web, liens utiles, emplacement des locaux par site</div></div>
-    <div class="a-arrow">›</div>
-  </button>
-  <p style="font-size:12px;color:var(--ink-soft);margin:14px 0 8px;">Page publique, sans connexion — annuaire des élus, coordonnées du CSE et rôles/instances, consultable par tous les salariés.</p>
-  <div class="qr-card">
-    <img class="qr-img" id="qrCanvasAnnuaire" alt="QR code">
-    <div class="qr-url" id="qrUrlAnnuaire"></div>
-    <button class="copy-btn" id="copyUrlBtnAnnuaire">Copier le lien</button>
-  </div>
-
-  <div class="section-lbl">Dossiers de signalement</div>
-  <div class="settings-card">
-    <p class="s-help" style="margin-top:0;">Destinataire et copie utilisés par le bouton "✉️ Mail de relance" dans un dossier de signalement.</p>
-    <label class="s-label" for="mrPresident">Destinataire — Président du CSE</label>
-    <input type="email" id="mrPresident" placeholder="alhermitte@smag.tech">
-    <label class="s-label" for="mrElus">Copie — Élus CSSCT (adresses séparées par ;)</label>
-    <input type="text" id="mrElus" placeholder="cdizien@agrosolutions.com;imariotti@smag.tech;choudayer@smag.tech">
-    <button class="settings-save-btn" id="mrSaveBtn">Enregistrer</button>
-    <div class="settings-msg" id="mrMsg"></div>
-  </div>
-  <button type="button" class="admin-card" onclick="openNotifSignalementModal()">
-    <div class="a-icon">📧</div>
-    <div><div class="a-title">Destinataires — nouveaux signalements</div><div class="a-desc">Adresses qui reçoivent un mail à chaque nouveau dossier créé par un collaborateur</div></div>
-    <div class="a-arrow">›</div>
-  </button>
-  <button type="button" class="admin-card" onclick="openTemplatesSignalementModal()">
-    <div class="a-icon">✉️</div>
-    <div><div class="a-title">Modèles d'email</div><div class="a-desc">Textes envoyés au collaborateur et à l'équipe CSSCT après un signalement</div></div>
-    <div class="a-arrow">›</div>
-  </button>
-  <p style="font-size:12px;color:var(--ink-soft);margin:14px 0 8px;">Formulaire public, sans connexion — partage-le librement à tous les collaborateurs (affichage, email, intranet...).</p>
-  <div class="qr-card">
-    <img class="qr-img" id="qrCanvasCollab" alt="QR code">
-    <div class="qr-url" id="qrUrlCollab"></div>
-    <button class="copy-btn" id="copyUrlBtnCollab">Copier le lien</button>
-  </div>
-
-  <div class="section-lbl">Expression de besoin</div>
-  <button type="button" class="admin-card" onclick="openNotifBesoinModal()">
-    <div class="a-icon">📧</div>
-    <div><div class="a-title">Destinataires — expressions de besoin</div><div class="a-desc">Adresses qui reçoivent un mail à chaque nouvelle expression de besoin ou complément</div></div>
-    <div class="a-arrow">›</div>
-  </button>
-  <button type="button" class="admin-card" onclick="openTemplatesBesoinModal()">
-    <div class="a-icon">✉️</div>
-    <div><div class="a-title">Modèles d'email</div><div class="a-desc">Textes envoyés au salarié et à l'équipe CSSCT après une expression de besoin</div></div>
-    <div class="a-arrow">›</div>
-  </button>
-  <p style="font-size:12px;color:var(--ink-soft);margin:14px 0 8px;">Formulaire public, sans connexion — un salarié peut y rester anonyme.</p>
-  <div class="qr-card">
-    <img class="qr-img" id="qrCanvasBesoin" alt="QR code">
-    <div class="qr-url" id="qrUrlBesoin"></div>
-    <button class="copy-btn" id="copyUrlBtnBesoin">Copier le lien</button>
-  </div>
-  <p style="font-size:12px;color:var(--ink-soft);margin:14px 0 8px;">Portail d'entrée unique (signalement + besoin + suivi), si tu préfères ne diffuser qu'un seul lien.</p>
-  <div class="qr-card">
-    <img class="qr-img" id="qrCanvasPortail" alt="QR code">
-    <div class="qr-url" id="qrUrlPortail"></div>
-    <button class="copy-btn" id="copyUrlBtnPortail">Copier le lien</button>
-  </div>
-
-  <div class="section-lbl">Partage général &amp; notifications</div>
-  <p style="font-size:12px;color:var(--ink-soft);margin:0 0 8px;">Lien de l'application complète, réservé à l'équipe CSSCT (connexion requise).</p>
-  <div class="qr-card">
-    <img class="qr-img" id="qrCanvas" alt="QR code">
-    <div class="qr-url" id="qrUrl"></div>
-    <button class="copy-btn" id="copyUrlBtn">Copier le lien</button>
-  </div>
-
-  <div class="section-lbl">Notifications sur téléphone (Web Push)</div>
-  <p style="font-size:12px;color:var(--ink-soft);margin:0 0 8px;">Chaque membre active ses notifications depuis la page « Notifications ». Une seule fois par installation, un administrateur génère ici les clés du serveur.</p>
-  <button class="tile" id="vapid-gen-btn" style="border:none;width:100%;margin-top:6px;">
-    <div class="tile-icon">🔑</div>
-    <div class="tile-title">Générer les clés de notification</div>
-  </button>
-  <button class="tile" id="vapid-check-btn" style="border:none;width:100%;margin-top:10px;">
-    <div class="tile-icon">✅</div>
-    <div class="tile-title">Vérifier la configuration</div>
-  </button>
-  <div id="vapid-check-result" style="font-size:12.5px;margin-top:8px;white-space:pre-wrap;word-break:break-word;"></div>
-  <a class="sitemap-link" href="notifications.html" style="display:block;margin-top:10px;">🔔 Page « Notifications » (activation par appareil)</a>
-
-  <div class="section-lbl">Toutes les pages de l'application</div>
+<section class="admin-panel" id="panel-plan" role="tabpanel">
+  <p class="panel-intro">Toutes les pages de l'application, par public.</p>
+  <div class="section-lbl">Équipe CSSCT — connexion requise</div>
   <div class="sitemap-grid">
     <a class="sitemap-link" href="index.html">Accueil</a>
     <a class="sitemap-link" href="nouveau_signalement.html">Nouveau signalement</a>
     <a class="sitemap-link" href="signalement_liste.html">Dossiers de signalement</a>
     <a class="sitemap-link" href="inspections.html">Inspections</a>
     <a class="sitemap-link" href="exercices_evacuation.html">Exercices d'évacuation</a>
-    <a class="sitemap-link" href="comptes_rendus_reunion.html">CR de réunion</a>
     <a class="sitemap-link" href="trousses_secours.html">Trousses de secours</a>
+    <a class="sitemap-link" href="comptes_rendus_reunion.html">CR de réunion</a>
+    <a class="sitemap-link" href="accords.html">Accords d'entreprise</a>
+    <a class="sitemap-link" href="accords_import.html">Accords d'entreprise · dépôt en masse</a>
+    <a class="sitemap-link" href="expression_besoin_liste.html">Expressions de besoin (équipe)</a>
     <a class="sitemap-link" href="dashboard.html">Tableau de bord</a>
     <a class="sitemap-link" href="import_excel.html">Import historique Excel</a>
-    <a class="sitemap-link" href="changelog.html">Notes de mise à jour</a>
+    <a class="sitemap-link" href="guide_vigilance.html">Guide de vigilance</a>
     <a class="sitemap-link" href="notifications.html">Notifications (activation par appareil)</a>
-    <a class="sitemap-link" href="signalement_collaborateur.html">Signalement collaborateur (public)</a>
-    <a class="sitemap-link" href="expression_besoin.html">Expression de besoin (public)</a>
-    <a class="sitemap-link" href="suivi_demande.html">Suivre ma demande (public)</a>
-    <a class="sitemap-link" href="portail.html">Portail salariés (public)</a>
-    <a class="sitemap-link" href="annuaire_cse.html">Annuaire CSE (public)</a>
-    <a class="sitemap-link" href="expression_besoin_liste.html">Expressions de besoin (équipe)</a>
+    <a class="sitemap-link" href="installer_application.html">Installer l'application</a>
+    <a class="sitemap-link" href="changelog.html">Notes de mise à jour</a>
     <a class="sitemap-link" href="a_propos.html">À propos</a>
     <a class="sitemap-link" href="administration.html">Administration (ici)</a>
+  </div>
+  <div class="section-lbl">Collaborateurs — mot de passe « Accès CR réunion »</div>
+  <div class="sitemap-grid">
+    <a class="sitemap-link" href="cr_reunion_collaborateurs.html">Comptes-rendus CSE (collaborateurs)</a>
+    <a class="sitemap-link" href="accords_collaborateurs.html">Accords d'entreprise (collaborateurs)</a>
+  </div>
+  <div class="section-lbl">Public — sans connexion</div>
+  <div class="sitemap-grid">
+    <a class="sitemap-link" href="portail.html">Portail salariés</a>
+    <a class="sitemap-link" href="signalement_collaborateur.html">Signalement collaborateur</a>
+    <a class="sitemap-link" href="expression_besoin.html">Expression de besoin</a>
+    <a class="sitemap-link" href="suivi_demande.html">Suivre ma demande</a>
+    <a class="sitemap-link" href="annuaire_cse.html">Annuaire CSE</a>
+  </div>
+</section>
+</div>
+
+<div class="modal-overlay" id="mailRelanceModal">
+  <div class="modal" style="max-width:480px;">
+    <div class="modal-head">
+      <h3>🔔 Mail de relance</h3>
+      <button class="modal-close" onclick="document.getElementById('mailRelanceModal').classList.remove('show')">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="settings-card" style="border:none; padding:0; margin:0;">
+        <p class="s-help" style="margin-top:0;">Destinataire et copie utilisés par le bouton "✉️ Mail de relance" dans un dossier de signalement.</p>
+        <label class="s-label" for="mrPresident">Destinataire — Président du CSE</label>
+        <input type="email" id="mrPresident" placeholder="prenom.nom@example.com">
+        <label class="s-label" for="mrElus">Copie — Élus CSSCT (adresses séparées par ;)</label>
+        <input type="text" id="mrElus" placeholder="prenom.nom@example.com;prenom.nom@example.com">
+        <button class="settings-save-btn" id="mrSaveBtn">Enregistrer</button>
+        <div class="settings-msg" id="mrMsg"></div>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -430,7 +537,8 @@
           <button type="button" onclick="deleteCrPassword()" style="flex:1;color:var(--danger);">Couper l'accès collaborateurs (supprimer le mot de passe)</button>
         </div>
         <p class="s-help" style="margin-top:10px;">⚠️ Changer ou supprimer le mot de passe empêche toute <em>nouvelle</em> connexion, mais ne déconnecte pas instantanément les collaborateurs déjà connectés (leur session reste valable jusqu'à 180 jours). Pour couper l'accès de tout le monde immédiatement, il faut faire tourner le secret <code>CR_ACCESS_SECRET</code> côté Cloudflare (voir mode opératoire).</p>
-        <p class="s-help" style="margin-top:10px;">Page collaborateurs : <a href="cr_reunion_collaborateurs.html" target="_blank">cr_reunion_collaborateurs.html</a></p>
+        <p class="s-help" style="margin-top:10px;">Ce même mot de passe ouvre aussi la page des <strong>accords d'entreprise</strong> : les collaborateurs y accèdent avec le même mot de passe que pour les comptes-rendus.</p>
+        <p class="s-help" style="margin-top:10px;">Pages collaborateurs : <a href="cr_reunion_collaborateurs.html" target="_blank">cr_reunion_collaborateurs.html</a> · <a href="accords_collaborateurs.html" target="_blank">accords_collaborateurs.html</a></p>
         <div class="access-msg" id="crAccesMsg"></div>
       </div>
 
@@ -607,7 +715,7 @@
           <li>1. Chercher <code>1:277603883255:web:b3b7a5c3097a60caac1bf2</code> → remplacer par le nouvel <code>appId</code>.</li>
           <li>2. Chercher <code>277603883255</code> → remplacer par le nouveau <code>messagingSenderId</code>.</li>
           <li>3. Chercher <code>AIzaSyACY8fyy8Rd9NyLJ855xsDyknuUMV-pAag</code> → remplacer par la nouvelle <code>apiKey</code>.</li>
-          <li>4. Chercher <code>cssct-cs2e-c655b</code> → remplacer par le nouveau <code>projectId</code> (remplace aussi <code>authDomain</code>, <code>storageBucket</code> et les liens de la console).</li>
+          <li>4. Chercher <code>cssct-cs2e-c655b</code> → remplacer par le nouveau <code>projectId</code> (remplace aussi <code>authDomain</code>, <code>storageBucket</code>, les liens de la console et l'adresse du logo des pages collaborateurs <code>cr_reunion_collaborateurs.html</code> et <code>accords_collaborateurs.html</code>, qui ne contiennent que cet identifiant : c'est ce remplacement qui les met à jour).</li>
           <li>5. Chercher <code>cdizien@agrosolutions.com;imariotti@smag.tech;choudayer@smag.tech</code> → remplacer par les adresses des élus CSSCT de l'organisation, séparées par <code>;</code> (2 fichiers).</li>
           <li>6. Chercher <code>alhermitte@smag.tech</code> → remplacer par l'adresse du président du CSE.</li>
           <li>7. Chercher <code>choudayer@smag.tech</code> → remplacer par l'adresse qui reçoit les notifications de secours (administrateur).</li>
@@ -622,7 +730,7 @@
         <li>Remplace les images <code>icon-192.png</code> et <code>apple-touch-icon.png</code> par celles de l'organisation, ainsi que <code>icon-512.png</code> s'il est présent (le manifeste le cite). Dans GitHub : page du dépôt → Add file → Upload files, en gardant exactement les mêmes noms.</li>
         <li>Dans l'éditeur web, onglet <strong>Source Control</strong> (à gauche) → écris un message → <strong>Commit &amp; Push</strong>.</li>
       </ol>
-      <div class="modop-note">Décide liste par liste (sites, entreprises, destinataires) si tu reprends celle d'origine ou si tu pars vierge. Une fois l'instance en ligne, ces listes se modifient sans toucher au code : Administration → Sites, Entreprises, Mail de relance.</div>
+      <div class="modop-note">Décide liste par liste (sites, entreprises, destinataires) si tu reprends celle d'origine ou si tu pars vierge. Une fois l'instance en ligne, ces listes se modifient sans toucher au code : Administration → Listes et paramètres (Sites, Entreprises) et Notifications et e-mails (Mail de relance).</div>
 
       <h4>Étape 3 — Hébergement Cloudflare (compte Cloudflare dédié)</h4>
       <ol>
@@ -648,7 +756,7 @@
         <li>Sur <code>console.cloud.google.com</code>, sélectionne le projet de cette instance (même nom que le projet Firebase).</li>
         <li>IAM et administration → Comptes de service → Créer un compte de service (ex. <code>worker-acces</code>), rôle <strong>Cloud Datastore User</strong>. Onglet Clés → Ajouter une clé → JSON → télécharge le fichier (jamais dans GitHub ; il ne peut pas être retéléchargé).</li>
         <li>Cloudflare → le Worker → Settings → Variables and Secrets → type <strong>Secret</strong> : <code>GOOGLE_SERVICE_ACCOUNT_KEY</code> = tout le contenu du fichier JSON ; <code>CR_ACCESS_SECRET</code> = une longue chaîne aléatoire (générateur de mot de passe). <strong>Deploy</strong>. Supprime ensuite le fichier JSON de ton ordinateur.</li>
-        <li>À vérifier : Administration → CR réunion → Accès collaborateurs : définis un mot de passe test, ouvre <code>cr_reunion_collaborateurs.html</code> en navigation privée et confirme qu'il est accepté.</li>
+        <li>À vérifier : Administration → Accès et sécurité → Comptes autorisés &amp; administrateurs → onglet Accès CR réunion : définis un mot de passe test, ouvre <code>cr_reunion_collaborateurs.html</code> puis <code>accords_collaborateurs.html</code> en navigation privée et confirme qu'il est accepté sur les deux (le même mot de passe ouvre les deux pages).</li>
       </ol>
       <div class="modop-note">Ce compte est nécessaire pour deux fonctions : les comptes rendus protégés par mot de passe et <strong>toutes les notifications</strong> (immédiates et rappels quotidiens). Sans lui, l'erreur est explicite (<code>GOOGLE_SERVICE_ACCOUNT_KEY absent</code>) et le reste de l'application fonctionne.</div>
 
@@ -656,14 +764,14 @@
       <ol>
         <li>Firebase → Firestore → crée la collection <code>authorized_emails</code> avec un document dont l'identifiant est ton adresse e-mail (en minuscules).</li>
         <li>Ouvre le site, saisis ton adresse, clique sur le lien reçu par e-mail : tu es connecté.</li>
-        <li>Administration → Comptes autorisés &amp; administrateurs : la liste des administrateurs est vide au départ (« mode bootstrap »), nomme-toi premier administrateur en priorité. Ajoute ensuite les autres comptes et la configuration du mail de relance.</li>
+        <li>Administration → Accès et sécurité → Comptes autorisés &amp; administrateurs : la liste des administrateurs est vide au départ (« mode bootstrap »), nomme-toi premier administrateur en priorité. Ajoute ensuite les autres comptes et la configuration du mail de relance.</li>
       </ol>
 
       <h4>Étape 7 — Notifications sur téléphone</h4>
       <ol>
-        <li>Administration → <strong>Générer les clés de notification</strong> : copie les deux valeurs affichées (elles ne sont enregistrées nulle part).</li>
+        <li>Administration → Notifications et e-mails → <strong>Générer les clés de notification</strong> : copie les deux valeurs affichées (elles ne sont enregistrées nulle part).</li>
         <li>Cloudflare → le Worker → Variables and Secrets : <code>VAPID_PUBLIC</code> en variable de type <strong>texte</strong>, <code>VAPID_PRIVATE</code> en <strong>secret</strong>. Facultatif : <code>VAPID_SUBJECT</code> (<code>mailto:adresse</code>) et <code>FUSEAU_HORAIRE</code> (par défaut <code>Europe/Paris</code>, pour l'heure des rappels). <strong>Deploy</strong>.</li>
-        <li>Administration → <strong>Vérifier la configuration</strong> : doit afficher « Configuration correcte ». Sinon le message dit ce qui manque.</li>
+        <li>Administration → Notifications et e-mails → <strong>Vérifier la configuration</strong> : doit afficher « Configuration correcte ». Sinon le message dit ce qui manque.</li>
         <li>Chaque membre ouvre « Notifications » (cloche de l'accueil), active son appareil puis touche « Envoyer un test ». Sur iPhone, l'application doit d'abord être installée sur l'écran d'accueil (iOS 16.4 ou plus récent).</li>
         <li>Chaque appareil a ses réglages : heure du rappel quotidien (9 h par défaut) et familles de notifications. Les rappels portent sur les trousses (péremptions, contrôles) et les signalements non clos depuis plus de 30 jours.</li>
         <li>Ne régénère jamais les clés d'une instance en service : tous les appareils devraient être réactivés un par un.</li>
@@ -672,7 +780,7 @@
       <h4>Vérifications finales</h4>
       <ol>
         <li>Dépose un signalement depuis le portail salarié : e-mail reçu, notification reçue sur un téléphone abonné, dossier visible dans l'application.</li>
-        <li>Administration → Sites et Entreprises : les listes sont celles de l'organisation (ou vierges), pas celles d'origine.</li>
+        <li>Administration → Listes et paramètres → Sites et Entreprises : les listes sont celles de l'organisation (ou vierges), pas celles d'origine.</li>
         <li>La recherche <code>c655b</code> dans l'éditeur web du dépôt ne trouve plus rien en dehors du texte de ce mode opératoire.</li>
       </ol>
 
@@ -2003,6 +2111,28 @@ document.getElementById('vapid-check-btn').addEventListener('click', function ()
     else { zone.style.color = '#A85D45'; zone.textContent = d.erreur || 'Configuration incomplète.'; }
   }).catch(function (e) { zone.style.color = '#A85D45'; zone.textContent = 'Vérification impossible : ' + e.message; });
 });
+</script>
+
+<script>
+(function(){
+  var tabs = Array.prototype.slice.call(document.querySelectorAll('#adminTabs .admin-tab'));
+  function show(key, majHash){
+    tabs.forEach(function(t){
+      var on = t.getAttribute('data-tab') === key;
+      t.classList.toggle('on', on);
+      t.setAttribute('aria-selected', on ? 'true' : 'false');
+      if(on && t.scrollIntoView){ t.scrollIntoView({inline:'center', block:'nearest'}); }
+    });
+    document.querySelectorAll('.admin-panel').forEach(function(p){
+      p.classList.toggle('on', p.id === 'panel-' + key);
+    });
+    if(majHash && window.history && history.replaceState){ history.replaceState(null, '', '#' + key); }
+  }
+  tabs.forEach(function(t){ t.addEventListener('click', function(){ show(t.getAttribute('data-tab'), true); }); });
+  var h = (location.hash || '').slice(1);
+  var ok = tabs.some(function(t){ return t.getAttribute('data-tab') === h; });
+  show(ok ? h : 'acces', false);
+})();
 </script>
 </body>
 </html>
